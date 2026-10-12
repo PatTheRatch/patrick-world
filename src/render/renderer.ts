@@ -1,6 +1,7 @@
 // The frame: layer order, culling, lettering, the surveyor's red, and hit-testing.
 
 import type { Bounds, CityPlan, RoadPlan, Terrain } from '../plan/types';
+import { joinRoad, townGate, type Gate, type RoadEnd } from '../plan/roads';
 import {
   RANKS,
   type Catalogue,
@@ -118,6 +119,7 @@ export class Renderer {
   private dpr = 1;
   /** How much towns are drawn larger than life at this zoom. 1 once close. */
   private exag = 1;
+  private gates = new WeakMap<CityPlan, Map<string, Gate | null>>();
   private observer: ResizeObserver;
   /** Off for the label-free test: would these places still read as different? */
   showLabels = true;
@@ -472,10 +474,12 @@ export class Renderer {
       if (!a || !b) continue;
       const dim = lit && !(lit.has(a.id) && lit.has(b.id)) ? 0.25 : 1;
       const path = new Path2D();
-      const ra = this.townReach(a.id);
-      const rb = this.townReach(b.id);
-      let line = road.line.filter(
-        (p) => Math.hypot(p.x - a.position.x, p.y - a.position.y) > ra && Math.hypot(p.x - b.position.x, p.y - b.position.y) > rb,
+      const n = road.line.length - 1;
+      // Each end comes in by a street of the town it reaches, where the town has one facing that way.
+      let line = joinRoad(
+        road.line,
+        this.roadEnd(a, road.line[Math.round(n * 0.2)]!),
+        this.roadEnd(b, road.line[Math.round(n * 0.8)]!),
       );
       // A new road is drawn along its length, from the place it was surveyed from.
       const laid = this.roadBirths.get(link.id);
@@ -544,7 +548,21 @@ export class Renderer {
   private townReach(id: string): number {
     const plan = this.scene?.plans.get(id);
     if (!plan || plan.lots.length === 0) return 9 / this.camera.k;
-    return coreRadius(plan) * this.exag * 0.55;
+    return coreRadius(plan) * this.exag * 0.8;
+  }
+
+  /** Where a road from `toward` ends at a place: at one of its streets, or at its limits. */
+  private roadEnd(place: PlaceState, toward: Point): RoadEnd {
+    const end: RoadEnd = { center: place.position, reach: this.townReach(place.id) };
+    const plan = this.scene?.plans.get(place.id);
+    if (!plan) return end;
+    let known = this.gates.get(plan);
+    if (!known) this.gates.set(plan, (known = new Map()));
+    const key = `${Math.round(toward.x)},${Math.round(toward.y)}`;
+    let gate = known.get(key);
+    if (gate === undefined) known.set(key, (gate = townGate(plan, toward)));
+    if (gate) end.gate = { at: this.drawn(plan, gate.at), out: gate.out };
+    return end;
   }
 
   private letterRoads(scene: Scene, places: Map<string, PlaceState>) {

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Point } from '../world/types';
 import { distanceToSegment, polylineLength } from './geometry';
-import { planRoads } from './roads';
+import { joinRoad, planRoads, townGate } from './roads';
+import { planCity } from './settlement';
 import { buildTerrain } from './terrain';
 import { makeLink, makePlace, TEST_CATALOGUE } from './testkit';
 
@@ -87,5 +88,62 @@ describe('planRoads', () => {
       for (const p of road.line) if (!terrain.isLand(p)) wet++;
       expect(wet / road.line.length).toBeLessThan(0.25);
     }
+  });
+});
+
+describe('a road comes into a town by one of its streets', () => {
+  const town = makePlace(20, { id: 'dunmore', position: { x: 3350, y: 2250 } });
+  const plan = planCity(town);
+  const ends = plan.streets.filter((s) => s.main).map((s) => s.line[s.line.length - 1] as Point);
+
+  it('picks the end of a main street facing the way the road comes from', () => {
+    for (let i = 0; i < 12; i++) {
+      const bearing = (i / 12) * Math.PI * 2;
+      const from = { x: plan.center.x + Math.cos(bearing) * 900, y: plan.center.y + Math.sin(bearing) * 900 };
+      const gate = townGate(plan, from);
+      if (!gate) continue;
+      expect(ends.some((e) => e.x === gate.at.x && e.y === gate.at.y)).toBe(true);
+      // It faces the traveller: never a street on the far side of town.
+      const dot = (gate.at.x - plan.center.x) * Math.cos(bearing) + (gate.at.y - plan.center.y) * Math.sin(bearing);
+      expect(dot).toBeGreaterThan(-Math.hypot(gate.at.x - plan.center.x, gate.at.y - plan.center.y) * 0.2);
+      expect(Math.hypot(gate.out.x, gate.out.y)).toBeCloseTo(1, 6);
+      // And the road bends round to it without a kink, wherever it comes from.
+      const far = Array.from({ length: 30 }, (_, n) => ({ x: from.x + ((plan.center.x - from.x) * n) / 29, y: from.y + ((plan.center.y - from.y) * n) / 29 }));
+      const drawn = joinRoad(far, { center: from, reach: 10 }, { center: plan.center, reach: 20, gate });
+      for (let n = 1; n + 1 < drawn.length; n++) {
+        const p = drawn[n - 1]!;
+        const q = drawn[n]!;
+        const r = drawn[n + 1]!;
+        expect(Math.abs(Math.atan2((q.x - p.x) * (r.y - q.y) - (q.y - p.y) * (r.x - q.x), (q.x - p.x) * (r.x - q.x) + (q.y - p.y) * (r.y - q.y)))).toBeLessThan(0.6);
+      }
+    }
+    // Every town with streets can be reached from somewhere.
+    expect(ends.length).toBeGreaterThan(1);
+  });
+
+  it('has no gate where nothing is built', () => {
+    const base = makePlace(3, { id: 'esk' });
+    expect(townGate(planCity({ ...base, features: base.features.map((f) => ({ ...f, stage: 'concept' as const })) }), { x: 0, y: 0 })).toBeNull();
+  });
+
+  it('leaves the open route alone and only bends the last stretch', () => {
+    const from = { x: plan.center.x + 900, y: plan.center.y };
+    const route = Array.from({ length: 30 }, (_, n) => ({ x: from.x + ((plan.center.x - from.x) * n) / 29, y: from.y + ((plan.center.y - from.y) * n) / 29 }));
+    const gate = townGate(plan, from)!;
+    const drawn = joinRoad(route, { center: from, reach: 40 }, { center: plan.center, reach: 20, gate });
+    expect(drawn[drawn.length - 1]).toEqual(gate.at);
+    // It stops at the limits of the town with no gate, and the middle of the route is the surveyed line.
+    expect(Math.hypot(drawn[0]!.x - from.x, drawn[0]!.y - from.y)).toBeGreaterThan(40);
+    expect(drawn).toContainEqual(route[15]);
+    // A street built further out moves the last stretch and nothing else.
+    const further = { at: { x: gate.at.x + gate.out.x * 30, y: gate.at.y + gate.out.y * 30 }, out: gate.out };
+    const later = joinRoad(route, { center: from, reach: 40 }, { center: plan.center, reach: 20, gate: further });
+    expect(later.slice(0, 12)).toEqual(drawn.slice(0, 12));
+  });
+
+  it('still draws something between two towns that stand side by side', () => {
+    const near = { x: town.position.x + 60, y: town.position.y + 10 };
+    const drawn = joinRoad([town.position, near], { center: town.position, reach: 40, gate: townGate(plan, near) }, { center: near, reach: 40 });
+    expect(drawn.length).toBeGreaterThan(2);
   });
 });
