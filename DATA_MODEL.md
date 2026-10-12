@@ -7,7 +7,7 @@ code is right and this file is stale.
 
 | Layer | Lives in | Stored? | Purpose |
 |---|---|---|---|
-| Events | `WorldEvent[]` | **Yes: the only stored thing** | Facts, with date and source |
+| Events | `WorldEvent[]`, `BuildEvent[]` | **Yes: the only stored thing** | Facts, with date and source. Plans are carried in events. |
 | Catalogue | `MethodDef[]`, `RegionDef[]` | Yes, static | Vocabulary the events refer to |
 | World state | `WorldState` | No: derived per edition date | What the facts mean |
 | Plans | `CityPlan`, `Terrain` | No: derived, cached | Geometry |
@@ -48,6 +48,112 @@ commits are a source's business, not the world's. An adapter aggregates before e
 - `Rank`: `spark` · `site` · `outpost` · `settlement` · `town` · `city` · `major`
 - `Liveliness`: `building` · `settled` · `quiet` · `dormant` · `ruins`
 - `MethodLevel`: `unknown` · `noted` · `practised` · `fluent` · `mastered`
+
+## Build events
+
+Defined in `src/world/build.ts`. They join the same log and are derived the same way. Build
+events carry a date-time, not a day: a session is a matter of minutes.
+
+| Event | Carries | Means |
+|---|---|---|
+| `plan.written` | the whole plan, its revision, author, `accepted` | A plan was drafted or revised. Only an accepted revision is the plan. |
+| `blocker.raised` / `blocker.cleared` | blocker id, reason / resolution | Something stands in the way, or no longer does. |
+| `session.started` / `session.ended` | session id, builder, plan revision / outcome | A builder began or stopped work. |
+| `step.started` / `step.completed` | session, step id | Progress through the plan. |
+| `file.changed` | session, path, lines added and removed | Effort, and a check against what the plan predicted. |
+| `test.run` | session, command, passed, failed | A test run was observed. Not a verdict on a criterion. |
+| `agent.message` | session, text | Something the builder said. Kept for the record; changes nothing. |
+| `verification.started` | session | Checking has begun. |
+| `criterion.checked` | criterion id, revision, `passed`, evidence, who checked | A verdict on one acceptance criterion. The only thing that can make a feature done. |
+| `build.completed` | session | The builder believes it is finished. A report, not a conclusion. |
+| `scaffold.written` | place, the scaffold, author, `accepted` | An idea was worked up. |
+| `idea.pursued` | place, which MVP entries to stake | Patrick decided to build it. Stakes lots. |
+
+The brief's event names map onto these: `session_started`, `task_started` (`step.started`),
+`task_completed` (`step.completed`), `file_changed`, `test_run`, `test_passed` and `test_failed`
+(one `test.run` with counts), `blocker` (`blocker.raised`), `agent_message`,
+`verification_started`, `build_completed`.
+
+### The plan
+
+```ts
+interface BuildPlan {
+  place: string; feature: string; revision: number;
+  objective: string;
+  criteria: { id; statement; verification: { kind: 'command' | 'manual' | 'review'; how } }[];
+  steps: { id; title; detail?; after?: string[]; touches?: string[] }[];
+  dependsOn: string[];        // 'place/feature', may cross places
+  verification?: string[];    // checks beyond the criteria
+  notes?: string;
+}
+```
+
+Completion state is not a field. It is `deriveBuild(events, isDone)`, which returns the stage,
+steps finished, criteria passed and failed, open blockers, outstanding dependencies, the active
+session, and a plain sentence saying why the stage is what it is.
+
+### Stage migration
+
+The prototype's `FeatureStage` (concept, planned, designed, building, working, mature) predates
+this. The mapping when the two are joined:
+
+| Prototype | Build model |
+|---|---|
+| concept | idea |
+| planned | specified |
+| designed | planned / ready |
+| building | building |
+| (none) | verifying |
+| working | done |
+| mature | done, plus the derived "mature" quality |
+
+`feature.staged` then stops being a way to move a feature and remains only as an **inferred**
+stage for features with no plan, emitted by adapters that cannot see plans (GitHub).
+
+## The builder boundary
+
+```ts
+interface BuilderAdapter {
+  readonly id: BuilderId;                // 'manual' | 'claude-code' | 'codex' | 'cursor' | …
+  readonly label: string;
+  available(): Promise<{ ok: boolean; why?: string }>;
+  start(brief: BuildBrief, report: (e: ExecutionEvent) => void): Promise<BuildSession>;
+  resume?(session: string, report: (e: ExecutionEvent) => void): Promise<BuildSession | null>;
+}
+```
+
+An adapter translates one tool's output into `ExecutionEvent`s and nothing else. What each
+would do:
+
+| Builder | Starts work by | Reports from |
+|---|---|---|
+| Manual | Opening a checklist in the building's note | Patrick ticking steps and recording checks |
+| Claude Code | Launching the CLI headless with the brief as its prompt | Its streamed JSON: tool calls become `file.changed` and `test.run`; a small reporting tool or hook gives `step.*` |
+| Codex | Launching its CLI the same way | Its event stream, mapped the same way |
+| Cursor | Opening the workspace with the brief written to a file | File-system watching and git, plus whatever its agent exposes |
+
+Rules an adapter must keep:
+
+1. **Report, never conclude.** It may emit `build.completed`. It may not emit a passing
+   `criterion.checked` for a `manual` or `review` criterion on work it did itself.
+2. **Command criteria are run by the world, not taken on trust.** The world runs the command (or
+   has a neutral runner do it) and records the verdict with the output as evidence.
+3. **Stable event ids,** so a resumed or replayed session never double counts.
+4. **No state of its own that matters.** If the adapter's process dies, the log still says
+   exactly where the build stands.
+
+## The Patrick OS boundary
+
+Two directions, both explicit, neither a shared database:
+
+| Direction | Mechanism | Carries |
+|---|---|---|
+| Patrick OS → World | A `WorldSource` (see above) | Suggested sparks (`place.founded` with origin `patrick-os`), notes, context for a scaffold or a brief |
+| World → Patrick OS | A `WorldObserver`: a subscriber to the event log, filtered to meaningful events | Places founded and pursued, plans accepted, sessions started and ended, features done, places abandoned |
+
+A suggestion from Patrick OS enters as a spark like any other and can be ignored. An observer
+receives events after they are recorded and cannot veto or alter them. Either product can be
+replaced, or absent, without the other noticing more than silence.
 
 ## Derived state
 
@@ -124,3 +230,7 @@ generated in code. There is no server.
   stops accepting work and its buildings are redrawn as an annexed ward of the surviving city.
 - No event for moving a feature between places.
 - No schema version on events. Add one before any real data is written.
+- `WorldObserver` is declared in `src/world/build.ts`; nothing calls it yet.
+- Build events use date-times while world events use days; the merged log needs one ordering
+  rule (date-time where present, end of day otherwise).
+- Idea origin is specified on scaffolds; `place.founded` needs an `origin` field to match.

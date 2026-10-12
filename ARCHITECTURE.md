@@ -30,6 +30,63 @@ There are perhaps six DOM surfaces: the cartouche, the edition dial, the survey 
 the capture slip, and an accessible index of places. Preact with signals keeps them reactive
 at 4 kB, and signals let the canvas loop read the same state without a render cycle.
 
+## The shape, now that the world builds as well as shows
+
+```
+   sources                         the world                         builders
+ ─────────────                ───────────────────                ─────────────────
+  GitHub        ─┐                                            ┌─  Manual (Patrick)
+  Patrick OS    ─┼─ events ─►  append-only log  ◄─ events ────┼─  Claude Code
+  Manual marks  ─┤                  │                         ├─  Codex
+  Scaffolders   ─┘                  ▼                         └─  Cursor
+                             derive / deriveBuild                     ▲
+                                    │                                 │
+                                    ▼                              briefs
+                                world state  ──────────────────────────┘
+                                    │
+                        ┌───────────┼────────────┐
+                        ▼           ▼            ▼
+                     the map    observers     the notes
+                               (Patrick OS)
+```
+
+Everything outside the middle column is an adapter, and every adapter does one of two things:
+report events in, or receive a brief or an event out. Nothing outside the middle holds state
+that matters. That is what "Patrick's World owns canonical build state" means structurally.
+
+Decisions this forces, taken now so that later work does not have to undo anything:
+
+- **One log, one direction.** Builders and sources never read each other, and never write
+  anything but events. There is no path by which an agent can mark a feature done.
+- **Stage is derived, in one function** (`deriveBuild`), not stored and not asserted. The
+  prototype's `feature.staged` event survives only as an inferred stage for features without a
+  plan.
+- **Adapters are interfaces in `src/world/`**, with no implementation there. The model stays
+  free of processes, file systems and network.
+- **Running a builder needs a process the browser cannot be.** A browser tab cannot launch a
+  CLI. So execution lives in a small local companion (see below), and the app talks to it over a
+  narrow, replaceable channel. The app must work with the companion absent: manual building and
+  everything visual need nothing but the browser.
+
+### The companion (planned, not built)
+
+A local Node process, started with the app in development and later packaged with it:
+
+| Responsibility | Why it cannot be the browser |
+|---|---|
+| Launch and stop builder CLIs, stream their output | Needs to spawn processes |
+| Run `command` verifications and capture output as evidence | Same, and must be neutral ground between builder and verdict |
+| Watch a workspace for file changes (for Cursor and manual work) | Needs the file system |
+| Persist the event log to disk | Local storage is not a home for real data |
+| Run source syncs (GitHub today) on a schedule | Needs credentials the browser should not hold |
+
+The channel is events in both directions over a local socket: the app sends "start this brief
+with this builder"; the companion sends back `ExecutionEvent`s. The app never learns which CLI
+flags a builder needs, and a builder adapter never learns anything about drawing.
+
+Whether this stays a companion beside a web app or becomes the main process of a desktop app
+(Tauri or Electron) is deliberately left open: the boundary is the same either way.
+
 ## Module map
 
 ```
@@ -38,7 +95,9 @@ src/
     types.ts          Events, catalogue, derived state, the WorldSource interface
     thresholds.ts     Every tunable rule in one place
     derive.ts         events + date → WorldState
-    sources/          FixtureSource, ManualSource (the adapter boundary)
+    build.ts          Build plans, build events, deriveBuild, BuilderAdapter, idea scaffolds
+    sources/          FixtureSource, ManualSource, GitHubSource (the adapter boundary)
+    builders/         (planned) one BuilderAdapter per tool, manual first
     fixtures/         The synthetic world, authored as phases and expanded to events
   plan/             Geometry. Pure, seeded, deterministic. Unit-tested.
     rng.ts            Seeded random
@@ -56,6 +115,8 @@ src/
     store.ts          Signals: log, edition date, selection, camera target
     ui/               Cartouche, EditionDial, SurveyNote, Key, Capture, Index
   main.ts
+scripts/            Fetchers that need credentials or a shell (github-fetch)
+companion/          (planned) the local process that runs builders and verifications
 ```
 
 Dependencies point one way: `app → render → plan → world`. `world` imports nothing.

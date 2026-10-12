@@ -107,6 +107,99 @@ An idea that merely lists the same methods as a city does not earn a road. Until
 built, shared methods are a coincidence of intent. A `shares` or `feeds` link also lays a main
 alongside, lettered with what flows.
 
+## Building: what stands under a building
+
+The world is not only a record of work done elsewhere. It is where work is planned, started
+and judged finished. Contract and rule: `src/world/build.ts`.
+
+### The principle
+
+**A building's stage is derived from its build plan and from what builders report. Nobody sets
+it.** This is the same rule as the rest of the model (no status field), carried down a level.
+It is also what makes the brief's requirement checkable: if a building is drawn complete, there
+is a plan whose every acceptance criterion has a recorded passing verdict.
+
+### The plan
+
+A feature may carry a **build plan**: an objective, acceptance criteria (each with how it will
+be verified), implementation steps (with ordering and the files they are expected to touch),
+dependencies on other features, further verification requirements, and notes. Blockers are
+raised and cleared against it as events.
+
+A plan is revised by writing a new revision. An agent may draft a revision; it is not the plan
+until Patrick accepts it. Accepting a new revision voids verdicts given on the old one, because
+they were about a different promise.
+
+### The stages
+
+| Stage | True when | Drawn as |
+|---|---|---|
+| Idea | It has a name and nothing else | A pencilled lot and a stake |
+| Specified | It has an objective and at least one acceptance criterion | A solid pencil outline |
+| Planned | It has implementation steps, but a dependency or blocker is outstanding | A dashed ink outline: from plans |
+| Ready | Planned, every dependency done, no blocker open | The same, with its corners pegged: ground can be broken |
+| Building | A session has started, or a step is under way or finished | Washed as far as its steps are finished, hatched beyond; the outline crawls while a session is open |
+| Verifying | Every step is finished; criteria are unchecked or failing | Fully washed, the outline still dashed: built, not yet passed |
+| Done | Every acceptance criterion has passed on the current revision | Solid ink wall and a cast shadow |
+
+Three consequences worth stating:
+
+- **A builder saying it is finished changes nothing.** `build.completed` is a report. Only
+  passing criteria make a building done. This is tested.
+- **Done can be lost.** A later failing verdict on a criterion returns the building to
+  verifying. Regressions are visible.
+- **The crawl means something exact.** A building's outline moves only while a session is open
+  on it. If Claude Code is implementing a feature right now, that building, and only that one,
+  is visibly under construction.
+
+"Mature" is no longer a stage. It becomes a derived quality of a done building that has been
+returned to and extended over time, drawn with the heavier wall and annexes as now.
+
+### Builders
+
+Work is done by a **builder**: Claude Code, Codex, Cursor, a future tool, or Patrick by hand.
+Every builder is behind the same small interface (`BuilderAdapter`): it is handed a brief (the
+plan, a workspace, the steps to attempt, context) and it reports execution events. It never
+writes state and never concludes.
+
+```
+Build Plan ──► BuilderAdapter ──► Claude Code / Codex / Cursor / hands
+                                          │
+   world state ◄── derive ◄── event log ◄─┘  execution events
+```
+
+**Manual is a builder like any other.** The manual adapter's "session" is Patrick working; its
+reports are him ticking off steps and recording checks. The plan, the stages and the rule for
+done are identical, which is the point: agent-built and hand-built features are comparable.
+
+Verification has three kinds: a **command** (its exit status decides), a **manual** check
+(Patrick looks), and a **review** (someone other than the builder judges). For the last two,
+whoever did the work may not be the one who checks it.
+
+### Ideas, before any plan
+
+A spark can arrive from Patrick, Claude, ChatGPT, Patrick OS or anywhere else; its origin is
+recorded. It can then be **scaffolded**: worked up into problem, hypothesis, target user,
+possible capabilities, an MVP, risks, open questions, technical possibilities and a first
+experiment. An AI may draft the scaffold. Like a plan, it is a suggestion until accepted.
+
+Scaffolding does not move an idea up the ladder: thinking about something is not building it.
+A scaffolded spark is drawn as a site with survey notes around it, and no more. The decision to
+**pursue** it is a separate event, and that event is what stakes lots on the map, one per MVP
+entry Patrick chooses. From there each lot is an idea-stage feature waiting for a plan.
+
+No idea is required to be scaffolded, and none is required to be pursued.
+
+### What this changes about evidence
+
+Until now, evidence meant commits. With plans, the stronger evidence is criteria passing, and
+commits become what they really are: effort. So:
+
+- **Stage** comes from the plan when a feature has one.
+- **Storeys** still come from work invested (commits, and now session activity).
+- A feature with no plan (everything arriving from GitHub today) keeps an **inferred** stage,
+  marked as inferred, and is drawn the same way. Writing a plan for it replaces the inference.
+
 ## Layout: where things go, and why they never move
 
 A map that rearranges itself is not a map. Three rules:
@@ -137,6 +230,9 @@ The design target is 300 places and 3,000 features.
 - The territory has room: regions are large and mostly blank, by design.
 
 ## What the model does not know yet
+
+- **Running a builder.** The interface exists; nothing implements it yet, including manual.
+- **Where a session runs** and what it may touch.
 
 - **Effort that is not commits.** Design, research and thinking leave no commit. The model has
   an `hours` field on work events and nothing feeds it yet.

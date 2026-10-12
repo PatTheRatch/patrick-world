@@ -27,11 +27,14 @@ He opens it at a desk, on a large screen, in two situations **[inferred]**:
   the next stretch of effort, or simply to enjoy seeing it.
 - **Capturing.** A new idea has arrived, or a project has moved, and he wants the world to
   reflect it.
+- **Building.** He picks a feature, writes or accepts its plan, chooses who builds it (himself
+  or a coding agent), and watches it go up. *(Stated in the second brief, 12 October 2026.)*
 
 ## Product Purpose
 
 Patrick's World turns his projects, ideas, experiments and ambitions into a living world he can
-explore, instead of lists, boards and folders.
+explore, instead of lists, boards and folders. It is also where he builds them: each building
+stands on a build plan, and work is started, watched and judged finished from inside the world.
 
 It exists because lists flatten everything: a thought he had once and a product he has built for
 six months look the same in a list. In the world they cannot look the same. One is a mark on
@@ -43,6 +46,8 @@ Success is an emotional response backed by an honest picture:
 - He can tell "thought of this once" from "built this for six months" at a glance.
 - He wants to put his real projects into it.
 - He would keep it open.
+- Planning a feature properly here is easier than not planning it, and "done" means the same
+  thing whether he or an agent did the work.
 
 ## Positioning
 
@@ -78,7 +83,29 @@ Confirmed by the brief:
 - Time is a first-class dimension: he should be able to see the world as it was a year ago.
 - New things can be added, expanded and connected from inside the world.
 
+Stated in the second brief (12 October 2026), designed for and not yet built:
+
+- **Build plans.** A feature can carry a plan: objective, acceptance criteria, implementation
+  steps, dependencies, files expected to change, verification requirements, blockers.
+- **Build stages.** Idea, specified, planned, ready, building, verifying, done. Each is a fact
+  about the plan, never a label someone sets.
+- **Builders.** Work can be handed to Claude Code, Codex, Cursor or a future tool, or done by
+  hand. All of them work from the same plan and reach done the same way.
+- **Idea scaffolding.** A spark can be worked up, with an AI's help, into problem, hypothesis,
+  target user, capabilities, MVP, risks, open questions, technical possibilities and a first
+  experiment. Choosing to pursue it stakes its first lots. No idea is required to be scaffolded.
+- **Ideas from elsewhere.** Sparks may arrive from Patrick, Claude, ChatGPT, Patrick OS or other
+  sources, and their origin is recorded.
+- **Patrick OS as a peer.** It may suggest ideas, supply context, and observe build events,
+  through explicit interfaces only. The two never share a database.
+
 Hard constraints:
+
+- Patrick's World owns canonical build state. A builder executes and reports; it never decides
+  that something is finished.
+- A building that looks complete must have a reason in its plan to be complete.
+- Not coupled to any one coding agent.
+- Manual work is a first-class way to build, not a fallback.
 
 - No fake currencies, gems, streaks, XP or any reward that does not correspond to real work.
 - Not a clone of any specific game's art, interface or mechanics.
@@ -88,6 +115,12 @@ Hard constraints:
 - No real accounts connected, nothing pushed to a remote, in this phase.
 
 Undecided (recorded, not invented):
+
+- Whether a builder session runs on Patrick's machine, in a container, or remotely, and what
+  it is allowed to touch.
+- Who may check a `manual` or `review` criterion when an agent did the work (the model requires
+  that it not be the agent itself; whether a second agent qualifies is open).
+- How much of a plan an agent may draft before Patrick must accept it.
 
 - Where the world's data is stored once it is real (local file, database, Patrick OS).
 - Whether anyone other than Patrick ever sees it.
@@ -122,6 +155,8 @@ Undecided (recorded, not invented):
    inside a layout.
 5. **Small things stay small.** A half-formed thought is a mark on the ground, and that is a
    legitimate, permanent thing for it to be.
+6. **The world keeps the books.** Plans and their state live here. Tools that do the work
+   report to it and are replaceable.
 
 ## Accessibility & Inclusion
 

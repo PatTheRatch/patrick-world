@@ -59,6 +59,53 @@ land; the morning summary is in [HANDOFF.md](HANDOFF.md).
 - [x] DESIGN.md recorded from what was built
 - [x] HANDOFF.md
 
+## Stage 8: Real data
+
+- [ ] GitHub adapter: fetch, transform to events, load in place of the specimen
+- [ ] Review inferred stages against what Patrick knows to be true; tune the rules
+- [ ] A repository-to-place and path-to-feature mapping file for where inference is wrong
+- [ ] The event log on disk, with a schema version
+
+## Stage 9: The build model in the app
+
+Contract and rule exist (`src/world/build.ts`, tested). Nothing below is built.
+
+- [ ] Join `BuildEvent` to the world log; one ordering rule for days and date-times
+- [ ] Migrate `FeatureStage` to `BuildStage`; `feature.staged` becomes inference only
+- [ ] Draw the two new stages: ready (pegged corners) and verifying (washed, outline still dashed)
+- [ ] The crawl follows an open session, not the stage
+- [ ] A building's note shows its plan: objective, criteria with verdicts, steps, blockers, and
+      the sentence saying why it stands where it does
+- [ ] Write and revise a plan in the note; accept an agent's draft
+
+## Stage 10: Building by hand
+
+The first builder, because it needs no companion and proves the model.
+
+- [ ] `ManualBuilder`: start a session, tick steps, record checks
+- [ ] "Build manually" from a ready building
+- [ ] Dependencies across features and places, drawn as a faint line while one is waiting
+
+## Stage 11: The companion and the first agent
+
+- [ ] The local companion: event channel, log on disk
+- [ ] Neutral runner for `command` criteria, with output kept as evidence
+- [ ] `ClaudeCodeBuilder`: headless launch from a brief, stream mapped to execution events
+- [ ] Choose a builder per session: Claude Code, Codex, Cursor, manual
+- [ ] `CodexBuilder`, `CursorBuilder`
+
+## Stage 12: Ideas
+
+- [ ] `origin` on founding; sparks from Claude, ChatGPT, Patrick OS
+- [ ] `ScaffoldProvider` and one implementation
+- [ ] Scaffold in a spark's note; accept, revise, pursue
+- [ ] Pursuing stakes lots from the MVP
+
+## Stage 13: Patrick OS
+
+- [ ] `PatrickOsSource`: suggestions and context in
+- [ ] `WorldObserver`: meaningful events out
+
 ## Out of scope tonight
 
 Real data sources, persistence beyond local storage, accounts, deployment, mobile layout,
