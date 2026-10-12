@@ -1,0 +1,728 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-12T00:00:00Z",
+  "title": "Design System: Patrick's World",
+  "extensions": {
+    "colorMeta": {
+      "surveyors-red": {
+        "role": "primary",
+        "displayName": "Surveyor's Red",
+        "canonical": "#c2341d",
+        "oklch": "oklch(54.1% 0.182 32)",
+        "tonalRamp": [
+          "oklch(15% 0.068 32)",
+          "oklch(27% 0.106 32)",
+          "oklch(38% 0.146 32)",
+          "oklch(50% 0.182 32)",
+          "oklch(62% 0.182 32)",
+          "oklch(73% 0.166 32)",
+          "oklch(84% 0.088 32)",
+          "oklch(95% 0.024 32)"
+        ]
+      },
+      "wash-frontage-rose": {
+        "role": "secondary",
+        "displayName": "Rose (Frontage)",
+        "canonical": "#d7667f",
+        "oklch": "oklch(65.2% 0.143 8)",
+        "tonalRamp": [
+          "oklch(15% 0.067 8)",
+          "oklch(27% 0.109 8)",
+          "oklch(38% 0.143 8)",
+          "oklch(50% 0.143 8)",
+          "oklch(62% 0.143 8)",
+          "oklch(73% 0.143 8)",
+          "oklch(84% 0.089 8)",
+          "oklch(95% 0.025 8)"
+        ]
+      },
+      "wash-works-chrome": {
+        "role": "secondary",
+        "displayName": "Chrome Yellow (Works)",
+        "canonical": "#e2ad2f",
+        "oklch": "oklch(77.6% 0.146 84)",
+        "tonalRamp": [
+          "oklch(15% 0.036 84)",
+          "oklch(27% 0.056 84)",
+          "oklch(38% 0.078 84)",
+          "oklch(50% 0.102 84)",
+          "oklch(62% 0.126 84)",
+          "oklch(73% 0.146 84)",
+          "oklch(84% 0.146 84)",
+          "oklch(95% 0.050 84)"
+        ]
+      },
+      "wash-reservoir-prussian": {
+        "role": "secondary",
+        "displayName": "Prussian Blue (Reservoir)",
+        "canonical": "#3f78ad",
+        "oklch": "oklch(55.8% 0.102 249)",
+        "tonalRamp": [
+          "oklch(15% 0.048 249)",
+          "oklch(27% 0.074 249)",
+          "oklch(38% 0.102 249)",
+          "oklch(50% 0.102 249)",
+          "oklch(62% 0.102 249)",
+          "oklch(73% 0.102 249)",
+          "oklch(84% 0.082 249)",
+          "oklch(95% 0.024 249)"
+        ]
+      },
+      "wash-observatory-viridian": {
+        "role": "secondary",
+        "displayName": "Viridian (Observatory)",
+        "canonical": "#3f9b7c",
+        "oklch": "oklch(62.5% 0.100 168)",
+        "tonalRamp": [
+          "oklch(15% 0.034 168)",
+          "oklch(27% 0.056 168)",
+          "oklch(38% 0.076 168)",
+          "oklch(50% 0.100 168)",
+          "oklch(62% 0.100 168)",
+          "oklch(73% 0.100 168)",
+          "oklch(84% 0.100 168)",
+          "oklch(95% 0.072 168)"
+        ]
+      },
+      "wash-utility-slate": {
+        "role": "secondary",
+        "displayName": "Slate (Utility)",
+        "canonical": "#7f8891",
+        "oklch": "oklch(62.2% 0.017 248)",
+        "tonalRamp": [
+          "oklch(15% 0.017 248)",
+          "oklch(27% 0.017 248)",
+          "oklch(38% 0.017 248)",
+          "oklch(50% 0.017 248)",
+          "oklch(62% 0.017 248)",
+          "oklch(73% 0.017 248)",
+          "oklch(84% 0.017 248)",
+          "oklch(95% 0.017 248)"
+        ]
+      },
+      "water": {
+        "role": "tertiary",
+        "displayName": "Chart Water",
+        "canonical": "#a9c1c8",
+        "oklch": "oklch(79.5% 0.028 217)",
+        "tonalRamp": [
+          "oklch(15% 0.028 217)",
+          "oklch(27% 0.028 217)",
+          "oklch(38% 0.028 217)",
+          "oklch(50% 0.028 217)",
+          "oklch(62% 0.028 217)",
+          "oklch(73% 0.028 217)",
+          "oklch(84% 0.028 217)",
+          "oklch(95% 0.028 217)"
+        ]
+      },
+      "water-line": {
+        "role": "tertiary",
+        "displayName": "Water Line",
+        "canonical": "#5f8fa6",
+        "oklch": "oklch(62.4% 0.062 230)",
+        "tonalRamp": [
+          "oklch(15% 0.034 230)",
+          "oklch(27% 0.054 230)",
+          "oklch(38% 0.062 230)",
+          "oklch(50% 0.062 230)",
+          "oklch(62% 0.062 230)",
+          "oklch(73% 0.062 230)",
+          "oklch(84% 0.062 230)",
+          "oklch(95% 0.028 230)"
+        ]
+      },
+      "table": {
+        "role": "neutral",
+        "displayName": "Baize Table",
+        "canonical": "#141714",
+        "oklch": "oklch(20.0% 0.007 145)",
+        "tonalRamp": [
+          "oklch(15% 0.007 145)",
+          "oklch(27% 0.007 145)",
+          "oklch(38% 0.007 145)",
+          "oklch(50% 0.007 145)",
+          "oklch(62% 0.007 145)",
+          "oklch(73% 0.007 145)",
+          "oklch(84% 0.007 145)",
+          "oklch(95% 0.007 145)"
+        ]
+      },
+      "linen": {
+        "role": "neutral",
+        "displayName": "Linen",
+        "canonical": "#d2cfc0",
+        "oklch": "oklch(85.3% 0.021 98)",
+        "tonalRamp": [
+          "oklch(15% 0.021 98)",
+          "oklch(27% 0.021 98)",
+          "oklch(38% 0.021 98)",
+          "oklch(50% 0.021 98)",
+          "oklch(62% 0.021 98)",
+          "oklch(73% 0.021 98)",
+          "oklch(84% 0.021 98)",
+          "oklch(95% 0.021 98)"
+        ]
+      },
+      "linen-shade": {
+        "role": "neutral",
+        "displayName": "Linen Shade",
+        "canonical": "#c9c5b4",
+        "oklch": "oklch(82.2% 0.024 96)",
+        "tonalRamp": [
+          "oklch(15% 0.024 96)",
+          "oklch(27% 0.024 96)",
+          "oklch(38% 0.024 96)",
+          "oklch(50% 0.024 96)",
+          "oklch(62% 0.024 96)",
+          "oklch(73% 0.024 96)",
+          "oklch(84% 0.024 96)",
+          "oklch(95% 0.024 96)"
+        ]
+      },
+      "town": {
+        "role": "neutral",
+        "displayName": "Town Ground",
+        "canonical": "#dedbcd",
+        "oklch": "oklch(89.0% 0.019 97)",
+        "tonalRamp": [
+          "oklch(15% 0.019 97)",
+          "oklch(27% 0.019 97)",
+          "oklch(38% 0.019 97)",
+          "oklch(50% 0.019 97)",
+          "oklch(62% 0.019 97)",
+          "oklch(73% 0.019 97)",
+          "oklch(84% 0.019 97)",
+          "oklch(95% 0.019 97)"
+        ]
+      },
+      "slip": {
+        "role": "neutral",
+        "displayName": "Slip",
+        "canonical": "#efeee9",
+        "oklch": "oklch(94.8% 0.007 97)",
+        "tonalRamp": [
+          "oklch(15% 0.007 97)",
+          "oklch(27% 0.007 97)",
+          "oklch(38% 0.007 97)",
+          "oklch(50% 0.007 97)",
+          "oklch(62% 0.007 97)",
+          "oklch(73% 0.007 97)",
+          "oklch(84% 0.007 97)",
+          "oklch(95% 0.007 97)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Black Ink",
+        "canonical": "#1c1a18",
+        "oklch": "oklch(21.9% 0.005 68)",
+        "tonalRamp": [
+          "oklch(15% 0.005 68)",
+          "oklch(27% 0.005 68)",
+          "oklch(38% 0.005 68)",
+          "oklch(50% 0.005 68)",
+          "oklch(62% 0.005 68)",
+          "oklch(73% 0.005 68)",
+          "oklch(84% 0.005 68)",
+          "oklch(95% 0.005 68)"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft Ink",
+        "canonical": "#3e3a35",
+        "oklch": "oklch(35.1% 0.010 74)",
+        "tonalRamp": [
+          "oklch(15% 0.010 74)",
+          "oklch(27% 0.010 74)",
+          "oklch(38% 0.010 74)",
+          "oklch(50% 0.010 74)",
+          "oklch(62% 0.010 74)",
+          "oklch(73% 0.010 74)",
+          "oklch(84% 0.010 74)",
+          "oklch(95% 0.010 74)"
+        ]
+      },
+      "sepia": {
+        "role": "neutral",
+        "displayName": "Sepia",
+        "canonical": "#7b6248",
+        "oklch": "oklch(51.4% 0.050 67)",
+        "tonalRamp": [
+          "oklch(15% 0.040 67)",
+          "oklch(27% 0.050 67)",
+          "oklch(38% 0.050 67)",
+          "oklch(50% 0.050 67)",
+          "oklch(62% 0.050 67)",
+          "oklch(73% 0.050 67)",
+          "oklch(84% 0.050 67)",
+          "oklch(95% 0.034 67)"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#5d6268",
+        "oklch": "oklch(49.4% 0.011 253)",
+        "tonalRamp": [
+          "oklch(15% 0.011 253)",
+          "oklch(27% 0.011 253)",
+          "oklch(38% 0.011 253)",
+          "oklch(50% 0.011 253)",
+          "oklch(62% 0.011 253)",
+          "oklch(73% 0.011 253)",
+          "oklch(84% 0.011 253)",
+          "oklch(95% 0.011 253)"
+        ]
+      },
+      "graphite-lettering": {
+        "role": "neutral",
+        "displayName": "Graphite, lettering",
+        "canonical": "#565b61",
+        "oklch": "oklch(46.9% 0.012 253)",
+        "tonalRamp": [
+          "oklch(15% 0.012 253)",
+          "oklch(27% 0.012 253)",
+          "oklch(38% 0.012 253)",
+          "oklch(50% 0.012 253)",
+          "oklch(62% 0.012 253)",
+          "oklch(73% 0.012 253)",
+          "oklch(84% 0.012 253)",
+          "oklch(95% 0.012 253)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Sheet title",
+        "purpose": "The Key sheet's title. Besley 700."
+      },
+      "headline": {
+        "displayName": "Cartouche title",
+        "purpose": "The title in the cartouche; 19px at 860px and below."
+      },
+      "title": {
+        "displayName": "Note title",
+        "purpose": "The name at the head of a survey note, site form or method slip."
+      },
+      "remark": {
+        "displayName": "Remark",
+        "purpose": "Besley italic: a place's own words, the edition line, hints, row asides."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Running text on slips. Archivo at width 98."
+      },
+      "label": {
+        "displayName": "Lettered action",
+        "purpose": "Wide gothic caps over a rule; also dial years and the whereabouts line."
+      },
+      "section-caps": {
+        "displayName": "Section caps",
+        "purpose": "Headings inside a note or the Key."
+      },
+      "field": {
+        "displayName": "Field",
+        "purpose": "Text typed into a ruled field."
+      }
+    },
+    "canvasLettering": [
+      {
+        "name": "place-name",
+        "family": "Besley",
+        "sizePx": {
+          "major": 25,
+          "city": 20,
+          "town": 15.5,
+          "settlement": 13,
+          "outpost": 12,
+          "site": 11.5,
+          "spark": 11.5
+        },
+        "scale": "0.92 to 1.3 with zoom; down to 0.66 on a narrow window",
+        "weight": "city, major 700 caps 0.09em; town 600; settlement, outpost 500; site, spark 400 italic graphite",
+        "halo": "linen at 90%"
+      },
+      {
+        "name": "region-name",
+        "family": "Archivo",
+        "sizePx": "11 to 30",
+        "weight": 500,
+        "stretch": 125,
+        "tracking": "0.62em",
+        "alpha": 0.4
+      },
+      {
+        "name": "ward-name",
+        "family": "Archivo",
+        "sizePx": "8.5 to 12.5",
+        "weight": 650,
+        "stretch": 118,
+        "tracking": "0.24em",
+        "alpha": 0.7
+      },
+      {
+        "name": "street-name",
+        "family": "Archivo",
+        "sizePx": "up to 10.5",
+        "weight": 500,
+        "stretch": 118,
+        "tracking": "0.34em",
+        "alpha": 0.55
+      },
+      {
+        "name": "building-name",
+        "family": "Archivo",
+        "sizePx": "8.5 to 11.5",
+        "weight": 650,
+        "stretch": 78,
+        "tracking": "0.04em"
+      },
+      {
+        "name": "stage-word",
+        "family": "Besley italic",
+        "sizePx": "0.95 of the building name",
+        "color": "graphite on a linen halo"
+      },
+      {
+        "name": "storey-numeral",
+        "family": "Archivo",
+        "sizePx": "8 to 11",
+        "weight": 700,
+        "stretch": 80,
+        "alpha": 0.85
+      },
+      {
+        "name": "margin-reference",
+        "family": "Archivo",
+        "sizePx": 9,
+        "weight": 600,
+        "alpha": 0.7
+      },
+      {
+        "name": "unsurveyed",
+        "family": "Archivo",
+        "sizePx": "0.62 of the region name",
+        "weight": 400,
+        "stretch": 118,
+        "tracking": "0.7em",
+        "alpha": 0.55
+      },
+      {
+        "name": "ruins",
+        "family": "Archivo",
+        "sizePx": 8.5,
+        "weight": 600,
+        "stretch": 120,
+        "tracking": "0.5em"
+      },
+      {
+        "name": "main",
+        "family": "Archivo",
+        "sizePx": 9.5,
+        "weight": 600,
+        "stretch": 110,
+        "tracking": "0.18em",
+        "color": "water-line mixed 25% toward ink, linen halo"
+      },
+      {
+        "name": "river-name",
+        "family": "Besley italic",
+        "sizePx": 11,
+        "tracking": "0.08em",
+        "color": "water-line"
+      }
+    ],
+    "aging": {
+      "building": {
+        "inkTowardSepia": 0,
+        "washOverLinen": 1
+      },
+      "settled": {
+        "inkTowardSepia": 0,
+        "washOverLinen": 1
+      },
+      "quiet": {
+        "inkTowardSepia": 0.4,
+        "washOverLinen": 0.85
+      },
+      "dormant": {
+        "inkTowardSepia": 0.85,
+        "washOverLinen": 0.625
+      },
+      "ruins": {
+        "inkTowardSepia": 1,
+        "washOverLinen": 0.37
+      }
+    },
+    "shadows": [
+      {
+        "name": "lift",
+        "value": "0 1px 0 rgb(0 0 0 / 0.22), 2px 5px 14px rgb(0 0 0 / 0.3)",
+        "purpose": "Every DOM slip lying on the sheet (--lift)."
+      },
+      {
+        "name": "key-swatch-slip",
+        "value": "1px 1.5px 0 rgb(0 0 0 / 0.26)",
+        "purpose": "The legend's drawing of a correction slip."
+      },
+      {
+        "name": "canvas-correction-slip",
+        "value": "1.1px 1.5px 0 rgb(28 26 24 / 0.34)",
+        "purpose": "Canvas: fresh slip paper sitting a hair above the sheet."
+      },
+      {
+        "name": "canvas-sheet-on-table",
+        "value": "5px 7px 0 rgb(0 0 0 / 0.38)",
+        "purpose": "Canvas: the sheet lying on the table."
+      },
+      {
+        "name": "canvas-cast-shadow",
+        "value": "footprint swept by (0.62, 0.78) x storeys x 2.1 world units; one unioned fill, rgb(28 26 24 / 0.3)",
+        "purpose": "Canvas: a standing building's shadow; its length is its storeys."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Interface transitions and slips landing (--ease-out)."
+      },
+      {
+        "name": "state",
+        "value": "140ms",
+        "purpose": "Colour and rule changes on hover and when on."
+      },
+      {
+        "name": "paste",
+        "value": "340ms (note), 260ms (method slip), 240ms (site form)",
+        "purpose": "A DOM slip pasted down: lands a little past true, then settles."
+      },
+      {
+        "name": "turn",
+        "value": "380ms",
+        "purpose": "The Key sheet turning in; the table dims over 220ms."
+      },
+      {
+        "name": "flood",
+        "value": "700ms, ease-out cubic",
+        "purpose": "Canvas: a wash flooding from the lot's centre when a building reaches working."
+      },
+      {
+        "name": "drain",
+        "value": "420ms, ease-out cubic",
+        "purpose": "Canvas: a wash lifting toward the centre when the edition turns back."
+      },
+      {
+        "name": "road",
+        "value": "900ms, ease-out quad",
+        "purpose": "Canvas: a new road inked along its length."
+      },
+      {
+        "name": "birth",
+        "value": "520ms",
+        "purpose": "Canvas: a spark drawn stroke by stroke; a place with a plan fades in (open item)."
+      },
+      {
+        "name": "crawl",
+        "value": "11px per second, repainted every 42ms",
+        "purpose": "Canvas: the dashed outline of a building in hand."
+      },
+      {
+        "name": "flight",
+        "value": "420ms to 1500ms, ease-in-out cubic, arc lift up to 0.92 in log zoom",
+        "purpose": "Canvas: the camera flying to a selection."
+      },
+      {
+        "name": "play",
+        "value": "11000ms",
+        "purpose": "The dial playing the editions forward from the start."
+      },
+      {
+        "name": "cut-threshold",
+        "value": "24 buildings, 6 places, 6 roads",
+        "purpose": "Above this many simultaneous changes nothing animates."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "narrow-furniture",
+        "value": "860px"
+      },
+      {
+        "name": "courtesy",
+        "value": "640px"
+      }
+    ],
+    "openItems": [
+      "Reverse-edition motion un-builds only the wash; outlines, roads and places are cut.",
+      "Places with plans arrive by alpha over 520ms rather than being drawn.",
+      "The top neat line is cropped at desktop home.",
+      "The layout at 640px and below is a courtesy arrangement, not a designed surface.",
+      "Correction slips on the canvas appear without the paste motion."
+    ]
+  },
+  "components": [
+    {
+      "name": "Lettered Action",
+      "kind": "button",
+      "refersTo": "link",
+      "description": "Gothic caps over a ruled line; the only button form. Red on hover or when on.",
+      "html": "<button class=\"ds-link\">Key <kbd class=\"ds-kbd\">K</kbd></button> &nbsp; <button class=\"ds-link\">Whole sheet</button> &nbsp; <button class=\"ds-link\" disabled>Present</button>",
+      "css": ".ds-link { font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 10.5px; font-weight: 650; font-stretch: 112%; letter-spacing: 0.13em; text-transform: uppercase; line-height: 1; padding: 9px 0 6px; background: none; border: 0; border-bottom: 1px solid var(--ink, #1c1a18); color: var(--ink, #1c1a18); white-space: nowrap; cursor: pointer; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-link:hover { color: var(--red, #c2341d); border-color: var(--red, #c2341d); } .ds-link:active { transform: translateY(1px); } .ds-link:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; } .ds-link:disabled { color: var(--graphite, #565b61); border-color: transparent; cursor: default; } .ds-kbd { font-size: 0.86em; font-weight: 500; letter-spacing: 0.04em; padding: 0 4px; margin-left: 3px; border: 1px solid rgb(28 26 24 / 0.24); color: #3e3a35; }"
+    },
+    {
+      "name": "Cartouche",
+      "kind": "card",
+      "refersTo": "cartouche",
+      "description": "The title block inside the sheet's lower-left corner: title, whereabouts, edition, tally, actions, specimen line.",
+      "html": "<header class=\"ds-cartouche\"><h1>Patrick’s World</h1><p class=\"ds-where\">The whole territory</p><p class=\"ds-edition\">Current edition, October 2026</p><p class=\"ds-tally\">12 places built on, 11 ideas pencilled, 65 buildings standing.</p><nav class=\"ds-actions\"><button class=\"ds-link\">Key <kbd class=\"ds-kbd\">K</kbd></button><button class=\"ds-link\">Methods</button></nav><p class=\"ds-specimen\">Specimen sheet. Every place, date and figure on it is fictional.</p></header>",
+      "css": ".ds-cartouche { width: 272px; padding: 16px 18px 13px; background: var(--slip, #efeee9); color: var(--ink, #1c1a18); border: 2px solid var(--ink, #1c1a18); outline: 1px solid var(--ink, #1c1a18); outline-offset: -6px; box-shadow: 0 1px 0 rgb(0 0 0 / 0.22), 2px 5px 14px rgb(0 0 0 / 0.3); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 13px; line-height: 1.45; font-stretch: 98%; } .ds-cartouche h1 { margin: 0; font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-weight: 700; font-size: 23px; line-height: 1.1; letter-spacing: -0.01em; } .ds-cartouche p { margin: 0; } .ds-where { margin-top: 5px !important; font-size: 10.5px; font-weight: 600; font-stretch: 118%; letter-spacing: 0.16em; text-transform: uppercase; } .ds-edition { margin-top: 11px !important; padding-top: 9px; border-top: 1px solid rgb(28 26 24 / 0.24); font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-style: italic; font-size: 13.5px; } .ds-tally { margin-top: 3px !important; color: #3e3a35; font-size: 12.5px; font-variant-numeric: tabular-nums; } .ds-actions { display: flex; flex-wrap: wrap; gap: 2px 16px; margin-top: 8px; } .ds-specimen { margin-top: 12px !important; padding-top: 8px; border-top: 1px solid rgb(28 26 24 / 0.24); font-size: 11px; line-height: 1.35; color: var(--graphite, #565b61); } .ds-link { font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 10.5px; font-weight: 650; font-stretch: 112%; letter-spacing: 0.13em; text-transform: uppercase; line-height: 1; padding: 9px 0 6px; background: none; border: 0; border-bottom: 1px solid var(--ink, #1c1a18); color: var(--ink, #1c1a18); white-space: nowrap; cursor: pointer; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-link:hover { color: var(--red, #c2341d); border-color: var(--red, #c2341d); } .ds-link:active { transform: translateY(1px); } .ds-link:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; } .ds-link:disabled { color: var(--graphite, #565b61); border-color: transparent; cursor: default; } .ds-kbd { font-size: 0.86em; font-weight: 500; letter-spacing: 0.04em; padding: 0 4px; margin-left: 3px; border: 1px solid rgb(28 26 24 / 0.24); color: #3e3a35; }"
+    },
+    {
+      "name": "Edition Dial",
+      "kind": "custom",
+      "refersTo": "edition-dial",
+      "description": "The signature control: a rule along the sheet's bottom margin, lettered with years, with the month's work as ink bars and a red index.",
+      "html": "<section class=\"ds-dial\"><button class=\"ds-dial-play\" aria-label=\"Play the editions forward\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" aria-hidden=\"true\"><path d=\"M3 1.5l9 5.5-9 5.5z\"/></svg></button><div class=\"ds-dial-rule\"><svg class=\"ds-dial-work\" viewBox=\"0 0 1000 26\" preserveAspectRatio=\"none\" aria-hidden=\"true\"><rect x=\"60\" y=\"20\" width=\"6\" height=\"6\"/><rect x=\"160\" y=\"14\" width=\"6\" height=\"12\"/><rect x=\"260\" y=\"16\" width=\"6\" height=\"10\"/><rect x=\"360\" y=\"9\" width=\"6\" height=\"17\"/><rect x=\"460\" y=\"12\" width=\"6\" height=\"14\"/><rect x=\"560\" y=\"6\" width=\"6\" height=\"20\"/><rect x=\"700\" y=\"10\" width=\"6\" height=\"16\" class=\"ds-ahead\"/><rect x=\"800\" y=\"4\" width=\"6\" height=\"22\" class=\"ds-ahead\"/><rect x=\"900\" y=\"2\" width=\"6\" height=\"24\" class=\"ds-ahead\"/></svg><div class=\"ds-dial-line\"></div><span class=\"ds-dial-year\" style=\"left:30%\">2025</span><span class=\"ds-dial-year\" style=\"left:72%\">2026</span><span class=\"ds-dial-index\" style=\"left:62%\"></span><span class=\"ds-dial-date\" style=\"left:62%;margin-left:6px\">March 2026</span></div><button class=\"ds-link\" style=\"align-self:center\">Present</button></section>",
+      "css": ".ds-dial { height: 62px; display: flex; align-items: stretch; gap: 14px; padding: 0 16px 0 6px; background: var(--slip, #efeee9); color: var(--ink, #1c1a18); box-shadow: 0 1px 0 rgb(0 0 0 / 0.22), 2px 5px 14px rgb(0 0 0 / 0.3); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); } .ds-dial-play { flex: none; width: 40px; display: grid; place-items: center; background: none; border: 0; border-right: 1px solid rgb(28 26 24 / 0.24); cursor: pointer; } .ds-dial-play svg { fill: var(--ink, #1c1a18); transition: fill 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-dial-play:hover svg { fill: var(--red, #c2341d); } .ds-dial-play:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; } .ds-dial-rule { position: relative; flex: 1; min-width: 0; cursor: ew-resize; } .ds-dial-work { position: absolute; left: 0; top: 8px; width: 100%; height: 26px; fill: var(--ink, #1c1a18); } .ds-dial-work .ds-ahead { fill: var(--graphite, #565b61); opacity: 0.38; } .ds-dial-line { position: absolute; left: 0; right: 0; top: 34px; border-top: 1px solid var(--ink, #1c1a18); } .ds-dial-year { position: absolute; top: 34px; padding: 5px 0 0 5px; border-left: 1px solid var(--ink, #1c1a18); font-size: 10.5px; font-weight: 600; font-stretch: 112%; letter-spacing: 0.1em; line-height: 1; font-variant-numeric: tabular-nums; } .ds-dial-index { position: absolute; top: 3px; bottom: 6px; width: 2px; margin-left: -1px; background: var(--red, #c2341d); } .ds-dial-index::before { content: ''; position: absolute; left: -4px; top: -3px; border: 5px solid transparent; border-top: 7px solid var(--red, #c2341d); border-bottom: 0; } .ds-dial-date { position: absolute; top: 2px; padding: 1px 6px 0; background: var(--red, #c2341d); color: var(--slip, #efeee9); font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; white-space: nowrap; } .ds-link { font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 10.5px; font-weight: 650; font-stretch: 112%; letter-spacing: 0.13em; text-transform: uppercase; line-height: 1; padding: 9px 0 6px; background: none; border: 0; border-bottom: 1px solid var(--ink, #1c1a18); color: var(--ink, #1c1a18); white-space: nowrap; cursor: pointer; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-link:hover { color: var(--red, #c2341d); border-color: var(--red, #c2341d); } .ds-link:active { transform: translateY(1px); } .ds-link:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; } .ds-link:disabled { color: var(--graphite, #565b61); border-color: transparent; cursor: default; } .ds-kbd { font-size: 0.86em; font-weight: 500; letter-spacing: 0.04em; padding: 0 4px; margin-left: 3px; border: 1px solid rgb(28 26 24 / 0.24); color: #3e3a35; }"
+    },
+    {
+      "name": "Survey Note",
+      "kind": "card",
+      "refersTo": "survey-note",
+      "description": "A slip pulled out beside the place or building it describes, tied to it on the sheet by a red leader line.",
+      "html": "<article class=\"ds-note\"><h2>Boxout Fantasy</h2><p class=\"ds-words\">Fantasy basketball intelligence. Knows my league better than I do.</p><p class=\"ds-standing\">A major city of 23 working buildings. Under construction now.</p><h3>Being built now</h3><ul><li><button class=\"ds-row\">Replacement finder <span>mostly raised</span></button></li><li><button class=\"ds-row\">Answer grader <span>a third raised</span></button></li></ul><p class=\"ds-methods\">Built with <button class=\"ds-chip\">Python,</button> <button class=\"ds-chip\">SQL.</button></p><div class=\"ds-actions\"><button class=\"ds-link\">Enter</button><button class=\"ds-link\">Stake a lot</button></div></article>",
+      "css": ".ds-note { width: 304px; padding: 16px 18px 14px; background: var(--slip, #efeee9); color: var(--ink, #1c1a18); border-top: 2px solid var(--red, #c2341d); box-shadow: 0 1px 0 rgb(0 0 0 / 0.22), 2px 5px 14px rgb(0 0 0 / 0.3); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 13px; line-height: 1.45; font-stretch: 98%; animation: ds-paste 340ms cubic-bezier(0.16, 1, 0.3, 1); } @keyframes ds-paste { from { opacity: 0; transform: translateY(-9px) rotate(-0.7deg) scale(1.02); } 55% { opacity: 1; transform: translateY(1.5px) rotate(0.15deg) scale(0.998); } } .ds-note h2 { margin: 0; font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-weight: 600; font-size: 19px; line-height: 1.15; letter-spacing: -0.005em; } .ds-note p, .ds-note ul { margin: 0; padding: 0; list-style: none; } .ds-words { margin-top: 5px !important; font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-style: italic; font-size: 13.5px; line-height: 1.4; color: #3e3a35; } .ds-standing { margin-top: 10px !important; } .ds-note h3 { margin: 15px 0 4px; font-size: 10px; font-weight: 650; font-stretch: 116%; letter-spacing: 0.15em; text-transform: uppercase; color: #3e3a35; } .ds-note li + li { border-top: 1px solid rgb(28 26 24 / 0.24); } .ds-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; width: 100%; padding: 5px 0; font: inherit; color: inherit; background: none; border: 0; text-align: left; cursor: pointer; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-row:hover { color: var(--red, #c2341d); } .ds-row:focus-visible, .ds-chip:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; } .ds-row span { flex: none; font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-style: italic; font-size: 12px; color: var(--graphite, #565b61); } .ds-methods { margin-top: 8px !important; font-size: 12px; color: var(--graphite, #565b61); } .ds-chip { font: inherit; font-size: 12px; line-height: 1.5; color: var(--ink, #1c1a18); background: none; border: 0; padding: 0; border-bottom: 1px solid rgb(28 26 24 / 0.24); cursor: pointer; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-chip:hover { color: var(--red, #c2341d); border-color: var(--red, #c2341d); } .ds-actions { display: flex; flex-wrap: wrap; gap: 2px 18px; margin-top: 13px; } .ds-link { font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 10.5px; font-weight: 650; font-stretch: 112%; letter-spacing: 0.13em; text-transform: uppercase; line-height: 1; padding: 9px 0 6px; background: none; border: 0; border-bottom: 1px solid var(--ink, #1c1a18); color: var(--ink, #1c1a18); white-space: nowrap; cursor: pointer; transition: color 140ms cubic-bezier(0.16, 1, 0.3, 1), border-color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-link:hover { color: var(--red, #c2341d); border-color: var(--red, #c2341d); } .ds-link:active { transform: translateY(1px); } .ds-link:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; } .ds-link:disabled { color: var(--graphite, #565b61); border-color: transparent; cursor: default; } .ds-kbd { font-size: 0.86em; font-weight: 500; letter-spacing: 0.04em; padding: 0 4px; margin-left: 3px; border: 1px solid rgb(28 26 24 / 0.24); color: #3e3a35; }"
+    },
+    {
+      "name": "Stage Ladder",
+      "kind": "custom",
+      "refersTo": "survey-note",
+      "description": "The six stage drawings, identical to the marks on the sheet; the current stage sits on a red rule, later ones are faded.",
+      "html": "<ol class=\"ds-ladder\"><li class=\"\"><svg width=\"40\" height=\"30\" viewBox=\"0 0 40 30\" aria-hidden=\"true\"><g fill=\"none\" stroke=\"#5d6268\"><rect x=\"5.5\" y=\"5.5\" width=\"27\" height=\"19\" stroke-width=\"1.1\" stroke-dasharray=\"0.2 3.2\" stroke-linecap=\"round\"/><circle cx=\"19\" cy=\"15\" r=\"1.8\" stroke-width=\"0.9\"/><path d=\"M15.5 15h7M19 11.5v7\" stroke-width=\"0.9\"/></g></svg>Proposed</li><li class=\"\"><svg width=\"40\" height=\"30\" viewBox=\"0 0 40 30\" aria-hidden=\"true\"><rect x=\"7.5\" y=\"7.5\" width=\"23\" height=\"15\" fill=\"none\" stroke=\"#5d6268\" stroke-width=\"1.3\"/></svg>Staked</li><li class=\"\"><svg width=\"40\" height=\"30\" viewBox=\"0 0 40 30\" aria-hidden=\"true\"><rect x=\"7.5\" y=\"7.5\" width=\"23\" height=\"15\" fill=\"none\" stroke=\"#1c1a18\" stroke-width=\"1.1\" stroke-dasharray=\"4 2.6\"/></svg>Plans</li><li class=\"ds-here\"><svg width=\"40\" height=\"30\" viewBox=\"0 0 40 30\" aria-hidden=\"true\"><defs><pattern id=\"ds-hatch\" width=\"4\" height=\"4\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(-45)\"><line x1=\"0\" y1=\"0\" x2=\"0\" y2=\"4\" stroke=\"#1c1a18\" stroke-width=\"0.7\" opacity=\"0.5\"/></pattern></defs><rect x=\"7.5\" y=\"7.5\" width=\"11\" height=\"15\" fill=\"#e2ad2f\" opacity=\"0.8\"/><rect x=\"18.5\" y=\"7.5\" width=\"12\" height=\"15\" fill=\"url(#ds-hatch)\"/><rect x=\"7.5\" y=\"7.5\" width=\"23\" height=\"15\" fill=\"none\" stroke=\"#1c1a18\" stroke-width=\"1.2\" stroke-dasharray=\"4 2.8\"/></svg>Building</li><li class=\"ds-ahead\"><svg width=\"40\" height=\"30\" viewBox=\"0 0 40 30\" aria-hidden=\"true\"><path d=\"M7.5 22.5l2.4 3h23l-2.4-3zM30.5 7.5l2.4 3v15l-2.4-3z\" fill=\"#1c1a18\" opacity=\"0.24\"/><rect x=\"7.5\" y=\"7.5\" width=\"23\" height=\"15\" fill=\"#e2ad2f\" stroke=\"#1c1a18\" stroke-width=\"1\"/></svg>Working</li><li class=\"ds-ahead\"><svg width=\"40\" height=\"30\" viewBox=\"0 0 40 30\" aria-hidden=\"true\"><path d=\"M5.5 22.5l4.6 5.6h25.4l-4.6-5.6zM30.5 5.5l4.6 5.6v17l-4.6-5.6z\" fill=\"#1c1a18\" opacity=\"0.24\"/><rect x=\"24.5\" y=\"2.5\" width=\"6\" height=\"4\" fill=\"#c8992c\" stroke=\"#1c1a18\" stroke-width=\"1.5\"/><rect x=\"5.5\" y=\"5.5\" width=\"25\" height=\"17\" fill=\"#c8992c\" stroke=\"#1c1a18\" stroke-width=\"1.9\"/></svg>Mature</li></ol>",
+      "css": ".ds-ladder { display: grid; grid-template-columns: repeat(6, 1fr); width: 280px; margin: 0; padding: 12px; list-style: none; background: var(--slip, #efeee9); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); } .ds-ladder li { display: grid; justify-items: center; gap: 3px; padding-bottom: 6px; border-bottom: 2px solid transparent; font-size: 8.5px; font-weight: 600; font-stretch: 70%; letter-spacing: 0.01em; text-transform: uppercase; text-align: center; line-height: 1.1; color: var(--graphite, #565b61); } .ds-ladder svg { width: 36px; height: 27px; display: block; } .ds-ladder .ds-ahead svg { opacity: 0.4; } .ds-ladder .ds-here { color: var(--ink, #1c1a18); border-color: var(--red, #c2341d); }"
+    },
+    {
+      "name": "Ruled Field",
+      "kind": "input",
+      "refersTo": "field-ruled",
+      "description": "A form on a slip: a label over a single ruled line, lettered in Besley. The rule turns red and thickens on focus.",
+      "html": "<label class=\"ds-field\">Name of the place<input type=\"text\" placeholder=\"What is it called\"></label>",
+      "css": ".ds-field { display: grid; width: 244px; padding: 15px 18px 13px; background: var(--slip, #efeee9); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); font-size: 12px; color: #3e3a35; } .ds-field input { width: 100%; margin-top: 1px; padding: 4px 0 4px; border: 0; border-bottom: 1px solid var(--ink, #1c1a18); border-radius: 0; background: transparent; font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-size: 15px; color: var(--ink, #1c1a18); caret-color: var(--red, #c2341d); } .ds-field input:focus { outline: none; border-bottom: 2px solid var(--red, #c2341d); padding-bottom: 3px; } .ds-field input::placeholder { color: var(--graphite, #565b61); font-style: italic; opacity: 1; }"
+    },
+    {
+      "name": "Kind Choice",
+      "kind": "chip",
+      "refersTo": "field-ruled",
+      "description": "Choosing a building's kind by its wash: swatch, name, meaning. Hairline box on hover, ink box when chosen.",
+      "html": "<div class=\"ds-kinds\"><label class=\"ds-kind ds-on\"><svg width=\"26\" height=\"18\" viewBox=\"0 0 26 18\" aria-hidden=\"true\"><rect x=\"1\" y=\"1\" width=\"24\" height=\"16\" fill=\"#e2ad2f\" stroke=\"#1c1a18\"/></svg><span><b>Works</b> Logic, services, machinery</span></label><label class=\"ds-kind\"><svg width=\"26\" height=\"18\" viewBox=\"0 0 26 18\" aria-hidden=\"true\"><rect x=\"1\" y=\"1\" width=\"24\" height=\"16\" fill=\"#3f78ad\" stroke=\"#1c1a18\"/></svg><span><b>Reservoir</b> Data, storage, pipelines</span></label></div>",
+      "css": ".ds-kinds { width: 268px; padding: 10px 18px; background: var(--slip, #efeee9); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); } .ds-kind { display: flex; align-items: center; gap: 9px; padding: 4px 6px; margin: 0 -6px; font-size: 12px; color: #3e3a35; cursor: pointer; border: 1px solid transparent; } .ds-kind b { font-weight: 650; color: var(--ink, #1c1a18); } .ds-kind:hover { border-color: rgb(28 26 24 / 0.24); } .ds-kind.ds-on { border-color: var(--ink, #1c1a18); }"
+    },
+    {
+      "name": "Method Node",
+      "kind": "custom",
+      "refersTo": "method-node",
+      "description": "A method in the Key of Methods. Border and fill say how well it is known: dotted, noted, practised, fluent, mastered.",
+      "html": "<div class=\"ds-nodes\"><button class=\"ds-node ds-unknown\"><b>Rust</b><span>Not yet used</span></button><button class=\"ds-node\"><b>SQL</b><span>Practised</span></button><button class=\"ds-node ds-fluent\"><b>TypeScript</b><span>Fluent</span></button><button class=\"ds-node ds-mastered\"><b>Python</b><span>Mastered</span></button></div>",
+      "css": ".ds-nodes { display: flex; flex-wrap: wrap; gap: 12px 18px; padding: 16px; background: var(--linen, #d2cfc0); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); } .ds-node { display: grid; align-content: center; gap: 1px; width: 168px; height: 44px; padding: 0 11px; text-align: left; font: inherit; color: var(--ink, #1c1a18); border: 1.2px solid var(--ink, #1c1a18); background: var(--linen, #d2cfc0); cursor: pointer; transition: border-color 140ms cubic-bezier(0.16, 1, 0.3, 1), color 140ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-node b { font-size: 13px; font-weight: 650; line-height: 1.2; } .ds-node span { font-size: 10.5px; font-stretch: 88%; color: #3e3a35; } .ds-node.ds-unknown { border: 1.2px dotted var(--graphite, #565b61); color: var(--graphite, #565b61); } .ds-node.ds-unknown span { color: var(--graphite, #565b61); } .ds-node.ds-fluent { background: var(--linen-shade, #c9c5b4); } .ds-node.ds-mastered { background: var(--linen-shade, #c9c5b4); border-width: 2px; outline: 1px solid var(--ink, #1c1a18); outline-offset: 2px; } .ds-node:hover { border-color: var(--red, #c2341d); color: var(--red, #c2341d); } .ds-node.ds-mastered:hover { outline-color: var(--red, #c2341d); } .ds-node:focus-visible { outline: 2px solid var(--red, #c2341d); outline-offset: 3px; }"
+    },
+    {
+      "name": "Key Rows",
+      "kind": "custom",
+      "refersTo": "key-sheet",
+      "description": "Legend rows on the Key sheet: the drawing, its name, what it means. Shown here for the three road grades and the main.",
+      "html": "<div class=\"ds-key\"><h2>Key</h2><h3>Between places</h3><dl><div><dt><i class=\"ds-road ds-surveyed\"></i>Surveyed</dt><dd>Related, on your word alone.</dd></div><div><dt><i class=\"ds-road ds-track\"></i>Track</dt><dd>They share a method.</dd></div><div><dt><i class=\"ds-road ds-made\"></i>Road</dt><dd>They share a great deal.</dd></div><div><dt><i class=\"ds-road ds-main\"></i>Main</dt><dd>Code or data really flows between them.</dd></div></dl></div>",
+      "css": ".ds-key { width: 340px; padding: 26px 34px 30px; border: 2px solid var(--ink, #1c1a18); outline: 1px solid var(--ink, #1c1a18); outline-offset: -7px; background: var(--linen, #d2cfc0); color: var(--ink, #1c1a18); font-family: var(--gothic, 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif); } .ds-key h2 { margin: 0; padding-bottom: 10px; border-bottom: 2px solid var(--ink, #1c1a18); font-family: var(--serif, 'Besley', 'Clarendon', Georgia, serif); font-weight: 700; font-size: 30px; line-height: 1; } .ds-key h3 { margin: 20px 0 8px; font-size: 10px; font-weight: 650; font-stretch: 116%; letter-spacing: 0.15em; text-transform: uppercase; } .ds-key dl, .ds-key dd { margin: 0; } .ds-key dl > div { display: grid; grid-template-columns: 118px 1fr; align-items: center; gap: 10px; padding: 5px 0; border-top: 1px solid rgb(28 26 24 / 0.24); } .ds-key dt { display: flex; align-items: center; gap: 9px; font-weight: 650; font-size: 12.5px; } .ds-key dd { color: #3e3a35; font-size: 12.5px; line-height: 1.35; } .ds-road { flex: none; display: block; width: 26px; height: 0; border-top: 1.5px solid var(--ink, #1c1a18); } .ds-road.ds-surveyed { border-top: 2px dotted #5d6268; } .ds-road.ds-track { border-top-style: dashed; } .ds-road.ds-made { height: 5px; border-bottom: 1.5px solid var(--ink, #1c1a18); } .ds-road.ds-main { border-top: 2px solid var(--water-line, #5f8fa6); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Atlas Still Being Drawn",
+    "overview": "The world is one sheet of a fire-insurance survey atlas, lying under a lamp, and the survey is not finished. Every building is a measured footprint; its wash says what it is, the way it is drawn says how far along it is, the paper and ink say when anyone was last there. Nothing is a status badge, because the atlas already has a native mark for every fact the product needs to state. Ground nobody has thought about is simply blank paper, lettered UNSURVEYED.\n\nThe system has two layers and one source of colour. The sheet is a Canvas 2D drawing (`src/render/`); a handful of paper slips are DOM laid over it (`src/app/ui/`, `src/app/styles.css`). Both take their inks from `src/render/palette.ts`, which hands the same values to the stylesheet at startup. The drawing vocabulary below is the design system as much as the colours and type are: a new surface extends the world by drawing in that vocabulary, not by adding chrome beside it.\n\nIt is dense where work is dense and empty where there is none. The first viewport is the whole sheet covering the window; the camera lowers toward the paper and a town resolves from a mark, to a patch of wash, to lettered buildings with storey numerals. The direction refuses three things by name: the fantasy parchment game map (scrollwork, compass flourish, burnt edges), the dark neon data globe (glows, gradients as atmosphere, particles), and the dashboard (sidebar, cards, badges, progress bars).",
+    "keyCharacteristics": [
+      "A true plan, never oblique or isometric; depth comes from cast shadows and stacked paper.",
+      "Colour says kind, drawing technique says stage, paper and ink say age. The three never trade jobs.",
+      "Saturated washes over real area on a cool buff-grey sheet; red belongs to the hand alone.",
+      "Lettering is cartographic: a place's name is sized and weighted by its rank.",
+      "Square-cut paper, ruled lines, no radii in the DOM.",
+      "A place with no work in hand is perfectly still, and the stillness is information."
+    ],
+    "rules": [
+      {
+        "name": "The Key Rule",
+        "body": "No colour is drawn on the sheet unless it is an ink in `palette.ts`. New colours enter there or not at all, and the stylesheet receives them from it.",
+        "section": "colors"
+      },
+      {
+        "name": "The Hand Rule",
+        "body": "Red marks only what Patrick is touching, drafting or reading now, and the edition under his hand. It never fills a building, never ranks, never decorates.",
+        "section": "colors"
+      },
+      {
+        "name": "The Kind-Not-Stage Rule",
+        "body": "A wash says what a building is. How far along it is must survive in greyscale: pencil dots, pencil line, dashed ink, hatch, full wash, heavy wall.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rank Rule",
+        "body": "The biggest words are the biggest places. A name's size, weight and case come from rank; nothing else may outshout a major city.",
+        "section": "typography"
+      },
+      {
+        "name": "The Lettering-Follows Rule",
+        "body": "Streets, rivers and mains are lettered along their line, kept upright; region names sit where they cross no place name, or are left off.",
+        "section": "typography"
+      },
+      {
+        "name": "The Pencil Voice Rule",
+        "body": "Graphite and Besley italic mean not yet real, or a remark about the thing. Black upright lettering means it stands.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Sheet Rule",
+        "body": "Nothing sits in a panel beside the drawing. A fact is drawn on the map or lettered on a slip tied to the thing it describes.",
+        "section": "layout"
+      },
+      {
+        "name": "The Blank Paper Rule",
+        "body": "Relief, woods and lettering are drawn only within reach of founded places (250 units plus 95 per rank, in three fading strengths). Beyond that the sheet is blank.",
+        "section": "layout"
+      },
+      {
+        "name": "The Storeys Rule",
+        "body": "A shadow's length is the building's storeys, and its storeys are the work in it. Shadow is never applied for emphasis.",
+        "section": "elevation"
+      },
+      {
+        "name": "The True Plan Rule",
+        "body": "No oblique, isometric or extruded view. Scale is read from shadow, density and the size of the name.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do take every colour from `src/render/palette.ts`. If the stylesheet needs an ink, export it through `inkVariables()`.",
+      "Do say stage with drawing technique and kind with wash, so the sheet still reads in greyscale.",
+      "Do size and weight a place's name by its rank, and let the largest places carry the largest words.",
+      "Do set line weights in screen pixels so ink stays hairline at every zoom.",
+      "Do give a shadow the length of the storeys, in the sun direction (0.62, 0.78), as one unioned fill.",
+      "Do put new facts on the sheet in the existing vocabulary, or on a slip tied to its subject by the red leader.",
+      "Do use Besley italic in graphite for anything proposed, remarked or not yet real.",
+      "Do keep a place with no work in hand perfectly still.",
+      "Do draw the final state at once under reduced motion or `?still`.",
+      "Do label every sheet of fixture data as a specimen, in the cartouche."
+    ],
+    "donts": [
+      "Don't use red for anything but the hand: no red buildings, no red rank, no red ornament.",
+      "Don't use a wash in DOM chrome. Washes appear off the map only as drawings of the map.",
+      "Don't let colour carry stage or age.",
+      "Don't draw relief, woods or lettering over ground no founded place reaches. Blank paper is the statement.",
+      "Don't round a slip's corners or box a field. Circles are survey marks; paper is cut square.",
+      "Don't tilt the plan: no oblique, isometric or extruded buildings.",
+      "Don't add a sidebar, toolbar, card grid, status badge or progress bar. Progress is hatching on the sheet and a few italic words in a note.",
+      "Don't add a scale bar. World distances measure nothing; the cartouche carries a tally instead.",
+      "Don't add scrollwork, a compass rose, burnt edges, glows, or gradients as atmosphere. The paper's own grain is the only texture.",
+      "Don't animate a large jump. Past 24 buildings or 6 places or roads, cut."
+    ]
+  }
+}

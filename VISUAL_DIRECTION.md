@@ -15,10 +15,11 @@ language, almost everything the product needs to say.
 | The product needs to say | The atlas already says it as |
 |---|---|
 | This is only an idea | A pencilled lot with a surveyor's stake |
-| This is planned | A dashed outline, lettered FROM PLANS |
-| This is being built | An inked outline, partly hatched, scaffold ticks on the open side |
+| This is decided on | A solid pencil outline |
+| This is designed | A dashed ink outline, lettered FROM PLANS |
+| This is being built | Washed as far as it has risen, hatched beyond, its outline crawling |
 | This works | A full colour wash, a storey numeral, a cast shadow |
-| This is mature | A double wall line, annexes, a lettered name |
+| This is mature | A heavy wall, a deeper wash, annexes |
 | Work happened here recently | A fresh, brighter correction slip pasted under the building |
 | Nobody has been here in a while | Ink faded toward sepia, washes gone chalky |
 | This was abandoned | A broken outline, a stain where the wash was, lettered RUINS |
@@ -83,7 +84,8 @@ A true plan, never an oblique or isometric view. Depth comes from two honest sou
 
 ## Motion: the pen, the wash, the paste
 
-Three verbs, and nothing else moves.
+Three verbs carry the drawing. (As built there is a fourth, their reverse: turning the edition
+back drains a wash. Roads, outlines and whole places do not yet un-draw; see HANDOFF.md.)
 
 - **The pen draws.** Lines ink themselves along their length. New things are drawn, not faded in.
 - **The wash floods.** Colour bleeds outward from a point inside the outline and settles.
