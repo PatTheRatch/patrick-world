@@ -92,6 +92,12 @@ Completion state is not a field. It is `deriveBuild(events, isDone)`, which retu
 steps finished, criteria passed and failed, open blockers, outstanding dependencies, the active
 session, and a plain sentence saying why the stage is what it is.
 
+### Where build events live today
+
+`src/app/builds.ts` keeps recorded build events per sheet in local storage and is also the
+manual builder. `src/world/buildlog.ts` (`overlayBuilds`) lays build state over the derived
+world for any edition. The specimen's scripted build is `src/world/fixtures/builds.ts`.
+
 ### Stage migration
 
 The prototype's `FeatureStage` (concept, planned, designed, building, working, mature) predates

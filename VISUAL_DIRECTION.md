@@ -172,6 +172,32 @@ and name held through district zoom; criteria ticks and a builder's mark on the 
 need the build model wired in. The survey is now frozen by a snapshot test: changing the ground
 plan rules moves every town once and must be done on purpose.
 
+## A building with a plan
+
+Where a feature has a build plan, the drawing is the plan's state and nothing else.
+
+| Stage | Drawn as |
+|---|---|
+| Idea | A pencilled lot and a stake |
+| Specified | A solid pencil outline |
+| Planned (waiting or blocked) | A dashed ink outline |
+| Ready | The same, with a peg at each corner: ground can be broken |
+| Building | Hatched ground, the wash deepening and the wall inked round as steps finish |
+| Verifying | Fully washed, no shadow, the wall still a dashed line: built, not accepted |
+| Done | Solid wall, cast shadow, storey numeral |
+
+**Acceptance criteria stand along the street front**, one mark each. The shape is how it is
+checked: a square for a command, a diamond for a review, a ring for Patrick's own eye. Hollow
+pencil has not been checked, solid ink has passed, struck through has failed. Four marks in
+front of a building say, without a word, how far it is from done and how it will be proven.
+
+**A red pennant on a pole** stands on any lot with a builder session open on it at this
+moment, at every zoom. It is the one mark that means "now", and a wall only moves while it flies.
+
+The plan itself opens as its own sheet of the atlas, the accepted exception to "the map is
+the workplace": objective, steps, what done means with the evidence for each verdict, who is
+building, what is in the way, and what has happened.
+
 ## The scene
 
 Patrick at his desk in the evening, a large monitor, a lamp. The atlas sheet lies under the

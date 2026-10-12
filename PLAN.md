@@ -114,24 +114,29 @@ reflection, not the loop).
 
 ## Stage 9: The build model in the app
 
-Contract and rule exist (`src/world/build.ts`, tested). Nothing below is built.
-
-- [ ] Join `BuildEvent` to the world log; one ordering rule for days and date-times
-- [ ] Migrate `FeatureStage` to `BuildStage`; `feature.staged` becomes inference only
-- [ ] Draw the two new stages: ready (pegged corners) and verifying (washed, outline still dashed)
-- [ ] The crawl follows an open session, not the stage
-- [ ] A building's note shows its plan: objective, criteria with verdicts, steps, blockers, and
-      the sentence saying why it stands where it does
-- [ ] Write and revise a plan in the note; accept an agent's draft
+- [x] Build events joined to the world: `overlayBuilds` lays each feature's build state over
+      the derived world, at any edition
+- [x] A feature with a plan takes its stage from the plan; inferred stages remain for the rest
+- [x] Ready (pegged corners) and verifying (washed, wall still dashed) drawn
+- [x] The wall moves only while a session is open on a planned feature
+- [x] Acceptance criteria marked on the frontage: shape is how it is checked, fill is the verdict
+- [x] A pennant on a lot with a live session, visible from every height
+- [x] A building's note: stage and why, objective, builder, blockers, steps, criteria
+- [x] The plan sheet: objective, steps, criteria with evidence, who is building, what is in
+      the way, what has happened
+- [x] A scripted build in the specimen world, to scrub through
+- [ ] Migrate `FeatureStage` to `BuildStage` outright (today build stages are mapped onto the
+      older drawing stages; rank still counts inferred stages only)
+- [ ] An agent's draft plan shown beside the accepted one, to accept or discard
 
 ## Stage 10: Building by hand
 
-The first builder, because it needs no companion and proves the model.
-
-- [ ] `ManualBuilder`: start a session, tick steps, record checks
-- [ ] "Build manually" from a ready building
-- [ ] Dependencies across places grade the road between them
-- [ ] How each criterion passed, shown; rewritten promises carry a slip
+- [x] Write and revise a plan in the plan sheet; dropping a criterion is remembered
+- [x] Start and end a manual session; finish steps; record a check with its evidence
+- [x] Raise and clear blockers
+- [x] A failed check holds it at verifying; a later failure takes done away
+- [ ] Dependencies chosen in the sheet; a dependency across places grades the road
+- [ ] How each criterion passed drawn on the wall itself; rewritten promises carry a slip
 - [ ] "Since you were last here"
 
 ## Stage 11: The companion and the first agent
