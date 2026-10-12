@@ -94,6 +94,30 @@ describe('deriveBuild', () => {
     expect(s.draft?.revision).toBe(2);
   });
 
+  it('records how a building was proven: only as strong as its weakest check', () => {
+    const built: BuildEvent[] = [written(plan()), session(), step('s1'), step('s2')];
+    expect(deriveBuild(built, allDone).provenBy).toBeUndefined();
+    expect(deriveBuild([...built, check('c1', true)], allDone).provenBy).toBe('command');
+    // c2 is a manual check: once it passes, the whole building rests partly on Patrick's word.
+    expect(deriveBuild([...built, check('c1', true), check('c2', true)], allDone).provenBy).toBe('word');
+  });
+
+  it('remembers a revision that promised less', () => {
+    const p1 = plan();
+    const dropped = plan({ revision: 2, criteria: [p1.criteria[0]!] });
+    const downgraded = plan({
+      revision: 3,
+      criteria: [{ ...p1.criteria[0]!, verification: { kind: 'manual', how: 'Try it.' } }],
+    });
+    const s = deriveBuild([written(p1), written(dropped), written(downgraded)], allDone);
+    expect(s.rewrites).toEqual([
+      { revision: 2, dropped: ['c2'], downgraded: [] },
+      { revision: 3, dropped: [], downgraded: ['c1'] },
+    ]);
+    // Adding or tightening is not a rewrite.
+    expect(deriveBuild([written(dropped), written(plan({ revision: 3 }))], allDone).rewrites).toEqual([]);
+  });
+
   it('manual work and agent work reach done the same way', () => {
     const by = (builder: 'manual' | 'codex'): BuildEvent[] => [
       written(plan()),

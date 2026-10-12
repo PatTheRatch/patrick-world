@@ -163,7 +163,19 @@ export interface BuildState {
   progress: number;
   /** Why the stage is what it is, in plain words. Shown in the building's note. */
   because: string;
+  /**
+   * How the passing criteria passed, weakest first: on Patrick's word, by review, or by a
+   * command. A done building is only as proven as its weakest check. Undefined until something passes.
+   */
+  provenBy?: Proof;
+  /** Accepted revisions that dropped a criterion or downgraded how one is verified. Kept, and shown. */
+  rewrites: { revision: number; dropped: string[]; downgraded: string[] }[];
 }
+
+/** How a criterion came to pass, from weakest to strongest. */
+export type Proof = 'word' | 'review' | 'command';
+const PROOF_ORDER: readonly Proof[] = ['word', 'review', 'command'];
+const proofOf = (kind: VerificationKind): Proof => (kind === 'manual' ? 'word' : kind);
 
 /**
  * The rule. Given everything recorded about one feature, where does it stand?
@@ -180,13 +192,26 @@ export function deriveBuild(events: BuildEvent[], isDone: (ref: string) => boole
   const blockers = new Map<string, string>();
   let active: BuildState['activeSession'];
   let anySession = false;
+  const rewrites: BuildState['rewrites'] = [];
 
   for (const e of events) {
     switch (e.type) {
       case 'plan.written':
         if (e.accepted) {
           // A new accepted revision voids earlier verdicts: they were about a different promise.
-          if (plan && e.plan.revision !== plan.revision) verdict.clear();
+          if (plan && e.plan.revision !== plan.revision) {
+            verdict.clear();
+            // Did this revision promise less than the last one?
+            const next = new Map(e.plan.criteria.map((c) => [c.id, c]));
+            const dropped = plan.criteria.filter((c) => !next.has(c.id)).map((c) => c.id);
+            const downgraded = plan.criteria
+              .filter((c) => {
+                const n = next.get(c.id);
+                return n && PROOF_ORDER.indexOf(proofOf(n.verification.kind)) < PROOF_ORDER.indexOf(proofOf(c.verification.kind));
+              })
+              .map((c) => c.id);
+            if (dropped.length + downgraded.length > 0) rewrites.push({ revision: e.plan.revision, dropped, downgraded });
+          }
           plan = e.plan;
           draft = undefined;
         } else draft = e.plan;
@@ -241,6 +266,11 @@ export function deriveBuild(events: BuildEvent[], isDone: (ref: string) => boole
     waitingOn,
     activeSession: active,
     progress,
+    rewrites,
+    provenBy: criteria
+      .filter((c) => verdict.get(c.id) === true)
+      .map((c) => proofOf(c.verification.kind))
+      .sort((x, y) => PROOF_ORDER.indexOf(x) - PROOF_ORDER.indexOf(y))[0],
   };
   const at = (stage: BuildStage, because: string): BuildState => ({ ...base, stage, because });
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
