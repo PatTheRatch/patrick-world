@@ -13,7 +13,11 @@ a status field.
 npm install
 npm run dev        # http://localhost:5199
 npm run check      # typecheck, tests, production build
+npm run sync:github  # read your repositories (via the gh CLI) into public/data/github.json
 ```
+
+With a GitHub record present the app shows your real repositories. `?world=specimen` shows the
+fictional specimen world instead. The record is private, git-ignored, and left out of builds.
 
 ## Getting around
 
@@ -42,4 +46,5 @@ Useful links while developing: `?still` (no motion), `?perf` (frame and derive t
 - [WORLD_MODEL.md](WORLD_MODEL.md), [DATA_MODEL.md](DATA_MODEL.md),
   [ARCHITECTURE.md](ARCHITECTURE.md), [INTERACTION_MODEL.md](INTERACTION_MODEL.md): how it works.
 
-All data in this build is fictional.
+The specimen world is fictional. The GitHub world is yours, with stages inferred from commit
+history until features have build plans.

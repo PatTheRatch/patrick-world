@@ -1,7 +1,19 @@
 // The title block, where a map keeps it: what this is, which edition, how much is on it.
 
-import { monthYear } from '../dates';
-import { asOf, clearManual, hasManual, isPresent, keyOpen, keySection, selection, whereabouts, world } from '../store';
+import { dayMonthYear, monthYear } from '../dates';
+import {
+  TODAY,
+  asOf,
+  clearManual,
+  hasManual,
+  isPresent,
+  keyOpen,
+  keySection,
+  selection,
+  whereabouts,
+  world,
+  worldKind,
+} from '../store';
 import { goHome } from '../view';
 
 const count = (n: number, one: string, many: string) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
@@ -66,7 +78,11 @@ export function Cartouche() {
           </button>
         )}
       </nav>
-      <p class="cartouche-specimen">Specimen sheet. Every place, date and figure on it is fictional.</p>
+      <p class="cartouche-specimen">
+        {worldKind.value === 'github'
+          ? `Surveyed from GitHub, ${dayMonthYear(TODAY.value)}. Stages are inferred from commit history.`
+          : 'Specimen sheet. Every place, date and figure on it is fictional.'}
+      </p>
     </header>
   );
 }

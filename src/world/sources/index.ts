@@ -1,7 +1,7 @@
 import type { WorldEvent } from '../types';
 
 export { FixtureSource } from './fixture';
-export { ManualSource, MANUAL_EVENTS_KEY } from './manual';
+export { ManualSource, MANUAL_EVENTS_GITHUB_KEY, MANUAL_EVENTS_KEY } from './manual';
 export type { StorageLike } from './manual';
 
 /**

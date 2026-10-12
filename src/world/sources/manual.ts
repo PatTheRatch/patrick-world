@@ -1,6 +1,8 @@
 import type { WorldEvent, WorldSource } from '../types';
 
 export const MANUAL_EVENTS_KEY = 'patricks-world/manual-events/v1';
+/** Marks made on the surveyed (GitHub) sheet are kept apart from marks made on the specimen. */
+export const MANUAL_EVENTS_GITHUB_KEY = 'patricks-world/manual-events/github/v1';
 
 /** The part of `Storage` this source needs. */
 export interface StorageLike {
@@ -41,8 +43,14 @@ export class ManualSource implements WorldSource {
   private events: WorldEvent[];
   private readonly listeners = new Set<Listener>();
 
-  /** Pass a storage to use instead of `localStorage`, or `null` to keep events in memory only. */
-  constructor(storage?: StorageLike | null) {
+  private readonly key: string;
+
+  /**
+   * Pass a storage to use instead of `localStorage`, or `null` to keep events in memory only;
+   * and a key, so that different sheets keep different marks.
+   */
+  constructor(storage?: StorageLike | null, key: string = MANUAL_EVENTS_KEY) {
+    this.key = key;
     this.storage = storage === undefined ? defaultStorage() : storage;
     this.events = this.read();
   }
@@ -79,7 +87,7 @@ export class ManualSource implements WorldSource {
   clear(): void {
     this.events = [];
     try {
-      this.storage?.removeItem(MANUAL_EVENTS_KEY);
+      this.storage?.removeItem(this.key);
     } catch {
       // Memory is already clear; nothing else to do.
     }
@@ -99,7 +107,7 @@ export class ManualSource implements WorldSource {
 
   private read(): WorldEvent[] {
     try {
-      const raw = this.storage?.getItem(MANUAL_EVENTS_KEY);
+      const raw = this.storage?.getItem(this.key);
       if (raw === null || raw === undefined) return [];
       const parsed: unknown = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed.filter(looksLikeEvent) : [];
@@ -110,7 +118,7 @@ export class ManualSource implements WorldSource {
 
   private write(): void {
     try {
-      this.storage?.setItem(MANUAL_EVENTS_KEY, JSON.stringify(this.events));
+      this.storage?.setItem(this.key, JSON.stringify(this.events));
     } catch {
       // Storage is full or forbidden: the events stay in memory for this session.
     }

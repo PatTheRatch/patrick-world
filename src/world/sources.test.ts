@@ -3,6 +3,7 @@ import { fixtureEvents } from './fixtures/world';
 import {
   FixtureSource,
   ManualSource,
+  MANUAL_EVENTS_GITHUB_KEY,
   MANUAL_EVENTS_KEY,
   mergeEvents,
   type StorageLike,
@@ -38,6 +39,22 @@ const brokenStorage: StorageLike = {
     throw new Error('denied');
   },
 };
+
+describe('ManualSource: one set of marks per key', () => {
+  it('keeps marks under different keys apart in the same storage', () => {
+    const storage = memoryStorage();
+    const specimen = new ManualSource(storage);
+    const surveyed = new ManualSource(storage, MANUAL_EVENTS_GITHUB_KEY);
+    specimen.add([note('on-the-fiction', '2026-01-01')]);
+    surveyed.add([note('on-the-survey', '2026-01-02')]);
+    expect(MANUAL_EVENTS_GITHUB_KEY).toBe('patricks-world/manual-events/github/v1');
+    expect(new ManualSource(storage).all().map((e) => e.id)).toEqual(['on-the-fiction']);
+    expect(new ManualSource(storage, MANUAL_EVENTS_GITHUB_KEY).all().map((e) => e.id)).toEqual(['on-the-survey']);
+    surveyed.clear();
+    expect(storage.data.has(MANUAL_EVENTS_GITHUB_KEY)).toBe(false);
+    expect(new ManualSource(storage).all()).toHaveLength(1);
+  });
+});
 
 describe('mergeEvents', () => {
   it('de-duplicates by id, keeping the first seen', () => {

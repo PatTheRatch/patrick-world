@@ -1,5 +1,12 @@
 # Morning handoff
 
+> **Since this was written** (later on 12 October): a GitHub adapter now puts your real
+> repositories on the map (`npm run sync:github`), and the product has been re-scoped as a place
+> to build, not only to look. The build model is designed and partly in code
+> (`src/world/build.ts`); the core loop, pillars and an adversarial review are in PRODUCT.md and
+> GAME_METAPHOR.md; the order of work is in PLAN.md. The sections below describe the first
+> overnight prototype and its specimen world.
+
 Written at the end of the overnight build, 12 October 2026.
 
 ```sh

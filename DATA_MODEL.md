@@ -212,12 +212,31 @@ Three things an adapter must respect:
    thinks a project is "stalled", that is not an event; the absence of work events already
    says it.
 
-### What a GitHub adapter would do
+### The GitHub adapter
 
-Read commit history per repository, bucket by week, emit `work.logged`. Map paths or labels to
-features where a mapping exists; otherwise log work against the place alone. Tags and releases
-become `release.shipped`. It needs a small mapping file (repository → place, path prefix →
-feature), which is the only configuration the model anticipates.
+Built. Three parts, so that fetching, meaning and drawing stay apart:
+
+| Part | Does |
+|---|---|
+| `scripts/github-fetch.mjs` (`npm run sync:github`) | Reads repositories, commits, languages, releases and per-directory history through the `gh` CLI, read-only, and writes `public/data/github.json`. No interpretation. The file is git-ignored and stripped from production builds. |
+| `src/world/sources/github/transform.ts` | A pure function from that record to events. Every rule is a named constant at the top of the file. |
+| `src/world/sources/github.ts` | A `WorldSource` that loads the record. When it is present the world is GitHub plus manual marks; the specimen is never mixed in. `?world=specimen` shows the fiction. |
+
+What it infers, and how far to trust it:
+
+| Thing | Rule | Trust |
+|---|---|---|
+| A place | One per repository owned | High |
+| Work | Commits by the owner, and by coding agents in the owner's repositories, per week. Each commit is logged against one feature only. | High |
+| A feature | A directory inside a source root, or at the top level | **Low.** A directory is not a capability. |
+| `building` | The feature's first commit | Medium |
+| `working` | Enough commits over enough weeks, and then a release, a three-week pause, or simply sustained work | **Low.** "Stopped" and "busy for three weeks" both count. |
+| `mature` | Returned to in three separate bursts over six months | Low |
+| Region | Keywords in the name, description and topics | **Low.** To be replaced by where he puts it. |
+| Methods | The repository's languages, on every feature | Low |
+| Links, users | Not inferred. GitHub does not evidence either. | |
+
+Every inferred stage is a stand-in until the feature has a build plan. The cartouche says so.
 
 ## Storage today
 

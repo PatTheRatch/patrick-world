@@ -214,7 +214,7 @@ export const isPlaying = () => playing !== 0;
 /** Run the edition forward from where the dial sits (or from the start) to the present. */
 export function play(durationMs = 9000, onDone?: () => void) {
   stopPlaying();
-  const end = dayNumber(TODAY);
+  const end = dayNumber(TODAY.value);
   const begin = dayNumber(world.value.beginsAt);
   let from = dayNumber(asOf.value);
   if (from >= end - 7) from = begin;
@@ -230,7 +230,7 @@ export function play(durationMs = 9000, onDone?: () => void) {
     else {
       playing = 0;
       isRunning.value = false;
-      asOf.value = TODAY;
+      asOf.value = TODAY.value;
       onDone?.();
     }
   };
@@ -240,7 +240,7 @@ export function play(durationMs = 9000, onDone?: () => void) {
 export function stepEdition(months: number) {
   stopPlaying();
   const begin = dayNumber(world.value.beginsAt);
-  const end = dayNumber(TODAY);
+  const end = dayNumber(TODAY.value);
   const next = Math.max(begin, Math.min(end, dayNumber(asOf.value) + Math.round(months * 30.44)));
   asOf.value = isoFromDay(next);
 }

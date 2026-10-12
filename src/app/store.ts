@@ -9,34 +9,50 @@ import type { CityPlan, RoadPlan } from '../plan/types';
 import type { Draft, Selection } from '../render/renderer';
 import { derive } from '../world/derive';
 import { catalogue } from '../world/fixtures/catalogue';
+import { FIXTURE_TODAY } from '../world/fixtures/world';
 import { mergeEvents } from '../world/sources';
 import { FixtureSource } from '../world/sources/fixture';
-import { ManualSource } from '../world/sources/manual';
+import { GitHubSource } from '../world/sources/github';
+import { MANUAL_EVENTS_GITHUB_KEY, ManualSource } from '../world/sources/manual';
 import { stressEvents } from '../world/sources/stress';
+import { isoDay } from '../world/time';
 import type { FeatureKind, FeatureStage, PlaceState, Point, WorldEvent } from '../world/types';
-
-/**
- * The present. The fixture history is written up to this day; with real sources
- * connected this becomes the actual date.
- */
-export const TODAY = '2026-10-12';
 
 export { catalogue };
 export const terrain = buildTerrain(catalogue, 'patricks-world');
 
 const fixture = new FixtureSource();
-export const manual = new ManualSource();
+export const github = new GitHubSource(catalogue, terrain.isLand);
+/** The owner's own marks. Each sheet keeps its own: `load` swaps this for the GitHub sheet's. */
+export let manual = new ManualSource();
 
-const fixtureEvents = signal<WorldEvent[]>([]);
+/**
+ * Which sheet is on the table. The two never mix: the specimen is fiction, the GitHub
+ * sheet is surveyed, and a map that showed both could not be trusted on either.
+ */
+export const worldKind = signal<'specimen' | 'github'>('specimen');
+/** When the GitHub record was fetched (ISO timestamp); null for the specimen. */
+export const surveyedAt = signal<string | null>(null);
+
+/**
+ * The present, as an ISO day. For the specimen it is the day its fiction is written up
+ * to; for GitHub it is the day of the sync, since nothing later is known. Read `.value`.
+ */
+export const TODAY = computed(() =>
+  worldKind.value === 'github' && surveyedAt.value !== null ? isoDay(surveyedAt.value) : FIXTURE_TODAY,
+);
+
+/** The base sheet: the fixture's events, or GitHub's. Never both. */
+const baseEvents = signal<WorldEvent[]>([]);
 const manualEvents = signal<WorldEvent[]>([]);
 export const loaded = signal(false);
 
-export const events = computed(() => mergeEvents([fixtureEvents.value, manualEvents.value]));
+export const events = computed(() => mergeEvents([baseEvents.value, manualEvents.value]));
 export const hasManual = computed(() => manualEvents.value.length > 0);
 
-/** The edition being shown. */
-export const asOf = signal(TODAY);
-export const isPresent = computed(() => asOf.value >= TODAY);
+/** The edition being shown. `load` sets it to the present of whichever sheet it finds. */
+export const asOf = signal(TODAY.value);
+export const isPresent = computed(() => asOf.value >= TODAY.value);
 
 /** Milliseconds the last derivation took, for `?perf`. */
 export const deriveMs = signal(0);
@@ -49,7 +65,7 @@ export const world = computed(() => {
 });
 
 /** The world as it stands today, whatever edition is on screen. */
-export const present = computed(() => (isPresent.value ? world.value : derive(events.value, catalogue, TODAY)));
+export const present = computed(() => (isPresent.value ? world.value : derive(events.value, catalogue, TODAY.value)));
 
 // Scrubbing revisits the same states over and over, so plans are kept per place and state.
 const planCache = new Map<string, Map<string, CityPlan>>();
@@ -125,9 +141,23 @@ effect(() => {
 // ───────────────────────── Loading ─────────────────────────
 
 export async function load() {
-  const base = await fixture.load();
-  const copies = Number(new URLSearchParams(location.search).get('stress') ?? 0);
-  fixtureEvents.value = copies > 0 ? [...base, ...stressEvents(base, Math.min(copies, 40), catalogue)] : base;
+  const params = new URLSearchParams(location.search);
+  // `?world=specimen` asks for the fiction even when a GitHub record is present.
+  const surveyed = params.get('world') === 'specimen' ? [] : await github.load();
+  if (surveyed.length > 0) {
+    baseEvents.value = surveyed;
+    surveyedAt.value = github.fetchedAt;
+    worldKind.value = 'github';
+    // Marks made on the fiction do not belong on the survey, nor the other way round.
+    manual = new ManualSource(undefined, MANUAL_EVENTS_GITHUB_KEY);
+  } else {
+    const base = await fixture.load();
+    const copies = Number(params.get('stress') ?? 0);
+    baseEvents.value = copies > 0 ? [...base, ...stressEvents(base, Math.min(copies, 40), catalogue)] : base;
+    surveyedAt.value = null;
+    worldKind.value = 'specimen';
+  }
+  asOf.value = TODAY.value;
   manualEvents.value = await manual.load();
   manual.subscribe?.(() => {
     manualEvents.value = manual.all();
@@ -169,7 +199,7 @@ export function markSite(name: string, note: string, at: Point): string {
   record([
     {
       id: newId('founded'),
-      at: TODAY,
+      at: TODAY.value,
       source: 'manual',
       type: 'place.founded',
       place,
@@ -187,7 +217,7 @@ export function stakeLot(place: string, name: string, kind: FeatureKind): string
   record([
     {
       id: newId('proposed'),
-      at: TODAY,
+      at: TODAY.value,
       source: 'manual',
       type: 'feature.proposed',
       place,
@@ -203,11 +233,11 @@ export function stakeLot(place: string, name: string, kind: FeatureKind): string
 export function surveyRoad(a: string, b: string) {
   if (a === b) return;
   if (world.value.links.some((l) => (l.a === a && l.b === b) || (l.a === b && l.b === a))) return;
-  record([{ id: newId('link'), at: TODAY, source: 'manual', type: 'link.formed', a, b, kind: 'related' }]);
+  record([{ id: newId('link'), at: TODAY.value, source: 'manual', type: 'link.formed', a, b, kind: 'related' }]);
 }
 
 export function recordStage(place: string, feature: string, stage: FeatureStage) {
-  record([{ id: newId('staged'), at: TODAY, source: 'manual', type: 'feature.staged', place, feature, stage }]);
+  record([{ id: newId('staged'), at: TODAY.value, source: 'manual', type: 'feature.staged', place, feature, stage }]);
 }
 
 export function clearManual() {

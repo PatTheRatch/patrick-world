@@ -72,7 +72,7 @@ From the design review. Each prototype answers a question; none exists to look f
 
 | # | Prototype | Question it answers | Stop when |
 |---|---|---|---|
-| 1 | His real GitHub on the sheet (in progress) | Does he recognise it? Is a directory a building? | He can name three things it gets wrong and three it showed him |
+| 1 | His real GitHub on the sheet (built; awaiting his read of it) | Does he recognise it? Is a directory a building? | He can name three things it gets wrong and three it showed him |
 | 2 | One real feature, planned by hand: a plan as a JSON file, built the usual way, events fed in by a tiny command | Is a plan the right size? Do the seven stages match how the work really went? | The feature is done, or the format was changed twice |
 | 3 | The manual builder in the app, on a second feature | Is committing cheap enough to do unprompted? | He plans a third without being asked, or does not |
 | 4 | A headless Claude Code run on one small plan, events only, no interface | Can steps and file changes be read from the stream? | Step boundaries are detected, or shown to need self-report |
@@ -86,7 +86,7 @@ reflection, not the loop).
 
 ## Stage 8: Real data
 
-- [ ] GitHub adapter: fetch, transform to events, load in place of the specimen
+- [x] GitHub adapter: fetch, transform to events, load in place of the specimen
 - [ ] Review inferred stages against what Patrick knows to be true; tune the rules
 - [ ] A repository-to-place and path-to-feature mapping file for where inference is wrong
 - [ ] The event log on disk, with a schema version

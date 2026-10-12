@@ -97,7 +97,7 @@ function Perf() {
   return (
     <p class="perf">
       frame {frame.value.toFixed(1)} ms · derive {deriveMs.value.toFixed(1)} ms · {events.value.length.toLocaleString('en-US')}{' '}
-      events · {world.value.places.length} places · {asOf.value === TODAY ? 'present' : asOf.value}
+      events · {world.value.places.length} places · {asOf.value === TODAY.value ? 'present' : asOf.value}
     </p>
   );
 }

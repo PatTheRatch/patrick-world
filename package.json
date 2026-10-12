@@ -7,6 +7,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "sync:github": "node scripts/github-fetch.mjs",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && vitest run && vite build"
   },

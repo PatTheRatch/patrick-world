@@ -11,7 +11,7 @@ export function EditionDial() {
   const rule = useRef<HTMLDivElement>(null);
   const playing = isRunning;
   const begin = dayNumber(present.value.beginsAt);
-  const end = dayNumber(TODAY);
+  const end = dayNumber(TODAY.value);
   const total = Math.max(1, end - begin);
   const at = (dayNumber(asOf.value) - begin) / total;
 
@@ -29,7 +29,7 @@ export function EditionDial() {
   });
 
   const years: { year: number; x: number }[] = [];
-  for (let y = yearOf(present.value.beginsAt) + 1; y <= yearOf(TODAY); y++) {
+  for (let y = yearOf(present.value.beginsAt) + 1; y <= yearOf(TODAY.value); y++) {
     years.push({ year: y, x: (dayNumber(`${y}-01-01`) - begin) / total });
   }
 
@@ -37,7 +37,7 @@ export function EditionDial() {
     const r = rule.current!.getBoundingClientRect();
     const t = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
     // Snap to the present near the end, so "now" is easy to return to.
-    asOf.value = t > 0.992 ? TODAY : isoFromDay(Math.round(begin + t * total));
+    asOf.value = t > 0.992 ? TODAY.value : isoFromDay(Math.round(begin + t * total));
   };
 
   const onDown = (e: PointerEvent) => {
@@ -53,7 +53,7 @@ export function EditionDial() {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') stepEdition(-1);
     else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') stepEdition(1);
     else if (e.key === 'Home') asOf.value = present.value.beginsAt;
-    else if (e.key === 'End') asOf.value = TODAY;
+    else if (e.key === 'End') asOf.value = TODAY.value;
     else return;
     e.preventDefault();
     e.stopPropagation();
@@ -109,7 +109,7 @@ export function EditionDial() {
         disabled={isPresent.value}
         onClick={() => {
           stopPlaying();
-          asOf.value = TODAY;
+          asOf.value = TODAY.value;
         }}
       >
         Present
