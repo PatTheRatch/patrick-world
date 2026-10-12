@@ -57,6 +57,7 @@ export function citySvg(plan: CityPlan): string {
     );
   }
   for (const w of plan.wards) {
+    if (!w.name) continue;
     out.push(
       `<text x="${f(w.labelAt.x)}" y="${f(w.labelAt.y)}" font-family="serif" font-style="italic" font-size="6" text-anchor="middle" fill="#1d1a15" fill-opacity="0.6" transform="rotate(${f((w.angle * 180) / Math.PI)} ${f(w.labelAt.x)} ${f(w.labelAt.y)})">${w.name} (${w.dominant})</text>`,
     );

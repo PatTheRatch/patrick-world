@@ -165,12 +165,36 @@ no suburbs. Outposts have none.
 **Motion means this week.** A place's edge stays dashed for three weeks after work, but it only
 moves in the week of the work.
 
-**Open after the second review, in order:** quarters with one grain each (a continuous terrace
-wall, tanks spaced on a spur) and one generalised wash per quarter from afar; regional roads
-entering by the ends of a town's own streets; side streets closing into blocks; a ward boundary
-and name held through district zoom; criteria ticks and a builder's mark on the building, which
-need the build model wired in. The survey is now frozen by a snapshot test: changing the ground
-plan rules moves every town once and must be done on purpose.
+**A street front keeps one grain.** The first building on one side of a street decides what
+that front is, and a building of another kind pays to stand there: it takes the other side, a
+side street, or another arm. So a quarter of mixed things sorts itself into a wall of works, a
+row of terraces opposite, tanks along a spur. From far off each quarter is one tone, the wash
+of what mostly stands in it; pencilled lots colour nothing.
+
+**A town lies the way its ground lies.** On a slope or a shore the through route runs along
+the contour, a little off true. On flat ground the place decides for itself. Position and land
+are both fixed, so this never changes.
+
+**Roads come in by the streets.** The surveyed route between two places is fixed. Its last
+stretch is brought round to the outer end of a main street heading that way, and is redrawn as
+the street is built further out. Where no street heads that way the road meets the nearest
+street end at an angle. A road never crosses a town to find a street.
+
+**Inside the blocks.** On the side of a street that has side streets, a pair of them built far
+enough up is joined across the top by a lane: a block. On the other side the back row of houses
+fronts a back lane, drawn only as far as houses stand on it. A street never runs through
+something standing, and nothing is built in a street that is already there.
+
+**Wards have bounds.** Where a town has more than one quarter, each is ringed with the fine
+dot-and-dash line an atlas keeps for a boundary that is not a wall, and its name is lettered
+beside it, parallel to its street and clear of its buildings, until the streets (which are
+named for the wards) are lettered instead.
+
+**Still open:** a ward's bounds are traced round its lots, so a quarter spread over two arms
+has two rings; a name can still land on a neighbour where both sides of a quarter are built
+up; roads cross rivers without bridges; lots do not yet avoid water or steep ground. The survey
+is frozen by a snapshot test: changing the ground plan rules moves every town once and must be
+done on purpose. It was done on purpose for the rules above, on 12 October 2026.
 
 ## A building with a plan
 

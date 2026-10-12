@@ -99,11 +99,15 @@ reflection, not the loop).
 - [x] Traffic on routes where something really flows and work is current
 - [x] Concave built-up outlines; five ground plans; fabric smaller, time-gated; motion means this week
 - [x] Survey frozen by snapshot
-- [ ] Quarter purity and one wash per quarter from afar
-- [ ] Regional roads enter by a town's own street ends; side streets close into blocks
+- [x] Quarter purity (one grain to a street front) and one wash per quarter from afar
+- [x] Regional roads enter by a town's own street ends
+- [x] Side streets close into blocks; back lanes behind the frontages
+- [x] Towns oriented to the ground (through route along the contour)
+- [x] Ward bounds, and ward names beside them through district zoom
+- [x] Streets and lots keep off each other's ground (re-surveyed 12 October 2026)
 - [ ] Worked fields and regrowth
-- [ ] District and building layers: criteria ticks, built order, revision slips
-- [ ] Bridges; towns oriented to the ground
+- [ ] District and building layers: built order, revision slips
+- [ ] Bridges; lots that avoid water and steep ground; one ring for a ward on two arms
 
 ## Stage 8: Real data
 

@@ -228,8 +228,9 @@ A map that rearranges itself is not a map. Three rules:
    its region and near any place it was founded "near", pushed clear of neighbours with room
    to grow. The position is stored on the founding event.
 2. **A place reveals a skeleton it always had.** Its routes, crossing, side streets and the
-   room for later quarters are fixed by its id. Each feature takes the nearest free frontage,
-   its quarter preferring its own street. Feature number seven always stands where feature
+   room for later quarters are fixed by its id, and the way it lies is fixed by the ground at
+   its position. Each feature takes the nearest free frontage, its quarter preferring its own
+   street and each street front keeping to one kind of building. Feature number seven always stands where feature
    number seven stood, and a quarter founded later stands at the edge of the town as it was
    that day.
 3. **Time only adds.** Scrubbing the edition backwards removes the newest things first and

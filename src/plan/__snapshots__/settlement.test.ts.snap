@@ -2,11 +2,11 @@
 
 exports[`the survey is frozen > keeps every lot where it stood 1`] = `
 [
-  "bend:30:-316176",
-  "cross:30:24817",
-  "tee:30:-235360",
-  "bend:30:203181",
-  "green:30:-5015",
-  "tee:30:-202510",
+  "bend:30:-32213",
+  "cross:30:15674",
+  "tee:30:-348579",
+  "bend:30:-167259",
+  "green:30:-10648",
+  "tee:30:-18163",
 ]
 `;

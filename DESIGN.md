@@ -222,7 +222,7 @@ Age is computed, not picked: ink is black mixed toward sepia by 0, 0, 0.4, 0.85,
 Lettering on the sheet, in screen pixels:
 - **Place names** (Besley, linen halo): 25, 20, 15.5, 13, 12, 11.5, 11.5 for major city, city, town, settlement, outpost, site, spark, scaled 0.92 to 1.3 with zoom. City and major: 700, caps, 0.09em. Town: 600. Settlement and outpost: 500. Site and spark: 400 italic in graphite.
 - **Region names** (Archivo 500, widest, 0.62em, caps, ink at 40%): 11 to 30px, fading out on descent.
-- **Ward names** (Archivo 650, wide, 0.24em, caps, 8.5 to 12.5px): shown between 0.75 and 2.9 px per unit, then they leave.
+- **Ward names** (Archivo 650, wide, 0.24em, caps, 8.5 to 11.5px, on a linen halo): lettered beside the ward's bounds, parallel to its street, between 0.75 and 4.4 px per unit; they leave as the streets named for them are lettered. Only where a town has more than one ward.
 - **Street names** (Archivo 500, wide, 0.34em, caps, up to 10.5px, ink at up to 55%): lettered along main streets between 3.3 and 9 px per unit.
 - **Building names** (Archivo 650, condensed, 0.04em, 8.5 to 11.5px, up to three lines): ink when standing, graphite on a linen halo when not. The stage word sits beneath in Besley italic graphite.
 - **Storey numerals** (Archivo 700, condensed, 8 to 11px): always in the footprint's upper-left.

@@ -43,6 +43,8 @@ export interface PlaceArt {
   square: Path2D | null;
   /** The town limits: the outline of everything that stands or is staked here. */
   hull: Path2D;
+  /** Each quarter's own ground, where the town has more than one: its bounds, and what stands in it. */
+  quarters: { path: Path2D; standing: FeatureKind | null }[];
   /** Rims and ribs: what tells a tank from a dome without colour. */
   details: Path2D;
   /** Length of the limits, in world units, for dashing. */
@@ -103,6 +105,7 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
     streets: {},
     square: null,
     hull: new Path2D(),
+    quarters: [],
     details: new Path2D(),
     hullLength: 0,
     stalled: false,
@@ -215,6 +218,23 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
       art.hullLength += Math.hypot(b.x - a.x, b.y - a.y);
     }
   }
+  // The quarters, where a town has parts: each one's own ground, and the kind most of what
+  // stands there is. Pencilled lots are inside the bounds but colour nothing.
+  if (plan.wards.length > 1) {
+    for (const ward of plan.wards) {
+      const own = art.lots.filter((d) => d.lot.block === ward.block);
+      const count: Partial<Record<FeatureKind, number>> = {};
+      let standing: FeatureKind | null = null;
+      for (const { feature } of own) {
+        if (feature.stage !== 'working' && feature.stage !== 'mature') continue;
+        const n = (count[feature.kind] = (count[feature.kind] ?? 0) + 1);
+        if (standing === null || n > (count[standing] ?? 0)) standing = feature.kind;
+      }
+      const path = new Path2D();
+      for (const loop of outlineOf(own.map((d) => d.lot), [], 4.2)) addPolygon(path, loop);
+      art.quarters.push({ path, standing });
+    }
+  }
   // What the buildings are, legible without colour: a tank has a rim, a dome has ribs.
   for (const { lot, feature } of art.lots) {
     if (feature.stage !== 'working' && feature.stage !== 'mature') continue;
@@ -241,9 +261,17 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
  * line that is read from far away.
  */
 function builtOutline(plan: CityPlan): Point[][] {
-  if (plan.lots.length === 0) return [];
+  return outlineOf(
+    plan.lots,
+    plan.streets.filter((st) => !st.back),
+    7.5,
+  );
+}
+
+/** The ground a set of lots stands on, grown by `GROW` and traced. */
+function outlineOf(lots: Lot[], made: CityPlan['streets'], GROW: number): Point[][] {
+  if (lots.length === 0) return [];
   const CELL = 3.2;
-  const GROW = 7.5;
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
@@ -254,8 +282,8 @@ function builtOutline(plan: CityPlan): Point[][] {
     if (p.x > x1) x1 = p.x;
     if (p.y > y1) y1 = p.y;
   };
-  for (const lot of plan.lots) lot.parcel.forEach(stretch);
-  for (const st of plan.streets) st.line.forEach(stretch);
+  for (const lot of lots) lot.parcel.forEach(stretch);
+  for (const st of made) st.line.forEach(stretch);
   x0 -= GROW + CELL * 2;
   y0 -= GROW + CELL * 2;
   const cols = Math.ceil((x1 + GROW + CELL * 2 - x0) / CELL);
@@ -263,7 +291,7 @@ function builtOutline(plan: CityPlan): Point[][] {
   if (cols * rows > 60000) return [];
   const grid = new Uint8Array(cols * rows);
 
-  for (const lot of plan.lots) {
+  for (const lot of lots) {
     let cx = 0;
     let cy = 0;
     for (const p of lot.parcel) {
@@ -295,7 +323,7 @@ function builtOutline(plan: CityPlan): Point[][] {
         if (Math.hypot(x0 + (c + 0.5) * CELL - x, y0 + (r + 0.5) * CELL - y) <= radius) grid[r * cols + c] = 1;
       }
   };
-  for (const st of plan.streets) {
+  for (const st of made) {
     for (let i = 0; i + 1 < st.line.length; i++) {
       const a = st.line[i]!;
       const b = st.line[i + 1]!;
@@ -408,6 +436,16 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
       ctx.fillStyle = o.foxing;
       ctx.fill(art.hull);
       ctx.restore();
+    }
+  }
+  // From far off a quarter is one tone: the wash of what mostly stands in it. It gives way
+  // to the buildings themselves as they become readable.
+  const general = 1 - ramp(k, 0.3, 0.7);
+  if (general > 0 && !art.ruin) {
+    for (const q of art.quarters) {
+      if (!q.standing) continue;
+      ctx.fillStyle = css(agedWash(q.standing, art.aging), 0.34 * general);
+      ctx.fill(q.path);
     }
   }
   // Streets. How made they are is the place's maturity, read before any building:
@@ -571,6 +609,17 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.strokeStyle = css(agedInk(AGING.dormant), 0.95 * inked);
     ctx.lineWidth = 0.9 * px;
     ctx.stroke(art.oldOutline);
+    ctx.setLineDash([]);
+  }
+
+  // Ward bounds: the fine dot-and-dash line an atlas keeps for a boundary that is not a wall.
+  const bounds = ramp(k, 0.6, 1.1) * (1 - 0.6 * ramp(k, 5, 8));
+  if (bounds > 0 && art.quarters.length > 0) {
+    ctx.strokeStyle = css(ink, 0.5 * bounds);
+    ctx.lineWidth = 0.75 * px;
+    ctx.lineJoin = 'round';
+    ctx.setLineDash([5 * px, 2.2 * px, 0.9 * px, 2.2 * px]);
+    for (const q of art.quarters) ctx.stroke(q.path);
     ctx.setLineDash([]);
   }
 

@@ -815,23 +815,31 @@ export class Renderer {
         }
       }
 
-      if (k >= 0.75 && k < 2.9) {
-        // Ward names are a far-off aid; once buildings can be read they step back and leave.
-        const a = Math.min(1, (k - 0.75) / 0.4) * Math.min(1, (2.9 - k) / 1.3);
+      if (k >= 0.75 && k < 4.4 && art.plan.wards.length > 1) {
+        // Ward names stand beside their bounds, clear of the buildings, and hold until the
+        // streets, which are named for them, are lettered instead.
+        const a = Math.min(1, (k - 0.75) / 0.4) * Math.min(1, (4.4 - k) / 1.1);
         for (const ward of art.plan.wards) {
+          if (!ward.name) continue;
           const c = at(ward.labelAt);
           const style: Lettering = {
             family: GOTHIC,
-            size: Math.max(8.5, Math.min(12.5, 5.2 * k)),
+            size: Math.max(8.5, Math.min(11.5, 4.6 * k)),
             weight: 650,
             stretch: 118,
             tracking: 0.24,
             upper: true,
             color: ink,
-            alpha: 0.7 * a,
+            alpha: 0.78 * a,
+            angle: ward.angle,
+            halo: INK.linen,
+            haloAlpha: 0.75,
           };
           const w = measure(ctx, ward.name, style);
-          const box = { x: c.x - w / 2 - 4, y: c.y - style.size * 0.8, w: w + 8, h: style.size * 1.6 };
+          // Boxes are tested unrotated: a name along a steep street claims a square of room.
+          const reach = Math.abs(Math.cos(ward.angle)) * w + Math.abs(Math.sin(ward.angle)) * style.size;
+          const rise = Math.abs(Math.sin(ward.angle)) * w + Math.abs(Math.cos(ward.angle)) * style.size * 1.6;
+          const box = { x: c.x - reach / 2 - 4, y: c.y - rise / 2, w: reach + 8, h: rise };
           if (wardBoxes.some((o) => overlaps(o, box))) continue;
           wardBoxes.push(box);
           letter(ctx, ward.name, c.x, c.y, style);

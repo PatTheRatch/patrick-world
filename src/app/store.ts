@@ -2,7 +2,7 @@
 // its plans and its roads are all computed from them.
 
 import { computed, effect, signal } from '@preact/signals';
-import { fabricCount, planCity } from '../plan/settlement';
+import { fabricCount, groundAt, planCity } from '../plan/settlement';
 import { planRoads } from '../plan/roads';
 import { buildTerrain } from '../plan/terrain';
 import type { CityPlan, RoadPlan } from '../plan/types';
@@ -97,7 +97,7 @@ export const plans = computed(() => {
     let plan = known.get(key);
     if (!plan) {
       if (known.size > 400) known.clear();
-      plan = planCity(place);
+      plan = planCity(place, groundAt(place.position, terrain.heightAt));
       known.set(key, plan);
     }
     out.set(place.id, plan);

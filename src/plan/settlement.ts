@@ -19,9 +19,10 @@
 //   work invested              → infill: terraces behind the frontages, saturating
 //   maturity (rank)            → how made the streets are, and whether there is a square
 //   attention                  → nothing here; that is the renderer's paper, edge and motion
+//   the ground it stands on    → which way it lies: the through route follows the contour
 
 import type { FeatureKind, FeatureState, PlaceState, Point, Rank } from '../world/types';
-import { boundsOf, convexOverlap } from './geometry';
+import { boundsOf, convexOverlap, pointInPolygon } from './geometry';
 import { hash01, rng } from './rng';
 import type { CityPlan, Dwelling, Lot, Polygon, Street, StreetGrade, Ward } from './types';
 
@@ -80,6 +81,12 @@ const SIDE_START = 25;
 const SIDE_MAX = 104;
 const EXTENSION_MAX = 150;
 const EXTENSION_SIDES = [46, 98];
+/** How far up a pair of side streets the lane that closes them into a block runs. */
+const CLOSE_AT = 60;
+/** A quarter keeps one grain to a street front: what it costs a building to stand among another kind. */
+const GRAIN = 48;
+/** The back lane behind the frontages on the side of a street that has no side streets. */
+const MEWS = HALF_STREET + 27;
 
 /** Terraces of ordinary fabric: saturating in the work, so effort thickens a town without burying it. */
 export function fabricCount(commits: number, users: number, activeWeeks = Infinity): number {
@@ -106,6 +113,8 @@ interface Way {
   /** Furthest frontage built on, along the way. */
   used: number;
   role: 'route' | 'cross' | 'side' | 'extension';
+  /** Something stands across its line: it can never be built further. */
+  shut?: boolean;
   /** For a side street: how far along its parent it leaves. */
   junction?: number;
   /** Index of the primary arm (0–3) for routes and crosses. */
@@ -141,10 +150,35 @@ function streetGrade(rank: Rank, role: Way['role']): StreetGrade {
   }
 }
 
-export function planCity(place: PlaceState): CityPlan {
+/** What the ground gives a place before anything is built on it. */
+export interface Ground {
+  /** The way the land lies: the bearing of the contour through the place, radians. */
+  lie?: number;
+}
+
+/** Below this much fall across the site, the ground is flat and decides nothing. */
+const FLAT = 0.012;
+
+/**
+ * Read the ground at a place: which way the contour runs through it. Position is fixed for
+ * good and so is the land, so this never changes for a place once it is founded.
+ */
+export function groundAt(position: Point, heightAt: (p: Point) => number, span = 70): Ground {
+  const gx = heightAt({ x: position.x + span, y: position.y }) - heightAt({ x: position.x - span, y: position.y });
+  const gy = heightAt({ x: position.x, y: position.y + span }) - heightAt({ x: position.x, y: position.y - span });
+  if (Math.hypot(gx, gy) < FLAT) return {};
+  return { lie: Math.atan2(gy, gx) + Math.PI / 2 };
+}
+
+export function planCity(place: PlaceState, ground: Ground = {}): CityPlan {
   const center = place.position;
   const seed = place.id;
-  const theta = hash01(`${seed}|bearing`) * Math.PI * 2;
+  // On a slope or a shore the through route runs along it, a little off true; on flat ground
+  // nothing decides it but the place itself.
+  const theta =
+    ground.lie === undefined
+      ? hash01(`${seed}|bearing`) * Math.PI * 2
+      : ground.lie + (hash01(`${seed}|bearing`) < 0.5 ? 0 : Math.PI) + (hash01(`${seed}|offtrue`) - 0.5) * 0.3;
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
   const toWorld = (x: number, y: number): Point => ({ x: center.x + x * cos - y * sin, y: center.y + x * sin + y * cos });
@@ -183,6 +217,7 @@ export function planCity(place: PlaceState): CityPlan {
 
   // Side streets leave each arm to its left, so no two arms ever build into the same quarter.
   const sideWays = new Map<Way, Way[]>();
+  const closes: { a: Way; b: Way; line: [Point, Point]; ground: Polygon }[] = [];
   const addSides = (parent: Way, offsets: number[], side: 1 | -1, max: number) => {
     const list: Way[] = [];
     offsets.forEach((base, n) => {
@@ -194,6 +229,21 @@ export function planCity(place: PlaceState): CityPlan {
       list.push(makeWay(`${parent.id}/s${n}`, px, py, a, { role: 'side', start: SIDE_START, max, junction: at }));
     });
     sideWays.set(parent, list);
+    // The ground for the lane that will one day join the pair is kept clear from the start.
+    const [first, second] = list;
+    if (first && second) {
+      const a = { x: first.ox + Math.cos(first.angle) * CLOSE_AT, y: first.oy + Math.sin(first.angle) * CLOSE_AT };
+      const b = { x: second.ox + Math.cos(second.angle) * CLOSE_AT, y: second.oy + Math.sin(second.angle) * CLOSE_AT };
+      const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+      const nx = (-(b.y - a.y) / len) * (HALF_STREET + 0.5);
+      const ny = ((b.x - a.x) / len) * (HALF_STREET + 0.5);
+      closes.push({
+        a: first,
+        b: second,
+        line: [toWorld(a.x, a.y), toWorld(b.x, b.y)],
+        ground: [toWorld(a.x + nx, a.y + ny), toWorld(b.x + nx, b.y + ny), toWorld(b.x - nx, b.y - ny), toWorld(a.x - nx, a.y - ny)],
+      });
+    }
   };
   for (const arm of arms) addSides(arm, SIDE_STREETS, 1, SIDE_MAX);
 
@@ -239,6 +289,9 @@ export function planCity(place: PlaceState): CityPlan {
     const poly = [at(t0, near), at(t0 + w, near), at(t0 + w, far), at(t0, far)];
     return side === 1 ? poly : poly.reverse();
   };
+  /** The carriageway of a way between two points along it. */
+  const roadway = (way: Way, from: number, to: number): Polygon => rectOn(way, 1, from, Math.max(0.1, to - from), -(HALF_STREET - 0.5), HALF_STREET - 0.5);
+  const everyWay = (): Way[] => [...arms, ...extensions, ...[...sideWays.values()].flat()];
   const localCentre = (way: Way, side: 1 | -1, t: number, s: number) => {
     const dx = Math.cos(way.angle);
     const dy = Math.sin(way.angle);
@@ -272,7 +325,11 @@ export function planCity(place: PlaceState): CityPlan {
   };
 
   const lots: Lot[] = [];
+  const wayOf = new Map<Lot, Way>();
   const parcels: Polygon[] = [];
+  // What each street front was first built as. A front keeps its grain: terraces run on as a
+  // wall of terraces, tanks stand along a spur of their own.
+  const grain = new Map<string, FeatureKind>();
   const features = [...place.features].sort((a, b) => a.order - b.order);
 
   for (const f of features) {
@@ -306,27 +363,59 @@ export function planCity(place: PlaceState): CityPlan {
     }
 
     let placed: { way: Way; side: 1 | -1; t: number; parcel: Polygon } | null = null;
+    let forced = false;
     for (let attempt = 0; attempt < 240 && !placed; attempt++) {
       let best: { way: Way; side: 1 | -1; t: number; cost: number } | null = null;
       for (const { way, penalty } of candidates) {
+        if (way.shut && !forced) continue;
         for (const side of way.sides) {
           const t = skipGaps(way, side, Math.max(way.cursor[side], way.start), width);
           if (t + width > way.max) continue;
           const c = localCentre(way, side, t + width / 2, HALF_STREET + depth / 2);
-          const cost = Math.hypot(c.x, c.y) + penalty + (way.lots === 0 && way.role === 'side' ? 6 : 0);
+          const front = grain.get(`${way.id}|${side}`);
+          const cost =
+            Math.hypot(c.x, c.y) + penalty + (way.lots === 0 && way.role === 'side' ? 6 : 0) + (front && front !== f.kind ? GRAIN : 0);
           if (!best || cost < best.cost - 1e-9) best = { way, side, t, cost };
         }
       }
       if (!best) {
-        // The quarter has filled every street it has: its main street runs on.
-        quarter.home[0]!.max += 60;
+        // The quarter has filled every street it has: one of them runs on. Never an old arm
+        // that a later quarter was laid out beyond; the town goes on down the newer road instead.
+        const capped = (w: Way) => (w.role === 'route' || w.role === 'cross') && extensions.some((e) => e.arm === w.arm);
+        const open = quarter.home.find((w) => !capped(w) && !w.shut && w.max > 0);
+        if (open) open.max += 60;
+        else {
+          // Every street of its own is closed to it: it takes any street of the town that is not.
+          const elsewhere = [...extensions, ...arms].filter((w) => !capped(w) && !w.shut && !candidates.some((c) => c.way === w));
+          if (elsewhere.length) for (const way of elsewhere) candidates.push({ way, penalty: 20 });
+          else {
+            const any = everyWay().find((w) => !w.shut && w.max > 0 && !capped(w));
+            if (any) any.max += 60;
+            else {
+              // Nowhere at all is left clear. A building is never lost for the sake of a street.
+              forced = true;
+              quarter.home[0]!.max += 60;
+            }
+          }
+        }
         continue;
       }
       // The old core is irregular: frontages step forward and back. Later streets are ruled.
       const old = best.cost < 58 && best.way.role !== 'extension';
       const setback = old ? fr.range(0, 2.4) : f.kind === 'frontage' ? 0 : 0.6;
       const parcel = rectOn(best.way, best.side, best.t, width, HALF_STREET + setback, HALF_STREET + setback + depth);
-      if (parcels.some((p) => convexOverlap(p, parcel))) {
+      // Its street must be able to reach it: a street never runs through something standing.
+      const on = best.way;
+      if (!forced && best.t + width > on.used && parcels.some((p) => convexOverlap(p, roadway(on, on.used, best.t + width + 4)))) {
+        on.shut = true;
+        continue;
+      }
+      if (
+        parcels.some((p) => convexOverlap(p, parcel)) ||
+        closes.some((c) => convexOverlap(c.ground, parcel)) ||
+        // Nor does anything stand in a street that is already there.
+        (!forced && everyWay().some((w) => w !== on && w.lots > 0 && convexOverlap(roadway(w, 0, w.used + 4), parcel)))
+      ) {
         best.way.cursor[best.side] = best.t + 5;
         continue;
       }
@@ -335,6 +424,8 @@ export function planCity(place: PlaceState): CityPlan {
     }
     if (!placed) continue;
 
+    const frontKey = `${placed.way.id}|${placed.side}`;
+    if (!grain.has(frontKey)) grain.set(frontKey, f.kind);
     placed.way.used = Math.max(placed.way.used, placed.t + width);
     placed.way.lots++;
     parcels.push(placed.parcel);
@@ -350,6 +441,7 @@ export function planCity(place: PlaceState): CityPlan {
       block: quarters.indexOf(quarter),
     };
     lots.push(lot);
+    wayOf.set(lot, placed.way);
     quarter.lots.push(lot);
     quarter.kinds[f.kind] = (quarter.kinds[f.kind] ?? 0) + 1;
   }
@@ -360,11 +452,13 @@ export function planCity(place: PlaceState): CityPlan {
   // Each has a fixed place in the skeleton. How many are revealed follows the work, and one
   // only appears once the street in front of it has been built that far.
   const dwellings: Dwelling[] = [];
+  // How far each back lane has houses on it: it is drawn that far and no further.
+  const mews = new Map<Way, { from: number; to: number }>();
   // An outpost has no suburbs: fabric is what a place acquires once it is a settlement.
   const young = place.rank === 'spark' || place.rank === 'site' || place.rank === 'outpost';
   const want = built && !young ? fabricCount(place.commits, place.users, place.activeWeeks) : 0;
   if (want > 0) {
-    const spots: { poly: Polygon; reach: number }[] = [];
+    const spots: { poly: Polygon; reach: number; mews?: { way: Way; from: number; to: number } }[] = [];
     const backRow = (way: Way, side: 1 | -1, from: number, near: number, upTo = way.used + 6, tag = 'back') => {
       const hr = rng(`${seed}|fabric|${tag}|${way.id}|${side}`);
       let t = from + hr.range(0, 6);
@@ -376,7 +470,9 @@ export function planCity(place: PlaceState): CityPlan {
         const end = t + len;
         if (end <= upTo) {
           const c = localCentre(way, side, t + len / 2, near + set + deep / 2);
-          spots.push({ poly: rectOn(way, side, t, len, near + set, near + set + deep), reach: Math.hypot(c.x, c.y) });
+          const spot: (typeof spots)[number] = { poly: rectOn(way, side, t, len, near + set, near + set + deep), reach: Math.hypot(c.x, c.y) };
+          if (tag === 'mews') spot.mews = { way, from: t, to: end };
+          spots.push(spot);
         }
         t = end + hr.range(2, 6);
       }
@@ -384,9 +480,10 @@ export function planCity(place: PlaceState): CityPlan {
     for (const way of [...arms, ...extensions]) {
       if (way.lots === 0) continue;
       // Behind the frontages, on both sides; the overlap test keeps them out of what is built.
-      backRow(way, -1, 14, HALF_STREET + 23);
+      // On the side with no side streets, they front a back lane of their own.
+      backRow(way, -1, 14, MEWS + 2.1, way.used + 6, 'mews');
       backRow(way, 1, 18, HALF_STREET + 23);
-      backRow(way, -1, 20, HALF_STREET + 33.5, way.used + 6, 'rear');
+      backRow(way, -1, 20, MEWS + 11.5, way.used + 6, 'rear');
       // Infill: wherever frontage was left open between the named buildings.
       backRow(way, 1, way.start, HALF_STREET + 0.6, way.used, 'infill');
       backRow(way, -1, way.start, HALF_STREET + 0.6, way.used, 'infill');
@@ -409,9 +506,21 @@ export function planCity(place: PlaceState): CityPlan {
     const taken: Polygon[] = [];
     for (const spot of spots) {
       if (dwellings.length >= want) break;
-      if (parcels.some((p) => convexOverlap(p, spot.poly)) || taken.some((p) => convexOverlap(p, spot.poly))) continue;
+      if (
+        parcels.some((p) => convexOverlap(p, spot.poly)) ||
+        taken.some((p) => convexOverlap(p, spot.poly)) ||
+        closes.some((c) => convexOverlap(c.ground, spot.poly))
+      )
+        continue;
       taken.push(spot.poly);
       dwellings.push({ footprint: spot.poly });
+      if (spot.mews) {
+        const run = mews.get(spot.mews.way);
+        if (run) {
+          run.from = Math.min(run.from, spot.mews.from);
+          run.to = Math.max(run.to, spot.mews.to);
+        } else mews.set(spot.mews.way, { from: spot.mews.from, to: spot.mews.to });
+      }
     }
   }
 
@@ -437,12 +546,33 @@ export function planCity(place: PlaceState): CityPlan {
       if (home?.name) street.name = `${home.name} ${i < 2 ? 'St' : 'Ave'}`;
       streets.push(street);
     });
-    for (const [parent, list] of sideWays) {
+    // A pair of side streets built far enough up is joined across the top: a block.
+    const closed = closes.filter(
+      (c) => c.a.lots > 0 && c.b.lots > 0 && Math.min(c.a.used, c.b.used) >= CLOSE_AT - 8 && !parcels.some((p) => convexOverlap(p, c.ground)),
+    );
+    for (const list of sideWays.values()) {
       for (const side of list) {
         if (side.lots === 0) continue;
-        streets.push({ line: line(side, 0, side.used + 7), main: false, grade: streetGrade(place.rank, 'side') });
+        const joined = closed.some((c) => c.a === side || c.b === side);
+        streets.push({ line: line(side, 0, Math.max(side.used + 7, joined ? CLOSE_AT + HALF_STREET : 0)), main: false, grade: streetGrade(place.rank, 'side') });
       }
-      void parent;
+    }
+    for (const c of closed) streets.push({ line: [...c.line], main: false, grade: streetGrade(place.rank, 'side') });
+    // Back lanes, as far as houses stand on them, stopping short of anything built across the way.
+    for (const [way, run] of mews) {
+      const dx = Math.cos(way.angle);
+      const dy = Math.sin(way.angle);
+      const at = (t: number) => toWorld(way.ox + dx * t + dy * MEWS, way.oy + dy * t - dx * MEWS);
+      let from = run.from - 2;
+      let to = run.to + 2;
+      const blocked = (t: number) => parcels.some((p) => pointInPolygon(at(t), p)) || dwellings.some((d) => pointInPolygon(at(t), d.footprint));
+      while (from < to && blocked(from)) from += 2;
+      for (let t = from; t <= to; t += 2)
+        if (blocked(t)) {
+          to = t - 3;
+          break;
+        }
+      if (to - from > 12) streets.push({ line: [at(from), at(to)], main: false, back: true, grade: streetGrade(place.rank, 'side') });
     }
     for (const ext of extensions) {
       const sides = (sideWays.get(ext) ?? []).filter((s) => s.lots > 0);
@@ -477,18 +607,33 @@ export function planCity(place: PlaceState): CityPlan {
     square = { outline, grade: rank === 'city' || rank === 'major' ? 'plaza' : rank === 'town' ? 'square' : 'common' };
   }
 
-  // ── Quarters, for lettering ──
+  // ── Quarters: what each is made of, and where its name can stand clear of it ──
   const wards: Ward[] = [];
-  for (const q of quarters) {
-    if (!q.name || q.lots.length === 0) continue;
+  quarters.forEach((q, index) => {
+    if (q.lots.length === 0) return;
+    // Lettered against the largest run of it that stands together on one street.
+    const runs = new Map<Way, Lot[]>();
+    for (const lot of q.lots) {
+      const way = wayOf.get(lot)!;
+      const run = runs.get(way);
+      if (run) run.push(lot);
+      else runs.set(way, [lot]);
+    }
+    let street = q.home[0]!;
+    let body: Lot[] = [];
+    for (const [way, run] of runs)
+      if (run.length > body.length) {
+        street = way;
+        body = run;
+      }
     let x = 0;
     let y = 0;
-    for (const lot of q.lots) {
-      x += lot.center.x;
-      y += lot.center.y;
+    for (const lot of body) {
+      x += lot.center.x / body.length;
+      y += lot.center.y / body.length;
     }
-    let angle = theta + q.home[0]!.angle;
-    angle = Math.atan2(Math.sin(angle), Math.cos(angle));
+    const along = theta + street.angle;
+    let angle = Math.atan2(Math.sin(along), Math.cos(along));
     if (angle > Math.PI / 2) angle -= Math.PI;
     if (angle < -Math.PI / 2) angle += Math.PI;
     let dominant: FeatureKind = q.founded;
@@ -499,8 +644,42 @@ export function planCity(place: PlaceState): CityPlan {
         dominant = kind;
       }
     }
-    wards.push({ name: q.name, labelAt: { x: x / q.lots.length, y: y / q.lots.length }, angle, dominant });
-  }
+    // Beside the quarter, parallel to its street, on whichever side has more open ground.
+    const nx = -Math.sin(along);
+    const ny = Math.cos(along);
+    const reach: Record<1 | -1, number> = { 1: 0, [-1]: 0 };
+    for (const lot of body)
+      for (const p of lot.parcel) {
+        const off = (p.x - x) * nx + (p.y - y) * ny;
+        if (off > reach[1]) reach[1] = off;
+        if (-off > reach[-1]) reach[-1] = -off;
+      }
+    // Clear of every other building along its whole length, not just at its middle.
+    const others = lots
+      .filter((l) => !body.includes(l))
+      .map((l) => ({ at: l.center, size: Math.hypot(l.parcel[0]!.x - l.center.x, l.parcel[0]!.y - l.center.y) }));
+    others.push({ at: center, size: R0 });
+    const half = Math.min(36, (q.name?.length ?? 0) * 2.2);
+    const ax = Math.cos(along);
+    const ay = Math.sin(along);
+    const origin = toWorld(street.ox, street.oy);
+    const streetOff = (origin.x - x) * nx + (origin.y - y) * ny;
+    let labelAt = { x, y };
+    let clearest = -Infinity;
+    for (const side of [1, -1] as const) {
+      const at = { x: x + nx * side * (reach[side] + 8), y: y + ny * side * (reach[side] + 8) };
+      let clear = Infinity;
+      for (const step of [-1, -0.5, 0, 0.5, 1])
+        for (const o of others) clear = Math.min(clear, Math.hypot(o.at.x - at.x - ax * half * step, o.at.y - at.y - ay * half * step) - o.size);
+      // Across the street is someone else's frontage: only if there is nowhere behind.
+      if (Math.abs(streetOff) > 5 && Math.sign(streetOff) === side) clear -= 16;
+      if (clear > clearest + 1e-9) {
+        clearest = clear;
+        labelAt = at;
+      }
+    }
+    wards.push({ name: q.name ?? '', block: index, labelAt, angle, dominant });
+  });
 
   // ── Extent ──
   const all: Point[] = [];

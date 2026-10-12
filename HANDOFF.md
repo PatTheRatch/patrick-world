@@ -122,7 +122,6 @@ My own additions:
 
 - The Boxout note is still tall. On a 1024 x 700 window its actions fall below the fold.
 - Staked lots are unlabelled until you are close in.
-- A city's ward names are faint and could be lettered along streets instead.
 - Revenue is not drawn at all. I found no honest spatial form for it.
 - A feature you mark "working" by hand, with no commits, reads oddly ("Stands 1 storey: 0
   commits of work").

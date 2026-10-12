@@ -28,7 +28,7 @@ export interface Lot {
   center: Point;
   /** The edge of the parcel on its street, left to right as seen from the street. */
   front?: [Point, Point];
-  /** Index into `CityPlan.blocks`. */
+  /** Which quarter of the town it stands in: `Ward.block`. */
   block: number;
 }
 
@@ -45,11 +45,16 @@ export interface Street {
   grade?: StreetGrade;
   /** Main streets are drawn at massing scale; lanes only when buildings are. */
   main: boolean;
+  /** A back lane among the ordinary houses: not part of the town's outline. */
+  back?: boolean;
   name?: string;
 }
 
 export interface Ward {
+  /** Empty for the quarter of a place that has not named its parts. */
   name: string;
+  /** Which quarter: the `block` of every lot in it. */
+  block: number;
   /** Where to letter the name, and along what angle (radians). */
   labelAt: Point;
   angle: number;

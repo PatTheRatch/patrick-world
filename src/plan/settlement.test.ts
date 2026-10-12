@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureKind, FeatureState, PlaceState } from '../world/types';
-import { boundsOf, convexOverlap, insideConvex, polygonCentroid } from './geometry';
-import { fabricCount, formOf, planCity } from './settlement';
+import { boundsOf, convexOverlap, insideConvex, pointInPolygon, polygonCentroid } from './geometry';
+import { fabricCount, formOf, groundAt, planCity } from './settlement';
 import { makePlace } from './testkit';
 
 const IDS = ['testport', 'alder', 'brine', 'quarry-hill', 'low-fen', 'saltmarsh'];
@@ -221,6 +221,97 @@ describe('places are born with different ground plans', () => {
           for (let b = a + 1; b < plan.lots.length; b++) expect(convexOverlap(plan.lots[a]!.parcel, plan.lots[b]!.parcel)).toBe(false);
       }
     }
+  });
+});
+
+describe('a street front keeps one grain', () => {
+  /** Of the buildings with a next-door neighbour on their own front, how many are next to their own kind. */
+  const alike = (id: string) => {
+    const place = { ...makePlace(30, { wards: ['Works', 'Yard'] }), id };
+    const kinds = new Map(place.features.map((f) => [f.id, f.kind]));
+    const plan = planCity(place);
+    let same = 0;
+    let pairs = 0;
+    for (const lot of plan.lots) {
+      let near: (typeof plan.lots)[number] | null = null;
+      let best = 30;
+      for (const other of plan.lots) {
+        if (other === lot || other.block !== lot.block) continue;
+        const d = Math.hypot(other.center.x - lot.center.x, other.center.y - lot.center.y);
+        if (d < best) {
+          best = d;
+          near = other;
+        }
+      }
+      if (!near) continue;
+      pairs++;
+      if (kinds.get(near.feature) === kinds.get(lot.feature)) same++;
+    }
+    return same / Math.max(1, pairs);
+  };
+
+  it('puts like next to like far more often than five kinds dealt in turn would', () => {
+    // The test places deal five kinds round-robin, so by chance a neighbour matches one time in five.
+    const share = IDS.map(alike);
+    for (const v of share) expect(v).toBeGreaterThan(0.4);
+    expect(share.reduce((a, b) => a + b, 0) / share.length).toBeGreaterThan(0.5);
+  });
+});
+
+describe('the lie of the land', () => {
+  it('reads the contour through a place, and nothing on flat ground', () => {
+    expect(groundAt({ x: 0, y: 0 }, () => 0.5)).toEqual({});
+    // Ground rising to the east: the contour runs north and south.
+    const lie = groundAt({ x: 0, y: 0 }, (p) => 0.5 + p.x * 0.001).lie!;
+    expect(Math.abs(Math.cos(lie))).toBeLessThan(1e-6);
+  });
+
+  it('lays the through route along the contour, a little off true, and keeps the stability rule', () => {
+    for (const id of IDS) {
+      const full = withId(makePlace(30), id);
+      const plan = planCity(full, { lie: 0.4 });
+      const off = Math.abs(Math.sin(plan.angle - 0.4));
+      expect(off).toBeLessThan(0.16);
+      const byFeature = new Map(plan.lots.map((l) => [l.feature, l]));
+      for (const lot of planCity(prefix(full, 9), { lie: 0.4 }).lots) expect(lot.parcel).toEqual(byFeature.get(lot.feature)!.parcel);
+    }
+    // Without a reading, a place decides for itself, as it always did.
+    expect(planCity(makePlace(8), {})).toEqual(planCity(makePlace(8)));
+  });
+});
+
+describe('blocks, back lanes and wards', () => {
+  const plans = IDS.map((id) => planCity({ ...withId(makePlace(30), id), commits: 2400, users: 800, activeWeeks: 70 }));
+
+  it('never runs a lane through a building or a house', () => {
+    for (const plan of plans) {
+      for (const street of plan.streets.filter((s) => !s.main)) {
+        const [a, b] = [street.line[0]!, street.line[street.line.length - 1]!];
+        for (let i = 1; i < 20; i++) {
+          const p = { x: a.x + ((b.x - a.x) * i) / 20, y: a.y + ((b.y - a.y) * i) / 20 };
+          for (const lot of plan.lots) expect(pointInPolygon(p, lot.parcel)).toBe(false);
+          if (street.back) for (const d of plan.dwellings) expect(pointInPolygon(p, d.footprint)).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('draws a back lane only where houses stand on it', () => {
+    expect(plans.some((plan) => plan.streets.some((s) => s.back))).toBe(true);
+    const bare = planCity({ ...makePlace(30), commits: 0, activeWeeks: 0 });
+    expect(bare.dwellings).toEqual([]);
+    expect(bare.streets.some((s) => s.back)).toBe(false);
+  });
+
+  it('gives every quarter with a lot a ward, its name standing clear of its own buildings', () => {
+    for (const plan of plans) {
+      expect(new Set(plan.wards.map((w) => w.block))).toEqual(new Set(plan.lots.map((l) => l.block)));
+      for (const ward of plan.wards)
+        for (const lot of plan.lots) if (lot.block === ward.block) expect(pointInPolygon(ward.labelAt, lot.parcel)).toBe(false);
+    }
+    // A place that has not named its parts has one quarter, and it is not lettered.
+    const plain = planCity(makePlace(6, { wards: [undefined] }));
+    expect(plain.wards.map((w) => w.name)).toEqual(['']);
   });
 });
 

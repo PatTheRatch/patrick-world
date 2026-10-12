@@ -53,7 +53,8 @@ Success is an emotional response backed by an honest picture:
 
 Patrick's World should not only show what he has built. It should understand what each
 project is, show him where he left off, help him decide where to go next, and let him build
-from inside the world. Morphology work is paused behind that.
+from inside the world. Morphology work waited behind the first build-plan slice and the first
+understanding layer, and was taken up again once both were in.
 
 ## Positioning
 
