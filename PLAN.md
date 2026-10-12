@@ -97,6 +97,10 @@ reflection, not the loop).
 - [x] What a place is made of shows in its lots and outline
 - [x] Fabric saturates and infills
 - [x] Traffic on routes where something really flows and work is current
+- [x] Concave built-up outlines; five ground plans; fabric smaller, time-gated; motion means this week
+- [x] Survey frozen by snapshot
+- [ ] Quarter purity and one wash per quarter from afar
+- [ ] Regional roads enter by a town's own street ends; side streets close into blocks
 - [ ] Worked fields and regrowth
 - [ ] District and building layers: criteria ticks, built order, revision slips
 - [ ] Bridges; towns oriented to the ground

@@ -142,6 +142,14 @@ Nothing already standing ever moves: the lot for a feature depends only on the f
 before it. Rank changes how made the streets are (a dashed track, a single lane, a ruled
 street, an avenue) and whether the middle is a common, a square or a plaza. It never moves a wall.
 
+**Places are born with different ground plans.** A crossroads, a T where one road meets
+another, a fork, a bend, or a wide green: one of five, fixed by the place's id. So towns of the
+same size are not the same shape, and a larger town is not a larger copy.
+
+**The outline is the built ground itself**, traced round the lots and streets, not a hull drawn
+round them. A ribbon reads as a ribbon and a fork as a fork from across the territory. Ordinary
+fabric is left out of the outline, so effort thickens a place without enlarging its footprint.
+
 **What a place is made of shows in its shape**, without colour. Terraces are narrow lots hard
 on a high street, and a quarter founded on them runs on down its street instead of turning the
 corner. Works are solid blocks with yards. Reservoirs are round tanks standing in open ground.
@@ -149,8 +157,20 @@ Observatories are octagonal domes in their own grounds. Utilities are long sheds
 line. A place that is mostly data and one that is mostly interface have different outlines.
 
 **Effort thickens a town; it does not sprawl it.** Ordinary fabric is aggregated terraces:
-infill in the gaps between named buildings, and rows on the back lanes. It grows with the
-logarithm of the work, so twelve hundred commits is a dense town, not a plain of houses.
+infill in the gaps between named buildings, and rows on the back lanes, each smaller than any
+named building. It grows with the logarithm of the work and is capped by the weeks worked, so
+twelve hundred commits is a dense town, not a plain of houses, and a furious first week builds
+no suburbs. Outposts have none.
+
+**Motion means this week.** A place's edge stays dashed for three weeks after work, but it only
+moves in the week of the work.
+
+**Open after the second review, in order:** quarters with one grain each (a continuous terrace
+wall, tanks spaced on a spur) and one generalised wash per quarter from afar; regional roads
+entering by the ends of a town's own streets; side streets closing into blocks; a ward boundary
+and name held through district zoom; criteria ticks and a builder's mark on the building, which
+need the build model wired in. The survey is now frozen by a snapshot test: changing the ground
+plan rules moves every town once and must be done on purpose.
 
 ## The scene
 

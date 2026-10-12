@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { FeatureKind, FeatureState, PlaceState } from '../world/types';
 import { boundsOf, convexOverlap, insideConvex, polygonCentroid } from './geometry';
-import { fabricCount, planCity } from './settlement';
+import { fabricCount, formOf, planCity } from './settlement';
 import { makePlace } from './testkit';
 
 const IDS = ['testport', 'alder', 'brine', 'quarry-hill', 'low-fen', 'saltmarsh'];
@@ -67,7 +67,7 @@ describe('planCity: nothing that stands ever moves', () => {
 });
 
 describe('planCity: a plausible plan', () => {
-  const plans = IDS.map((id) => planCity({ ...withId(makePlace(30), id), commits: 2400, users: 800 }));
+  const plans = IDS.map((id) => planCity({ ...withId(makePlace(30), id), commits: 2400, users: 800, activeWeeks: 70 }));
 
   it('never overlaps two parcels, and keeps every building on its own ground', () => {
     for (const plan of plans) {
@@ -114,8 +114,9 @@ describe('planCity: a plausible plan', () => {
 describe('planCity: form changes in kind as a place grows', () => {
   it('a few buildings are a ribbon along one route; many are a town with depth', () => {
     for (const id of IDS) {
-      const small = span(withId(ofKind('works', 4), id));
-      expect(small.long / small.short).toBeGreaterThan(1.3);
+      // Two buildings are a pair on a track, whatever ground plan the place was born with.
+      const small = span(withId(ofKind('works', 2), id));
+      expect(small.long / small.short).toBeGreaterThan(1.05);
       const large = span(withId(makePlace(30), id));
       expect(large.long / large.short).toBeLessThan(2.4);
       expect(large.short).toBeGreaterThan(small.short * 1.8);
@@ -190,12 +191,49 @@ describe('fabric follows the work, and saturates', () => {
     for (let i = 1; i < steps.length; i++) expect(steps[i]!).toBeGreaterThan(steps[i - 1]!);
     expect(steps[4]! - steps[3]!).toBeLessThanOrEqual(steps[1]! - steps[0]! + 6);
     expect(fabricCount(100000, 0)).toBeLessThan(90);
+    // Time as well as effort: a furious first week builds no suburbs.
+    expect(fabricCount(1200, 0, 1)).toBeLessThanOrEqual(4);
+    expect(planCity({ ...makePlace(6), rank: 'outpost', commits: 900, activeWeeks: 30 }).dwellings).toEqual([]);
   });
 
   it('adds terraces without disturbing the ones already there', () => {
-    const few = planCity({ ...makePlace(24), commits: 120 });
-    const many = planCity({ ...makePlace(24), commits: 4000 });
+    const few = planCity({ ...makePlace(24), commits: 120, activeWeeks: 80 });
+    const many = planCity({ ...makePlace(24), commits: 4000, activeWeeks: 80 });
     expect(many.dwellings.length).toBeGreaterThan(few.dwellings.length);
     expect(many.dwellings.slice(0, few.dwellings.length)).toEqual(few.dwellings);
+  });
+});
+
+describe('places are born with different ground plans', () => {
+  it('gives a spread of forms across ids, each fixed for good', () => {
+    const ids = Array.from({ length: 60 }, (_, i) => `place-${i}`);
+    const forms = new Set(ids.map((id) => formOf(id).name));
+    expect(forms.size).toBeGreaterThanOrEqual(4);
+    expect(formOf('boxout-fantasy')).toBe(formOf('boxout-fantasy'));
+  });
+
+  it('lays every form out without overlaps, at every size', () => {
+    for (let i = 0; i < 40; i++) {
+      for (const n of [3, 9, 30]) {
+        const plan = planCity({ ...makePlace(n), id: `form-${i}`, commits: 1500, activeWeeks: 50 });
+        expect(plan.lots).toHaveLength(n);
+        for (let a = 0; a < plan.lots.length; a++)
+          for (let b = a + 1; b < plan.lots.length; b++) expect(convexOverlap(plan.lots[a]!.parcel, plan.lots[b]!.parcel)).toBe(false);
+      }
+    }
+  });
+});
+
+describe('the survey is frozen', () => {
+  // Changing the ground-plan rules moves every town once. That is allowed only on purpose:
+  // if this fails, you have re-surveyed the world, and must say so and update the snapshot.
+  it('keeps every lot where it stood', () => {
+    const digest = (id: string, n: number) => {
+      const plan = planCity({ ...makePlace(n), id });
+      let sum = 0;
+      for (const lot of plan.lots) for (const p of lot.parcel) sum += Math.round((p.x - plan.center.x) * 10) * 3 + Math.round((p.y - plan.center.y) * 10) * 7;
+      return `${formOf(id).name}:${plan.lots.length}:${sum}`;
+    };
+    expect(['testport', 'alder', 'brine', 'quarry-hill', 'low-fen', 'saltmarsh'].map((id) => digest(id, 30))).toMatchSnapshot();
   });
 });

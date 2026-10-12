@@ -3,7 +3,7 @@
 
 import type { CityPlan, Lot, StreetGrade } from '../plan/types';
 import { KINDS, RANKS, type FeatureKind, type FeatureState, type PlaceState, type Point } from '../world/types';
-import { addPolygon, addShadow, polygonBounds, scaleAbout } from './ink';
+import { addPolygon, addShadow, pointInPolygon, polygonBounds, scaleAbout } from './ink';
 import { AGING, INK, WASH, agedInk, agedWash, css, mix, type Aging, type RGB } from './palette';
 
 const SUN = { x: 0.62, y: 0.78 };
@@ -43,12 +43,16 @@ export interface PlaceArt {
   square: Path2D | null;
   /** The town limits: the outline of everything that stands or is staked here. */
   hull: Path2D;
+  /** Rims and ribs: what tells a tank from a dome without colour. */
+  details: Path2D;
   /** Length of the limits, in world units, for dashing. */
   hullLength: number;
   /** Whether anything here has been left half built. */
   stalled: boolean;
   /** The edition's day number: what "recently" is measured from. */
   today: number;
+  /** Work was logged here within the last week: the only thing that makes anything move. */
+  movingNow: boolean;
   blockLines: Path2D;
   slips: Path2D;
   dwellings: Path2D;
@@ -93,9 +97,11 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
     streets: {},
     square: null,
     hull: new Path2D(),
+    details: new Path2D(),
     hullLength: 0,
     stalled: false,
     today,
+    movingNow: !!place.lastWorkAt && today - dayOf(place.lastWorkAt) <= 7,
     blockLines: new Path2D(),
     slips: new Path2D(),
     dwellings: new Path2D(),
@@ -177,42 +183,155 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
     addPolygon(art.square, plan.square.outline);
   }
 
-  // The town limits, a little clear of the outermost walls.
-  const pts: Point[] = [];
-  for (const lot of plan.lots) pts.push(...lot.parcel);
-  for (const d of plan.dwellings) pts.push(...d.footprint);
-  if (pts.length >= 3) {
-    const hull = convexHull(pts).map((p) => {
-      const d = Math.hypot(p.x - plan.center.x, p.y - plan.center.y) || 1;
-      const out = 7;
-      return { x: p.x + ((p.x - plan.center.x) / d) * out, y: p.y + ((p.y - plan.center.y) / d) * out };
-    });
-    addPolygon(art.hull, hull);
-    for (let i = 0; i < hull.length; i++) {
-      const a = hull[i]!;
-      const b = hull[(i + 1) % hull.length]!;
+  // The town limits: the outline of the built-up ground itself, so a ribbon reads as a
+  // ribbon and a crossroads as a crossroads. Named lots and streets only; the ordinary fabric
+  // is left out, so that effort thickens a place without enlarging its outline.
+  for (const loop of builtOutline(plan)) {
+    addPolygon(art.hull, loop);
+    for (let i = 0; i < loop.length; i++) {
+      const a = loop[i]!;
+      const b = loop[(i + 1) % loop.length]!;
       art.hullLength += Math.hypot(b.x - a.x, b.y - a.y);
+    }
+  }
+  // What the buildings are, legible without colour: a tank has a rim, a dome has ribs.
+  for (const { lot, feature } of art.lots) {
+    if (feature.stage !== 'working' && feature.stage !== 'mature') continue;
+    const main = lot.footprint[0];
+    if (!main || main.length < 8) continue;
+    const c = lot.center;
+    if (feature.kind === 'reservoir') {
+      const rim = scaleAbout(main, c, 0.62);
+      addPolygon(art.details, rim);
+    } else if (feature.kind === 'observatory') {
+      for (let i = 0; i < main.length; i += 2) {
+        art.details.moveTo(c.x, c.y);
+        art.details.lineTo(main[i]!.x, main[i]!.y);
+      }
     }
   }
   art.stalled = art.building.some((b) => isStalled(b.feature, today));
   return art;
 }
 
-function convexHull(points: Point[]): Point[] {
-  const pts = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
-  const cross = (o: Point, a: Point, b: Point) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-  const lower: Point[] = [];
-  for (const p of pts) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
-    lower.push(p);
+/**
+ * The outline of a place's built-up ground: every lot grown a little and every street given
+ * its width, merged, and traced. Done on a coarse grid, then smoothed, which is plenty for a
+ * line that is read from far away.
+ */
+function builtOutline(plan: CityPlan): Point[][] {
+  if (plan.lots.length === 0) return [];
+  const CELL = 3.2;
+  const GROW = 7.5;
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  const stretch = (p: Point) => {
+    if (p.x < x0) x0 = p.x;
+    if (p.y < y0) y0 = p.y;
+    if (p.x > x1) x1 = p.x;
+    if (p.y > y1) y1 = p.y;
+  };
+  for (const lot of plan.lots) lot.parcel.forEach(stretch);
+  for (const st of plan.streets) st.line.forEach(stretch);
+  x0 -= GROW + CELL * 2;
+  y0 -= GROW + CELL * 2;
+  const cols = Math.ceil((x1 + GROW + CELL * 2 - x0) / CELL);
+  const rows = Math.ceil((y1 + GROW + CELL * 2 - y0) / CELL);
+  if (cols * rows > 60000) return [];
+  const grid = new Uint8Array(cols * rows);
+
+  for (const lot of plan.lots) {
+    let cx = 0;
+    let cy = 0;
+    for (const p of lot.parcel) {
+      cx += p.x / lot.parcel.length;
+      cy += p.y / lot.parcel.length;
+    }
+    const grown = lot.parcel.map((p) => {
+      const d = Math.hypot(p.x - cx, p.y - cy) || 1;
+      return { x: p.x + ((p.x - cx) / d) * GROW * 1.25, y: p.y + ((p.y - cy) / d) * GROW * 1.25 };
+    });
+    const b = polygonBounds([grown]);
+    const c0 = Math.max(0, Math.floor((b.x - x0) / CELL));
+    const c1 = Math.min(cols - 1, Math.ceil((b.x + b.w - x0) / CELL));
+    const r0 = Math.max(0, Math.floor((b.y - y0) / CELL));
+    const r1 = Math.min(rows - 1, Math.ceil((b.y + b.h - y0) / CELL));
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) {
+        if (grid[r * cols + c]) continue;
+        if (pointInPolygon({ x: x0 + (c + 0.5) * CELL, y: y0 + (r + 0.5) * CELL }, grown)) grid[r * cols + c] = 1;
+      }
   }
-  const upper: Point[] = [];
-  for (let i = pts.length - 1; i >= 0; i--) {
-    const p = pts[i]!;
-    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
-    upper.push(p);
+  const stamp = (x: number, y: number, radius: number) => {
+    const c0 = Math.max(0, Math.floor((x - radius - x0) / CELL));
+    const c1 = Math.min(cols - 1, Math.ceil((x + radius - x0) / CELL));
+    const r0 = Math.max(0, Math.floor((y - radius - y0) / CELL));
+    const r1 = Math.min(rows - 1, Math.ceil((y + radius - y0) / CELL));
+    for (let r = r0; r <= r1; r++)
+      for (let c = c0; c <= c1; c++) {
+        if (Math.hypot(x0 + (c + 0.5) * CELL - x, y0 + (r + 0.5) * CELL - y) <= radius) grid[r * cols + c] = 1;
+      }
+  };
+  for (const st of plan.streets) {
+    for (let i = 0; i + 1 < st.line.length; i++) {
+      const a = st.line[i]!;
+      const b = st.line[i + 1]!;
+      const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 2.5));
+      for (let k = 0; k <= n; k++) stamp(a.x + ((b.x - a.x) * k) / n, a.y + ((b.y - a.y) * k) / n, 5.2);
+    }
   }
-  return lower.slice(0, -1).concat(upper.slice(0, -1));
+
+  // Trace: every cell side with built ground on one side and open ground on the other.
+  const at = (c: number, r: number) => (c < 0 || r < 0 || c >= cols || r >= rows ? 0 : grid[r * cols + c]!);
+  const next = new Map<number, number[]>();
+  const key = (c: number, r: number) => r * (cols + 1) + c;
+  const link = (c0: number, r0: number, c1: number, r1: number) => {
+    const k = key(c0, r0);
+    const list = next.get(k);
+    if (list) list.push(key(c1, r1));
+    else next.set(k, [key(c1, r1)]);
+  };
+  for (let r = 0; r < rows; r++)
+    for (let c = 0; c < cols; c++) {
+      if (!at(c, r)) continue;
+      if (!at(c, r - 1)) link(c, r, c + 1, r);
+      if (!at(c + 1, r)) link(c + 1, r, c + 1, r + 1);
+      if (!at(c, r + 1)) link(c + 1, r + 1, c, r + 1);
+      if (!at(c - 1, r)) link(c, r + 1, c, r);
+    }
+  const loops: Point[][] = [];
+  for (const start of [...next.keys()]) {
+    while ((next.get(start)?.length ?? 0) > 0) {
+      const loop: Point[] = [];
+      let k = start;
+      for (let guard = 0; guard < 40000; guard++) {
+        const out = next.get(k);
+        if (!out || out.length === 0) break;
+        loop.push({ x: x0 + (k % (cols + 1)) * CELL, y: y0 + Math.floor(k / (cols + 1)) * CELL });
+        k = out.pop()!;
+        if (k === start) break;
+      }
+      if (loop.length >= 10) loops.push(smoothLoop(loop));
+    }
+  }
+  return loops;
+}
+
+/** Drop the staircase: thin the points, then round the corners off twice. */
+function smoothLoop(loop: Point[]): Point[] {
+  let pts = loop.filter((_, i) => i % 2 === 0);
+  for (let pass = 0; pass < 3; pass++) {
+    const out: Point[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      const a = pts[i]!;
+      const b = pts[(i + 1) % pts.length]!;
+      out.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 }, { x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 });
+    }
+    pts = out;
+  }
+  return pts;
 }
 
 const ramp = (v: number, a: number, b: number) => Math.max(0, Math.min(1, (v - a) / (b - a)));
@@ -246,7 +365,8 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   // The ground a place stands on says how recently anyone was here. From far off this is
   // the first thing the eye reads: fresh paper under what is being worked on, bare sheet under
   // what is merely standing, foxed paper under what has been left.
-  const far = 1 - ramp(k, 1.3, 2.3);
+  // It stays, fainter, when you come down among the buildings: you should still know where you are.
+  const far = 1 - 0.6 * ramp(k, 1.3, 2.3);
   const live = art.place.liveliness;
   if (far > 0 && art.hullLength > 0) {
     if (live === 'building') {
@@ -307,8 +427,8 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     const weight = 0.2 + 0.08 * ramp(k, 0.5, 1) - 0.1 * ramp(k, 1.2, 2.4);
     ctx.fillStyle = css(mix(INK.linenShade, ink, weight), houses * (0.55 + 0.45 * art.aging.washStrength));
     ctx.fill(art.dwellings);
-    if (k > 1.1) {
-      ctx.strokeStyle = css(ink, 0.42 * ramp(k, 1.1, 1.8));
+    if (k > 0.7) {
+      ctx.strokeStyle = css(ink, 0.5 * ramp(k, 0.7, 1.4));
       ctx.lineWidth = 0.6 * px;
       ctx.stroke(art.dwellings);
     }
@@ -402,6 +522,11 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.stroke(art.outline);
     ctx.lineWidth = Math.min(2.3 * px, 1.1);
     ctx.stroke(art.heavy);
+    if (k > 0.9 && !art.ruin) {
+      ctx.lineWidth = 0.6 * px;
+      ctx.strokeStyle = css(ink, 0.7 * ramp(k, 0.9, 1.6));
+      ctx.stroke(art.details);
+    }
     ctx.strokeStyle = css(agedInk(AGING.dormant), 0.95 * inked);
     ctx.lineWidth = 0.9 * px;
     ctx.stroke(art.oldOutline);
@@ -411,14 +536,15 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   // The town limits. How the line is drawn is the place's state, legible without colour:
   // crawling where work is going on, solid where it stands, thin and browned where it is
   // quiet, dotted where it sleeps, broken where it is ruins.
-  const limits = 1 - ramp(k, 1.5, 2.6);
+  const limits = 1 - 0.75 * ramp(k, 1.6, 3);
   if (limits > 0 && art.hullLength > 0) {
     ctx.lineJoin = 'round';
     if (live === 'building') {
       ctx.strokeStyle = css(INK.black, 0.95 * limits);
       ctx.lineWidth = 1.35 * px;
       ctx.setLineDash([6 * px, 4 * px]);
-      ctx.lineDashOffset = o.crawl ? -(o.time * 0.012) * px : 0;
+      // The line is dashed for three weeks after work; it only MOVES in the week of the work.
+      ctx.lineDashOffset = o.crawl && art.movingNow ? -(o.time * 0.012) * px : 0;
     } else if (live === 'settled') {
       ctx.strokeStyle = css(INK.black, 0.8 * limits);
       ctx.lineWidth = 0.9 * px;
@@ -564,7 +690,8 @@ function drawBuilding(
   ctx.strokeStyle = css(ink, 0.95);
   ctx.lineWidth = 1 * px;
   ctx.setLineDash([5 * px, 3.5 * px]);
-  ctx.lineDashOffset = o.crawl && !stale ? -(o.time * 0.011) * px : 0;
+  const fresh = !!feature.lastWorkAt && art.today - dayOf(feature.lastWorkAt) <= 7;
+  ctx.lineDashOffset = o.crawl && fresh ? -(o.time * 0.011) * px : 0;
   ctx.stroke(path);
   ctx.lineDashOffset = 0;
   ctx.setLineDash([perimeter * feature.progress, perimeter]);

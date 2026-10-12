@@ -1,0 +1,12 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`the survey is frozen > keeps every lot where it stood 1`] = `
+[
+  "bend:30:-316176",
+  "cross:30:24817",
+  "tee:30:-235360",
+  "bend:30:203181",
+  "green:30:-5015",
+  "tee:30:-202510",
+]
+`;

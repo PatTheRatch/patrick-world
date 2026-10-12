@@ -86,7 +86,8 @@ export const AGING: Record<Liveliness, Aging> = {
   settled: { inkFade: 0, washStrength: 1 },
   quiet: { inkFade: 0.4, washStrength: 0.8 },
   dormant: { inkFade: 0.85, washStrength: 0.5 },
-  ruins: { inkFade: 1, washStrength: 0.16 },
+  // Roofless: the walls remain, the colour has gone.
+  ruins: { inkFade: 1, washStrength: 0.02 },
 };
 
 export const agedInk = (a: Aging): RGB => mix(INK.black, INK.sepia, a.inkFade);

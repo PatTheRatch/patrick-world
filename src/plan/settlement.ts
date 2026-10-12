@@ -51,8 +51,29 @@ const KIND: Record<FeatureKind, KindSpec> = {
 };
 
 const HALF_STREET = 2.6;
-/** Where the first lots stand, out from the middle: the space left is the common, later the square. */
-const R0 = 11;
+/**
+ * The ground plan a place is born with. Not every town is a crossroads: some stand where one
+ * road meets another, some where a road forks, some along a bend, some round a green.
+ * `open` is how far out the first lots stand: the space left is the common, later the square.
+ */
+interface Form {
+  name: 'cross' | 'tee' | 'fork' | 'bend' | 'green';
+  /** Arm bearings in the town's own frame. The first two are the through route. */
+  arms: number[];
+  open: number;
+}
+const FORMS: Form[] = [
+  { name: 'cross', arms: [0, Math.PI, Math.PI / 2, -Math.PI / 2], open: 14 },
+  { name: 'tee', arms: [0, Math.PI, Math.PI / 2], open: 13 },
+  { name: 'fork', arms: [0, 2.2, -2.2], open: 12 },
+  { name: 'bend', arms: [0, 2.55, -Math.PI / 2], open: 11 },
+  { name: 'green', arms: [0, Math.PI, Math.PI / 2, -Math.PI / 2], open: 21 },
+];
+
+/** Which form a place has. Fixed by its id alone. */
+export function formOf(id: string): Form {
+  return FORMS[Math.floor(hash01(`${id}|form`) * FORMS.length) % FORMS.length]!;
+}
 const ARM_MAX = 136;
 const SIDE_STREETS = [58, 112];
 const SIDE_START = 25;
@@ -61,8 +82,10 @@ const EXTENSION_MAX = 150;
 const EXTENSION_SIDES = [46, 98];
 
 /** Terraces of ordinary fabric: saturating in the work, so effort thickens a town without burying it. */
-export function fabricCount(commits: number, users: number): number {
-  return Math.round(6 * Math.log2(1 + Math.max(0, commits) / 25)) + Math.round(2 * Math.log10(1 + Math.max(0, users)));
+export function fabricCount(commits: number, users: number, activeWeeks = Infinity): number {
+  const byWork = Math.round(6 * Math.log2(1 + Math.max(0, commits) / 25)) + Math.round(2 * Math.log10(1 + Math.max(0, users)));
+  // A town's ordinary fabric takes time as well as effort: a furious first week does not build suburbs.
+  return Math.min(byWork, Math.round(Math.max(0, activeWeeks) * 3.5));
 }
 
 // ───────────────────────── The skeleton ─────────────────────────
@@ -126,10 +149,12 @@ export function planCity(place: PlaceState): CityPlan {
   const sin = Math.sin(theta);
   const toWorld = (x: number, y: number): Point => ({ x: center.x + x * cos - y * sin, y: center.y + x * sin + y * cos });
 
-  // Four arms. Not square to each other and not quite opposite: an old crossroads never is.
+  // The arms of its form. Never quite true to each other: an old junction never is.
   const j = (k: string, amount: number) => (hash01(`${seed}|${k}`) - 0.5) * 2 * amount;
-  const armAngle = [0, Math.PI + j('a1', 0.16), Math.PI / 2 + j('a2', 0.2), -Math.PI / 2 + j('a3', 0.2)];
-  const stagger = [0, j('s1', 3.5), j('s2', 2.5), j('s3', 2.5)];
+  const form = formOf(seed);
+  const R0 = form.open;
+  const armAngle = form.arms.map((a, i) => (i === 0 ? a : a + j(`a${i}`, 0.2)));
+  const stagger = form.arms.map((_, i) => (i === 0 ? 0 : j(`s${i}`, 3)));
 
   const makeWay = (id: string, ox: number, oy: number, angle: number, o: Partial<Way>): Way => ({
     id,
@@ -237,13 +262,13 @@ export function planCity(place: PlaceState): CityPlan {
   const quarters: Quarter[] = [];
   const quarterOf = new Map<string, Quarter>();
   const homeFor = (index: number, kind: FeatureKind): Way[] => {
-    if (index < 4) return [arms[index]!, ...(sideWays.get(arms[index]!) ?? [])];
-    if (index < 8) {
+    if (index < arms.length) return [arms[index]!, ...(sideWays.get(arms[index]!) ?? [])];
+    if (index < arms.length + 4) {
       const ext = extend(index);
       return [ext, ...(sideWays.get(ext) ?? [])];
     }
     void kind;
-    return quarters[index % 8]!.home;
+    return quarters[index % quarters.length]!.home;
   };
 
   const lots: Lot[] = [];
@@ -334,15 +359,18 @@ export function planCity(place: PlaceState): CityPlan {
   // Each has a fixed place in the skeleton. How many are revealed follows the work, and one
   // only appears once the street in front of it has been built that far.
   const dwellings: Dwelling[] = [];
-  const want = built ? fabricCount(place.commits, place.users) : 0;
+  // An outpost has no suburbs: fabric is what a place acquires once it is a settlement.
+  const young = place.rank === 'spark' || place.rank === 'site' || place.rank === 'outpost';
+  const want = built && !young ? fabricCount(place.commits, place.users, place.activeWeeks) : 0;
   if (want > 0) {
     const spots: { poly: Polygon; reach: number }[] = [];
     const backRow = (way: Way, side: 1 | -1, from: number, near: number, upTo = way.used + 6, tag = 'back') => {
       const hr = rng(`${seed}|fabric|${tag}|${way.id}|${side}`);
       let t = from + hr.range(0, 6);
       while (t < upTo + 30) {
-        const len = hr.range(13, 23);
-        const deep = hr.range(6.5, 8.5);
+        // Smaller than any named building: this is the background a town is seen against.
+        const len = hr.range(7.5, 13);
+        const deep = hr.range(4.8, 6.2);
         const set = hr.range(0, 1.6);
         const end = t + len;
         if (end <= upTo) {
@@ -403,7 +431,8 @@ export function planCity(place: PlaceState): CityPlan {
       const far = beyond.length ? Math.max(...beyond) : reach > 0 ? reach + 9 : i < 2 && anyOnRoute ? 20 : 0;
       if (far <= 0) return;
       const home = quarters.find((q) => q.home[0] === arm);
-      const street: Street = { line: line(arm, -R0 * 0.55, far), main: true, grade: streetGrade(place.rank, arm.role) };
+      // From the very middle, so the through route goes through.
+      const street: Street = { line: line(arm, -R0, far), main: true, grade: streetGrade(place.rank, arm.role) };
       if (home?.name) street.name = `${home.name} ${i < 2 ? 'St' : 'Ave'}`;
       streets.push(street);
     });
@@ -431,13 +460,18 @@ export function planCity(place: PlaceState): CityPlan {
   // ── The middle: a common once there is a crossing, a square once it is a town ──
   let square: CityPlan['square'];
   const armsInUse = arms.filter((a) => a.lots > 0).length;
-  if (built && armsInUse >= 3) {
-    const corner = (a: Way, b: Way) => {
-      const r = R0 * 0.92;
-      return toWorld((Math.cos(a.angle) + Math.cos(b.angle)) * r * 0.74, (Math.sin(a.angle) + Math.sin(b.angle)) * r * 0.74);
-    };
-    const ring = [arms[0]!, arms[2]!, arms[1]!, arms[3]!];
-    const outline = ring.map((a, i) => corner(a, ring[(i + 1) % ring.length]!));
+  if (built && armsInUse >= Math.min(3, arms.length)) {
+    // Corners between each arm and the next one round, so the square is the junction's own shape.
+    const ring = [...arms].sort((p, q) => norm(p.angle) - norm(q.angle));
+    const outline = ring.map((a, i) => {
+      const b = ring[(i + 1) % ring.length]!;
+      let mid = (norm(a.angle) + norm(b.angle)) / 2;
+      if (norm(b.angle) < norm(a.angle)) mid += Math.PI;
+      const gap = Math.abs(((norm(b.angle) - norm(a.angle) + Math.PI * 2) % (Math.PI * 2)) / 2);
+      // Just inside where the first frontages stand.
+      const r = R0 * (gap > 1.2 ? 0.8 : 1.02);
+      return toWorld(Math.cos(mid) * r, Math.sin(mid) * r);
+    });
     const rank = place.rank;
     square = { outline, grade: rank === 'city' || rank === 'major' ? 'plaza' : rank === 'town' ? 'square' : 'common' };
   }
@@ -493,6 +527,8 @@ export function planCity(place: PlaceState): CityPlan {
   if (square) plan.square = square;
   return plan;
 }
+
+const norm = (a: number) => ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
 
 // ───────────────────────── Buildings ─────────────────────────
 
