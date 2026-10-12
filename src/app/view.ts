@@ -29,6 +29,9 @@ export const getRenderer = () => renderer;
 
 const now = () => performance.now();
 
+/** Room to leave beside a framed thing for its note, in pixels. None on a narrow screen. */
+const aside = (px: number) => (renderer && renderer.camera.width > 640 ? px : 0);
+
 export function goHome() {
   if (!renderer) return;
   renderer.camera.flyTo(renderer.home(), now());
@@ -43,16 +46,17 @@ export function visit(id: string) {
   if (!plan) return;
   const sizePx = plan.radius * cam.k;
   const c = cam.toScreen(plan.center);
-  const inView = c.x > 160 && c.x < cam.width - 420 && c.y > 120 && c.y < cam.height - 180;
+  const wide = cam.width > 640;
+  const inView = wide && c.x > 160 && c.x < cam.width - 420 && c.y > 120 && c.y < cam.height - 180;
   if (plan.lots.length === 0) {
     // A mark on open ground: come closer, but leave the country around it visible.
     const k = Math.max(cam.k, renderer.fitK * 2.3);
-    if (!inView || cam.k < k * 0.98) cam.flyTo({ x: plan.center.x + 150 / k, y: plan.center.y, k }, now());
+    if (!inView || cam.k < k * 0.98) cam.flyTo({ x: plan.center.x + aside(150) / k, y: plan.center.y, k }, now());
     return;
   }
   if (inView && sizePx > 110 && sizePx < Math.min(cam.width, cam.height) * 0.6) return;
   const target = renderer.framePlace(id);
-  if (target) cam.flyTo({ ...target, x: target.x + 150 / target.k }, now());
+  if (target) cam.flyTo({ ...target, x: target.x + aside(150) / target.k }, now());
 }
 
 /** Go all the way in to read the buildings. */
@@ -60,7 +64,7 @@ export function enter(id: string) {
   if (!renderer) return;
   selection.value = { type: 'place', id };
   const target = renderer.framePlace(id, true);
-  if (target) renderer.camera.flyTo({ ...target, x: target.x + 130 / target.k }, now());
+  if (target) renderer.camera.flyTo({ ...target, x: target.x + aside(130) / target.k }, now());
 }
 
 export function inspect(place: string, feature: string, fly = false) {
@@ -68,7 +72,7 @@ export function inspect(place: string, feature: string, fly = false) {
   selection.value = { type: 'feature', place, id: feature };
   if (!fly) return;
   const target = renderer.frameFeature(place, feature);
-  if (target) renderer.camera.flyTo({ ...target, x: target.x + 150 / target.k }, now());
+  if (target) renderer.camera.flyTo({ ...target, x: target.x + aside(150) / target.k }, now());
 }
 
 /** Step back out one scale. */

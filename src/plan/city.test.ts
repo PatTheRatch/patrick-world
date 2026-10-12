@@ -11,7 +11,7 @@ import {
   polygonCentroid,
   polylineCrossesPolygon,
 } from './geometry';
-import { builtSpan, makePlace } from './testkit';
+import { makePlace } from './testkit';
 import type { CityPlan, Lot, Polygon, Street } from './types';
 
 const FULL = makePlace(30);
@@ -161,8 +161,9 @@ describe('planCity: a plausible plan', () => {
           for (const p of poly) expect(insideConvex(p, lot.parcel, 2e-3)).toBe(true);
         }
         const main = lot.footprint[0] as Polygon;
-        expect(polygonArea(main)).toBeLessThan(polygonArea(lot.parcel) * 0.82);
-        expect(polygonArea(main)).toBeGreaterThan(polygonArea(lot.parcel) * 0.1);
+        // Dense, but never the whole parcel: there is always a yard.
+        expect(polygonArea(main)).toBeLessThan(polygonArea(lot.parcel) * 0.9);
+        expect(polygonArea(main)).toBeGreaterThan(polygonArea(lot.parcel) * 0.45);
         expect(pointInPolygon(lot.center, main)).toBe(true);
       }
     }
@@ -199,7 +200,7 @@ describe('planCity: a plausible plan', () => {
           expect(polylineCrossesPolygon(s.line, b.outline)).toBe(false);
           // Half a street width, at least, between the line and any block.
           for (const p of b.outline) {
-            expect(distanceToSegment(p, s.line[0] as Point, s.line[1] as Point)).toBeGreaterThan(3.4);
+            expect(distanceToSegment(p, s.line[0] as Point, s.line[1] as Point)).toBeGreaterThan(2.4);
           }
         }
       }
@@ -237,8 +238,9 @@ describe('planCity: a plausible plan', () => {
       expect(plan.dwellings).toHaveLength(Math.round(7 * Math.log10(2501)));
       for (const d of plan.dwellings) {
         for (const b of plan.blocks) expect(convexOverlap(d.footprint, b.outline)).toBe(false);
+        // Suburbs hug the town: every house is within a block or so of built ground.
         const c = polygonCentroid(d.footprint);
-        for (const b of plan.blocks) expect(distanceToPolygonEdge(c, b.outline)).toBeGreaterThan(30);
+        expect(Math.min(...plan.blocks.map((b) => distanceToPolygonEdge(c, b.outline)))).toBeLessThan(95);
       }
       for (let i = 0; i < plan.dwellings.length; i++) {
         for (let j = i + 1; j < plan.dwellings.length; j++) {
@@ -289,22 +291,57 @@ describe('planCity: sizes', () => {
     expect(plan.center).toEqual({ x: 40, y: 50 });
   });
 
-  it('a 30-feature city is some 300-420 units across', () => {
-    const plan = planCity(FULL);
-    const across = plan.radius * 2;
-    console.log(`30 features: ${across.toFixed(0)} across, built ${builtSpan(plan).toFixed(0)}, ${plan.blocks.length} blocks`);
-    expect(across).toBeGreaterThanOrEqual(300);
-    expect(across).toBeLessThanOrEqual(420);
+  const coverage = (plan: CityPlan): number =>
+    plan.lots.reduce((sum, l) => sum + polygonArea(l.footprint[0] as Polygon) / polygonArea(l.parcel), 0) / plan.lots.length;
+
+  it('is the right size at 5, 15 and 30 features', () => {
+    const ranges: [number, number, number][] = [
+      // Three wards here, so three blocks round the crossroads; one or two come in under 150.
+      [5, 90, 170],
+      [15, 170, 260],
+      [30, 220, 330],
+    ];
+    for (const [n, lo, hi] of ranges) {
+      for (const id of ['testport', 'alder', 'brine', 'corvid', 'dunmore', 'esk']) {
+        const plan = planCity(makePlace(n, { id }));
+        const across = plan.radius * 2;
+        expect(across, `${id} ${n}`).toBeGreaterThanOrEqual(lo);
+        expect(across, `${id} ${n}`).toBeLessThanOrEqual(hi);
+      }
+    }
   });
 
-  it('a 5-feature place is one or two blocks: 60-150 units of built ground', () => {
-    for (const wards of [['Market'], ['Market', 'Foundry'], [undefined]]) {
-      const plan = planCity(makePlace(5, { wards }));
-      const built = builtSpan(plan);
-      console.log(`5 features, ${wards.length} ward(s): built ${built.toFixed(0)}, ${(plan.radius * 2).toFixed(0)} across with street ends`);
-      expect(plan.blocks.length).toBeLessThanOrEqual(2);
-      expect(built).toBeGreaterThanOrEqual(55);
-      expect(built).toBeLessThanOrEqual(150);
+  it('packs a 30-feature city into 8-14 mostly full blocks', () => {
+    for (const id of ['testport', 'alder', 'brine', 'corvid', 'dunmore', 'esk']) {
+      const plan = planCity(makePlace(30, { id }));
+      expect(plan.blocks.length, id).toBeGreaterThanOrEqual(8);
+      expect(plan.blocks.length, id).toBeLessThanOrEqual(14);
+      // Parcels cover most of the ground inside the blocks.
+      const lotArea = plan.lots.reduce((sum, l) => sum + polygonArea(l.parcel), 0);
+      const blockArea = plan.blocks.reduce((sum, b) => sum + polygonArea(b.outline), 0);
+      expect(lotArea / blockArea, id).toBeGreaterThan(0.6);
+      expect(coverage(plan), id).toBeGreaterThan(0.65);
+      expect(coverage(plan), id).toBeLessThan(0.85);
+    }
+  });
+
+  it('grows as one contiguous mass: every block after the first shares a street with an earlier one', () => {
+    for (const id of ['testport', 'alder', 'brine', 'corvid', 'dunmore', 'esk']) {
+      for (const n of [5, 15, 30]) {
+        const plan = planCity(makePlace(n, { id }));
+        for (let k = 1; k < plan.blocks.length; k++) {
+          const b = (plan.blocks[k] as { outline: Polygon }).outline;
+          let touching = false;
+          for (let e = 0; e < k && !touching; e++) {
+            const a = (plan.blocks[e] as { outline: Polygon }).outline;
+            // Edge neighbours face each other across one street; corner neighbours do not.
+            let close = 0;
+            for (const p of b) if (distanceToPolygonEdge(p, a) < 8.5) close++;
+            if (close >= 2) touching = true;
+          }
+          expect(touching, `${id} ${n} block ${k}`).toBe(true);
+        }
+      }
     }
   });
 

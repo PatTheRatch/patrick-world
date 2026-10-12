@@ -63,6 +63,14 @@ export function SurveyNote() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const h = el.offsetHeight;
+      if (vw <= 640) {
+        // No room beside anything: the note sits above the cartouche as a sheet.
+        const floor = document.querySelector('.cartouche')?.getBoundingClientRect().top ?? vh - 190;
+        el.style.transform = `translate(10px, ${Math.max(10, floor - h - 8)}px)`;
+        el.style.visibility = 'visible';
+        line.style.visibility = 'hidden';
+        return;
+      }
       const gap = 30;
       const floor = vh - 104;
       let x = rect.x + rect.w + gap;

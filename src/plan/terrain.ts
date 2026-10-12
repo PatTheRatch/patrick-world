@@ -241,11 +241,11 @@ export function buildTerrain(catalogue: Catalogue, seed: string): Terrain {
         // is not an arc of a circle.
         const reachR = reg.radius * (0.885 + 0.1 * rim);
         // Past the rim the guarantee falls away steeply but without a step.
-        const f = d < reachR ? 0.014 + 0.04 * (1 - d / reachR) : 0.014 - (d - reachR) * 0.0014;
+        const f = d < reachR ? 0.014 + 0.016 * (1 - d / reachR) : 0.014 - (d - reachR) * 0.0014;
         if (f > floor) floor = f;
       }
       const q = acc > 0 ? -160 * Math.log(acc) : 4000;
-      const shelf = q < 0 ? 0.07 + 0.06 * (1 - Math.exp(q / 260)) : 0.07 - 0.3 * (q / 520);
+      const shelf = q < 0 ? 0.07 + 0.035 * (1 - Math.exp(q / 260)) : 0.07 - 0.3 * (q / 520);
       // Deep inside a region the noise may raise hills but may not sink much ground.
       const sink = 0.5 + 0.5 * smoothstep(-520, 220, q);
 
@@ -267,7 +267,7 @@ export function buildTerrain(catalogue: Catalogue, seed: string): Terrain {
       h += 0.34 * inland * range * ridge ** 5;
       if (h < SEA_LEVEL + floor) {
         // Keep a trace of the buried relief so the rescued ground is not a perfect cone.
-        h = SEA_LEVEL + floor + 0.2 * Math.max(0, h - SEA_LEVEL + 0.12);
+        h = SEA_LEVEL + floor + 0.4 * Math.max(0, h - SEA_LEVEL + 0.12);
       }
       g[ix + iy * nx] = h;
     }
@@ -702,11 +702,20 @@ export function buildTerrain(catalogue: Catalogue, seed: string): Terrain {
     steep = Math.max(sorted[target] ?? 0, 0.00035);
     const top = sorted[Math.floor(target * 0.05)] ?? steep * 2;
     for (const c of cand) {
+      // Thinner where towns stand: the heart of each region keeps a quarter of its
+      // strokes, rising to all of them at a quarter of its radius.
+      const thin = hr.next();
       if (c.s < steep) continue;
+      let keep = 1;
+      for (const reg of regions) {
+        const d = Math.hypot(c.x - reg.center.x, c.y - reg.center.y) / (reg.radius * 0.25);
+        if (d < 1) keep = Math.min(keep, 0.25 + 0.75 * d * d);
+      }
+      if (thin > keep) continue;
       const len = 6 + 10 * clamp((c.s - steep) / (top - steep || 1), 0, 1);
       const bx = c.x - (c.dx / c.s) * len;
       const by = c.y - (c.dy / c.s) * len;
-      if (hAt(bx, by) < SEA_LEVEL) continue;
+      if (hAt(bx, by) < SEA_LEVEL + 0.003) continue;
       hachures.push({
         a: { x: Math.round(c.x * 10) / 10, y: Math.round(c.y * 10) / 10 },
         b: { x: Math.round(bx * 10) / 10, y: Math.round(by * 10) / 10 },

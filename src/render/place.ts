@@ -40,6 +40,9 @@ export interface PlaceArt {
   dwellings: Path2D;
   shadows: Path2D;
   wash: Partial<Record<FeatureKind, Path2D>>;
+  /** In a revived place: what stood through the silence, still wearing its age. */
+  oldWash: Partial<Record<FeatureKind, Path2D>>;
+  oldOutline: Path2D;
   deep: Path2D;
   outline: Path2D;
   heavy: Path2D;
@@ -67,6 +70,8 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan): PlaceArt {
     dwellings: new Path2D(),
     shadows: new Path2D(),
     wash: {},
+    oldWash: {},
+    oldOutline: new Path2D(),
     deep: new Path2D(),
     outline: new Path2D(),
     heavy: new Path2D(),
@@ -110,13 +115,15 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan): PlaceArt {
         break;
       case 'working':
       case 'mature': {
-        const path = (art.wash[f.kind] ??= new Path2D());
+        // A revival is fresh paper on old ink: untouched buildings keep their age.
+        const stale = place.revived && f.heat <= 0.1;
+        const path = stale ? (art.oldWash[f.kind] ??= new Path2D()) : (art.wash[f.kind] ??= new Path2D());
         const d = f.storeys * STOREY_SHADOW;
         for (const poly of lot.footprint) {
           addPolygon(path, poly);
           if (!ruin) addShadow(art.shadows, poly, SUN.x * d, SUN.y * d);
-          if (f.stage === 'mature') addPolygon(art.deep, poly);
-          addPolygon(f.stage === 'mature' || f.landmark ? art.heavy : art.outline, poly);
+          if (f.stage === 'mature' && !stale) addPolygon(art.deep, poly);
+          addPolygon(stale ? art.oldOutline : f.stage === 'mature' || f.landmark ? art.heavy : art.outline, poly);
         }
         break;
       }
@@ -215,6 +222,12 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.fillStyle = css(agedWash(kind, art.aging));
     ctx.fill(path);
   }
+  for (const kind of KINDS) {
+    const path = art.oldWash[kind];
+    if (!path) continue;
+    ctx.fillStyle = css(agedWash(kind, AGING.dormant));
+    ctx.fill(path);
+  }
   if (!art.ruin) {
     ctx.fillStyle = css(INK.black, 0.13 * art.aging.washStrength);
     ctx.fill(art.deep);
@@ -272,6 +285,9 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.stroke(art.outline);
     ctx.lineWidth = Math.min(2.3 * px, 1.1);
     ctx.stroke(art.heavy);
+    ctx.strokeStyle = css(agedInk(AGING.dormant), 0.95 * inked);
+    ctx.lineWidth = 0.9 * px;
+    ctx.stroke(art.oldOutline);
     ctx.setLineDash([]);
   }
   ctx.restore();

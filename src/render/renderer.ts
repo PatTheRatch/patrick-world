@@ -119,6 +119,11 @@ export class Renderer {
     this.canvas.height = Math.max(1, Math.round(rect.height * this.dpr));
     const first = this.camera.width <= 1;
     this.camera.resize(rect.width, rect.height);
+    // On a narrow screen the lower half belongs to the note and the cartouche.
+    this.camera.pad =
+      rect.width <= 640
+        ? { top: 16, right: 12, bottom: rect.height * 0.56, left: 12 }
+        : { top: 40, right: 40, bottom: 96, left: 40 };
     if (this.scene) {
       const home = this.home();
       this.fitK = home.k;
@@ -539,8 +544,8 @@ export class Renderer {
       const ink = art.ink;
       const at = (p: Point) => cam.toScreen(this.drawn(art.plan, p));
 
-      if (k >= 2.4 && k < 9 && art.building.length + Object.keys(art.wash).length > 0) {
-        const a = Math.min(1, (k - 2.4) / 0.8) * 0.5;
+      if (k >= 3.3 && k < 9 && art.building.length + Object.keys(art.wash).length > 0) {
+        const a = Math.min(1, (k - 3.3) / 0.8) * 0.55;
         for (const street of art.plan.streets) {
           if (!street.main || !street.name || street.line.length < 2) continue;
           const mid = Math.floor((street.line.length - 1) / 2);
@@ -580,8 +585,8 @@ export class Renderer {
             color: ink,
             alpha: 0.9 * a,
             halo: INK.linen,
-            haloWidth: 3.5,
-            haloAlpha: 0.9 * a,
+            haloWidth: 2.2,
+            haloAlpha: 0.55 * a,
           };
           const w = measure(ctx, ward.name, style);
           const box = { x: c.x - w / 2 - 4, y: c.y - style.size * 0.8, w: w + 8, h: style.size * 1.6 };
@@ -653,7 +658,9 @@ export class Renderer {
   private layoutNames(scene: Scene, visible: PlaceArt[], lit: Set<string> | null) {
     const { ctx, camera: cam } = this;
     const k = cam.k;
-    const grow = Math.max(0.92, Math.min(1.3, Math.pow(k / this.fitK, 0.22)));
+    // Names are sized for a desk; on a narrow screen they come down with it.
+    const narrow = Math.max(0.66, Math.min(1, cam.width / 1000));
+    const grow = Math.max(0.92, Math.min(1.3, Math.pow(k / this.fitK, 0.22))) * narrow;
     const out: { box: ScreenRect; draw: () => void }[] = [];
     const order = [...visible].sort(
       (a, b) => RANKS.indexOf(b.place.rank) - RANKS.indexOf(a.place.rank) || b.place.commits - a.place.commits,
@@ -698,6 +705,10 @@ export class Renderer {
       const candidates = [
         { x: c.x, y: c.y - r - gap },
         { x: c.x, y: c.y + r + gap },
+        { x: c.x + w * 0.3, y: c.y - r - gap },
+        { x: c.x - w * 0.3, y: c.y - r - gap },
+        { x: c.x + w * 0.3, y: c.y + r + gap },
+        { x: c.x - w * 0.3, y: c.y + r + gap },
         { x: c.x + r + w / 2 + 8, y: c.y },
         { x: c.x - r - w / 2 - 8, y: c.y },
       ];

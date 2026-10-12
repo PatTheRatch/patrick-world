@@ -17,8 +17,8 @@ export const BLOCK_W = 46;
 export const BLOCK_H = 34;
 export const STREET_W = 5;
 export const MAIN_STREET_W = 8;
-/** How far a street runs on past the last block it serves, as a share of the next block. */
-const STREET_END = 1 / 3;
+/** How far a street runs on past the edge of the last block it serves, as a share of the next block. */
+const STREET_END = 0.3;
 
 /**
  * One direction of the street grid: an endless run of blocks separated by streets.
@@ -37,14 +37,16 @@ class Axis {
     private readonly longChance: number,
   ) {
     this.period = hash01(`${seed}|period`) < 0.5 ? 3 : 4;
-    this.offset = Math.floor(hash01(`${seed}|offset`) * this.period);
-    this.starts.set(0, -this.size(0) / 2);
+    // Line 0 is always a main street and passes through the origin: a town stands on a
+    // crossroads, with its first four blocks in the corners.
+    this.offset = 0;
+    this.starts.set(0, this.gap(0) / 2);
   }
 
   /** Length of block `i` along this axis. */
   size(i: number): number {
     const h = hash01(`${this.seed}|size|${i}`);
-    const long = i !== 0 && hash01(`${this.seed}|long|${i}`) < this.longChance ? 1.45 : 1;
+    const long = i !== 0 && i !== -1 && hash01(`${this.seed}|long|${i}`) < this.longChance ? 1.45 : 1;
     return Math.round(this.base * (0.88 + 0.26 * h) * long * 2) / 2;
   }
 
@@ -93,11 +95,11 @@ interface KindSpec {
 }
 
 const KIND: Record<FeatureKind, KindSpec> = {
-  frontage: { w: [11.5, 15.5], min: 9 },
-  works: { w: [25, 33], min: 16 },
-  reservoir: { w: [21, 27], min: 15 },
-  observatory: { w: [14, 17.5], min: 11.5 },
-  utility: { w: [9.5, 12.5], min: 8 },
+  frontage: { w: [13, 17.5], min: 9.5 },
+  works: { w: [28, 36], min: 17 },
+  reservoir: { w: [23, 30], min: 16 },
+  observatory: { w: [15.5, 19], min: 12 },
+  utility: { w: [11, 14], min: 8.5 },
 };
 
 /** A leftover narrower than this is given to the lot beside it rather than left over. */
@@ -383,7 +385,7 @@ export function planCity(place: PlaceState): CityPlan {
   // because towns grow along their first street.
   const stretchAngle =
     (hash01(`${id}|stretch-dir`) < 0.6 ? 0 : Math.PI / 2) + (hash01(`${id}|stretch-skew`) - 0.5) * 0.7;
-  const stretch = 1.2 + 0.5 * hash01(`${id}|stretch`);
+  const stretch = 1.04 + 0.26 * hash01(`${id}|stretch`);
   const sc = Math.cos(stretchAngle);
   const ss = Math.sin(stretchAngle);
   const reach = (cx: number, cy: number): number => {
@@ -453,10 +455,10 @@ export function planCity(place: PlaceState): CityPlan {
             const dd = Math.hypot((c.cx - cx) / stretch, (c.cy - cy) * 1.25);
             if (dd < near) near = dd;
           }
-          score = near + 0.35 * out + 8 * turn + 6 * jitter(i, j);
+          score = near + 0.6 * out + 5 * turn + 5 * jitter(i, j);
         } else {
           // Found the quarter: hard against the town, on the side its bearing points.
-          score = out + 16 * turn + 8 * jitter(i, j);
+          score = out + 9 * turn + 5 * jitter(i, j);
         }
         if (!best || score < best.score) best = { i, j, score };
       }
@@ -468,8 +470,7 @@ export function planCity(place: PlaceState): CityPlan {
     const y0 = ys.start(pick.j);
     const y1 = ys.end(pick.j);
     const cr = rng(`${id}|block|${pick.i}|${pick.j}`);
-    const seededEnd = cr.next() < 0.5 ? 1 : -1;
-    const fillFrom = pick.i === 0 ? seededEnd : pick.i > 0 ? 1 : -1;
+    const fillFrom = pick.i >= 0 ? 1 : -1;
     const cell: Cell = {
       i: pick.i,
       j: pick.j,
@@ -613,8 +614,8 @@ export function planCity(place: PlaceState): CityPlan {
       let prev = from;
       const emit = (t0: number, t1: number): void => {
         // A short way past the last block, so the town's edges trail off.
-        const s = along.end(t0 - 1) - along.size(t0 - 1) * STREET_END;
-        const e = along.start(t1 + 1) + along.size(t1 + 1) * STREET_END;
+        const s = along.start(t0) - along.size(t0 - 1) * STREET_END;
+        const e = along.end(t1) + along.size(t1 + 1) * STREET_END;
         const at = across.line(k);
         const line = orient === 'v' ? [toWorld(at, s), toWorld(at, e)] : [toWorld(s, at), toWorld(e, at)];
         const main = across.isMain(k);

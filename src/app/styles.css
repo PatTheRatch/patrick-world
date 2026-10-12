@@ -1014,7 +1014,12 @@ input::placeholder {
     bottom: 10px;
   }
   .note {
-    width: min(304px, calc(100vw - 20px));
+    width: calc(100vw - 20px);
+    max-height: 40vh;
+  }
+  .cartouche-where,
+  .cartouche-actions kbd {
+    display: none;
   }
   .key-backdrop {
     padding: 8px;
