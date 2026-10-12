@@ -12,7 +12,7 @@
   --water-line: #5f8fa6;
   /* Lettering tones: ink and graphite, darkened to hold contrast at small sizes on a slip. */
   --ink-soft: #3e3a35;
-  --graphite: #565b61;
+  --graphite: #565b61; /* palette graphite #5d6268, a step darker for small text */
   --rule: rgb(28 26 24 / 0.24);
 
   --serif: 'Besley', 'Clarendon', Georgia, serif;

@@ -28,26 +28,29 @@ export function addPolyline(path: Path2D, line: Polyline) {
   }
 }
 
-/** The ground a building's shadow covers: its footprint swept along `d`. */
+/**
+ * The ground a building's shadow covers: its footprint swept along `d`. Every piece is wound
+ * the same way, so a single non-zero fill unions them instead of letting them cancel.
+ */
 export function addShadow(path: Path2D, poly: Polygon, dx: number, dy: number) {
   const n = poly.length;
+  const emit = (pts: Point[]) => {
+    let area = 0;
+    for (let i = 0; i < pts.length; i++) {
+      const p = pts[i]!;
+      const q = pts[(i + 1) % pts.length]!;
+      area += p.x * q.y - q.x * p.y;
+    }
+    const ordered = area < 0 ? [...pts].reverse() : pts;
+    ordered.forEach((p, i) => (i === 0 ? path.moveTo(p.x, p.y) : path.lineTo(p.x, p.y)));
+    path.closePath();
+  };
   for (let i = 0; i < n; i++) {
     const a = poly[i]!;
     const b = poly[(i + 1) % n]!;
-    path.moveTo(a.x, a.y);
-    path.lineTo(b.x, b.y);
-    path.lineTo(b.x + dx, b.y + dy);
-    path.lineTo(a.x + dx, a.y + dy);
-    path.closePath();
+    emit([a, b, { x: b.x + dx, y: b.y + dy }, { x: a.x + dx, y: a.y + dy }]);
   }
-  const first = poly[0];
-  if (!first) return;
-  path.moveTo(first.x + dx, first.y + dy);
-  for (let i = 1; i < n; i++) {
-    const p = poly[i]!;
-    path.lineTo(p.x + dx, p.y + dy);
-  }
-  path.closePath();
+  emit(poly.map((p) => ({ x: p.x + dx, y: p.y + dy })));
 }
 
 export function pointInPolygon(p: Point, poly: Polygon): boolean {

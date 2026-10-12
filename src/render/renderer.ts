@@ -207,7 +207,10 @@ export class Renderer {
   /** The lowest zoom at which the sheet still covers the whole window. */
   private coverK(): number {
     const size = this.scene?.catalogue.size ?? { width: 4800, height: 3200 };
-    return Math.max(this.camera.width / (size.width + SHEET_MARGIN * 2), this.camera.height / (size.height + SHEET_MARGIN * 2));
+    const w = this.camera.width / (size.width + SHEET_MARGIN * 2);
+    const h = this.camera.height / (size.height + SHEET_MARGIN * 2);
+    // A desk-sized window is covered by the sheet. A narrow one must be able to see all of it.
+    return this.camera.width > 640 ? Math.max(w, h) : Math.min(w, h) * 1.6;
   }
 
   home() {
@@ -604,8 +607,9 @@ export class Renderer {
         }
       }
 
-      if (k >= 0.75 && k < 3.4) {
-        const a = Math.min(1, (k - 0.75) / 0.4) * Math.min(1, (3.4 - k) / 0.6);
+      if (k >= 0.75 && k < 2.9) {
+        // Ward names are a far-off aid; once buildings can be read they step back and leave.
+        const a = Math.min(1, (k - 0.75) / 0.4) * Math.min(1, (2.9 - k) / 1.3);
         for (const ward of art.plan.wards) {
           const c = at(ward.labelAt);
           const style: Lettering = {
@@ -616,7 +620,7 @@ export class Renderer {
             tracking: 0.24,
             upper: true,
             color: ink,
-            alpha: 0.82 * a,
+            alpha: 0.7 * a,
           };
           const w = measure(ctx, ward.name, style);
           const box = { x: c.x - w / 2 - 4, y: c.y - style.size * 0.8, w: w + 8, h: style.size * 1.6 };
@@ -636,7 +640,9 @@ export class Renderer {
         const selected =
           (scene.selection?.type === 'feature' && scene.selection.id === feature.id) ||
           (scene.hover?.type === 'feature' && scene.hover.id === feature.id);
-        const named = (k >= 3.6 && wPx > 54) || selected;
+        // Work in hand is always named once a town can be read; the rest when there is room.
+        const underway = feature.stage === 'building' && k >= 1.9 && !art.ruin;
+        const named = (k >= 3.6 && wPx > 54) || selected || underway;
 
         if (done && !art.ruin && !(named && wPx < 120)) {
           // Storeys, in the fixed place an atlas keeps them: the footprint's upper-left.
@@ -661,8 +667,11 @@ export class Renderer {
           upper: true,
           color: done ? ink : INK.graphite,
           halo: done ? null : INK.linen,
+          haloAlpha: 0.9,
         };
-        const lines = wrap(ctx, feature.name, style, selected ? Math.max(70, wPx - 8) : wPx - 6, 3);
+        const free = selected || underway;
+        const lines = wrap(ctx, feature.name, style, free ? Math.max(70, wPx - 8) : wPx * 0.86, 3);
+        if (!free && lines.some((line) => measure(ctx, line, style) > wPx * 0.92)) continue;
         const lh = style.size * 1.12;
         const word = STAGE_WORD[feature.stage];
         const total = lines.length * lh + (word ? lh : 0);
@@ -721,8 +730,8 @@ export class Renderer {
         color: pencilled ? INK.graphite : art.ink,
         alpha: (lit && !lit.has(place.id) ? 0.3 : 1) * (pencilled ? 0.95 : 1),
         halo: INK.linen,
-        haloWidth: Math.max(4, size * 0.3),
-        haloAlpha: 0.94,
+        haloWidth: Math.max(2.6, size * 0.2),
+        haloAlpha: 0.9 * (lit && !lit.has(place.id) ? 0.25 : 1),
       };
       const w = measure(ctx, place.name, style);
       const c = cam.toScreen(plan.center);
