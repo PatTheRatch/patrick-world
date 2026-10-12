@@ -391,7 +391,7 @@ describe('places', () => {
     expect(at('2026-01-07').commits).toBe(3);
     expect(at('2026-01-07').nextRank).toEqual({
       rank: 'town',
-      needs: ['2 more working features', '7 more weeks with work in them'],
+      needs: ['2 more working features', '3 more weeks with work in them'],
     });
     expect(derive(log, catalogue, '2026-01-07').places).toHaveLength(1);
   });

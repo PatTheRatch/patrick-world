@@ -82,7 +82,7 @@ liveliness.
 | Site | A staked, pencilled lot or two | A second thought: a further note or a proposed feature |
 | Outpost | One inked structure and a track | Any real work logged |
 | Settlement | A block, a first washed building | A working feature |
-| Town | Several blocks, a named street | 3 working features, 8 weeks with work in them |
+| Town | Several blocks, a named street | 3 working features, 4 weeks with work in them |
 | City | Wards, a landmark, a Clarendon name | 6 working features, 20 active weeks, a release |
 | Major city | Many wards, dwellings, mains | 10 working features, 40 active weeks, measured traction |
 

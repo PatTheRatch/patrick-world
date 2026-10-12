@@ -8,6 +8,7 @@ import { buildTerrain } from '../plan/terrain';
 import type { CityPlan, RoadPlan } from '../plan/types';
 import type { Draft, Selection } from '../render/renderer';
 import { derive } from '../world/derive';
+import { inferWays } from '../world/ways';
 import { catalogue } from '../world/fixtures/catalogue';
 import { FIXTURE_TODAY } from '../world/fixtures/world';
 import { mergeEvents } from '../world/sources';
@@ -60,6 +61,8 @@ export const deriveMs = signal(0);
 export const world = computed(() => {
   const t0 = performance.now();
   const state = derive(events.value, catalogue, asOf.value);
+  // Tracks between places that share methods: inferred, and marked so.
+  state.links = [...state.links, ...inferWays(state.places, state.links)];
   deriveMs.value = performance.now() - t0;
   return state;
 });

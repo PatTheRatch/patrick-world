@@ -345,6 +345,11 @@ function annexCount(f: FeatureState, r: Rng): number {
 
 // ───────────────────────── The plan ─────────────────────────
 
+/** About this many commits stand behind one ordinary house. */
+export const COMMITS_PER_HOUSE = 9;
+export const HOUSE_CAP = 260;
+const HOUSE_RINGS = 5;
+
 export function planCity(place: PlaceState): CityPlan {
   const id = place.id;
   const center = { x: place.position.x, y: place.position.y };
@@ -662,21 +667,26 @@ export function planCity(place: PlaceState): CityPlan {
     return { name, labelAt: toWorld(u / k, v / k), angle: labelAngle, dominant };
   });
 
-  // ── Dwellings: terraces on the open blocks that face the town, from measured users ──
+  // ── Houses: the ordinary fabric of a town, in terraces on the blocks around it ──
+  // The named buildings are features; the houses are everything else that was done. One for
+  // about every nine commits, and more where people use the thing. This is what gives a
+  // heavily worked place its physical size.
   const dwellings: Dwelling[] = [];
-  const houseCount = Math.min(60, Math.max(0, Math.round(7 * Math.log10(1 + Math.max(0, place.users)))));
-  if (houseCount > 0) {
+  const houseCount = Math.min(
+    HOUSE_CAP,
+    Math.max(0, Math.round(Math.max(0, place.commits) / COMMITS_PER_HOUSE) + Math.round(7 * Math.log10(1 + Math.max(0, place.users)))),
+  );
+  if (houseCount > 0 && claimed.size > 0) {
     type Side = 'top' | 'bottom' | 'left' | 'right';
     interface Slot {
       i: number;
       j: number;
       side: Side;
-      /** 0: first terrace on a block facing the town; 1: a second one; 2: the next ring out. */
+      /** Rings out from the town, two tiers each: the side facing in, then the far side. */
       tier: number;
       score: number;
     }
     const slots: Slot[] = [];
-    const suburb = new Set<string>();
     const facing = (i: number, j: number, has: (k: string) => boolean): Side[] => {
       const out: Side[] = [];
       if (has(key(i, j - 1))) out.push('top');
@@ -685,27 +695,28 @@ export function planCity(place: PlaceState): CityPlan {
       if (has(key(i + 1, j))) out.push('right');
       return out;
     };
-    for (let j = jMin - 1; j <= jMax + 1; j++) {
-      for (let i = iMin - 1; i <= iMax + 1; i++) {
-        if (claimed.has(key(i, j))) continue;
-        const sides = facing(i, j, (k) => claimed.has(k));
-        if (sides.length === 0) continue;
-        suburb.add(key(i, j));
-        const score = reach(xs.mid(i), ys.mid(j)) + 12 * jitter(i, j);
-        // Opposite sides of a block can both carry a terrace; adjoining sides would collide.
-        const first = sides[0] as Side;
-        slots.push({ i, j, side: first, tier: 0, score });
-        const opposite: Side = first === 'top' ? 'bottom' : first === 'left' ? 'right' : first;
-        if (opposite !== first && sides.includes(opposite)) slots.push({ i, j, side: opposite, tier: 1, score });
+    // Grow outward ring by ring. Each ring is the free cells touching the one inside it.
+    const taken = new Set<string>();
+    let inner: (k: string) => boolean = (k) => claimed.has(k);
+    for (let ring = 0; ring < HOUSE_RINGS; ring++) {
+      const here = new Set<string>();
+      for (let j = jMin - ring - 1; j <= jMax + ring + 1; j++) {
+        for (let i = iMin - ring - 1; i <= iMax + ring + 1; i++) {
+          const cell = key(i, j);
+          if (claimed.has(cell) || taken.has(cell)) continue;
+          const sides = facing(i, j, inner);
+          if (sides.length === 0) continue;
+          here.add(cell);
+          const score = reach(xs.mid(i), ys.mid(j)) + 12 * jitter(i, j);
+          // All four sides of a block can carry a terrace: the side facing the town first.
+          // The two short sides are inset so they do not run into the long ones at the corners.
+          const order: Side[] = [...sides, ...(['top', 'bottom', 'left', 'right'] as Side[]).filter((x) => !sides.includes(x))];
+          order.forEach((side, n) => slots.push({ i, j, side, tier: ring, score: score + n * 0.001 }));
+        }
       }
-    }
-    for (let j = jMin - 2; j <= jMax + 2; j++) {
-      for (let i = iMin - 2; i <= iMax + 2; i++) {
-        if (claimed.has(key(i, j)) || suburb.has(key(i, j))) continue;
-        const sides = facing(i, j, (k) => suburb.has(k));
-        if (sides.length === 0) continue;
-        slots.push({ i, j, side: sides[0] as Side, tier: 2, score: reach(xs.mid(i), ys.mid(j)) + 12 * jitter(i, j) });
-      }
+      for (const cell of here) taken.add(cell);
+      const last = here;
+      inner = (k) => last.has(k);
     }
     slots.sort((p, q) => p.tier - q.tier || p.score - q.score || p.i - q.i || p.j - q.j);
     outer: for (const slot of slots) {
@@ -715,14 +726,19 @@ export function planCity(place: PlaceState): CityPlan {
       const y0 = ys.start(slot.j);
       const y1 = ys.end(slot.j);
       const alongX = slot.side === 'top' || slot.side === 'bottom';
-      const run = (alongX ? x1 - x0 : y1 - y0) - 3;
       const hw = hr.range(4.6, 5.4);
       const hd = hr.range(5.5, 6.5);
       const gap = 1;
-      const n = Math.max(1, Math.min(hr.int(3, 6), Math.floor((run + gap) / (hw + gap))));
-      const used = n * hw + (n - 1) * gap;
-      const lead = 1.5 + (run - used) * hr.next();
       const back = 0.6;
+      // Terraces along the block's long sides run corner to corner; those on its ends fit between them.
+      const inset = alongX ? 1.5 : back + 6.5 + 1.6;
+      const run = (alongX ? x1 - x0 : y1 - y0) - inset * 2;
+      const fit = Math.floor((run + gap) / (hw + gap));
+      if (fit < 1) continue;
+      // Mostly full rows, now and then a gap where a house was never built.
+      const n = Math.max(1, fit - (hr.next() < 0.3 ? 1 : 0));
+      const used = n * hw + (n - 1) * gap;
+      const lead = inset + (run - used) * hr.next();
       for (let k = 0; k < n; k++) {
         const t = lead + k * (hw + gap);
         let fp: Polygon;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Point } from '../world/types';
-import { planCity } from './city';
+import { planCity, COMMITS_PER_HOUSE, HOUSE_CAP } from './city';
 import {
   convexOverlap,
   distanceToPolygonEdge,
@@ -233,14 +233,12 @@ describe('planCity: a plausible plan', () => {
     }
   });
 
-  it('houses the measured users on the fringe, clear of everything built', () => {
+  it('houses the work and the users on the blocks around the town, clear of everything built', () => {
+    const houses = (commits: number, users: number) =>
+      Math.min(HOUSE_CAP, Math.round(commits / COMMITS_PER_HOUSE) + Math.round(7 * Math.log10(1 + users)));
     for (const plan of plans) {
-      expect(plan.dwellings).toHaveLength(Math.round(7 * Math.log10(2501)));
       for (const d of plan.dwellings) {
         for (const b of plan.blocks) expect(convexOverlap(d.footprint, b.outline)).toBe(false);
-        // Suburbs hug the town: every house is within a block or so of built ground.
-        const c = polygonCentroid(d.footprint);
-        expect(Math.min(...plan.blocks.map((b) => distanceToPolygonEdge(c, b.outline)))).toBeLessThan(95);
       }
       for (let i = 0; i < plan.dwellings.length; i++) {
         for (let j = i + 1; j < plan.dwellings.length; j++) {
@@ -250,12 +248,21 @@ describe('planCity: a plausible plan', () => {
         }
       }
     }
-    const few = planCity(makePlace(30, { users: 30 }));
-    const many = planCity(makePlace(30, { users: 30000 }));
-    // Dwelling k is always the same house.
+    const at = (commits: number, users = 0) => planCity({ ...makePlace(30), commits, users });
+    expect(at(0).dwellings).toHaveLength(0);
+    expect(at(90).dwellings).toHaveLength(houses(90, 0));
+    expect(at(90, 2500).dwellings).toHaveLength(houses(90, 2500));
+    expect(at(1e9).dwellings).toHaveLength(HOUSE_CAP);
+    // House k is always the same house: a town only ever adds to its fabric.
+    const few = at(90);
+    const many = at(1200);
     expect(many.dwellings.slice(0, few.dwellings.length)).toEqual(few.dwellings);
-    expect(planCity(makePlace(30, { users: 1e12 })).dwellings).toHaveLength(60);
-    expect(planCity(makePlace(30, { users: 0 })).dwellings).toHaveLength(0);
+    // The first houses hug the town; a heavily worked place spreads further out.
+    const far = (plan: ReturnType<typeof planCity>) =>
+      Math.max(...plan.dwellings.map((d) => Math.min(...plan.blocks.map((b) => distanceToPolygonEdge(polygonCentroid(d.footprint), b.outline)))));
+    expect(far(few)).toBeLessThan(95);
+    expect(many.dwellings.length).toBeGreaterThan(few.dwellings.length * 5);
+    expect(many.radius).toBeGreaterThanOrEqual(few.radius);
   });
 
   it('encloses everything in its radius and bounds', () => {

@@ -53,6 +53,66 @@ Strongest signal today: permanence and honesty. Weakest: **appetite.** The proto
 entirely retrospective; nothing on it makes him want to act. The build loop, and a ready lot
 that looks ready, are what supply it.
 
+## The second pass: the world encodes attention
+
+Patrick's verdict on the first map: "a beautiful atlas with project markers, not yet a living
+world." An independent critique agreed and named the mechanism: every town was the same object
+at a different count, name size came from rank alone, and at whole-territory zoom nothing
+answered "what am I working on" without reading. The second pass optimises for one test:
+
+> Looking at the whole territory, without reading a label, can he tell what is alive, what is
+> growing, what is steady, what he has neglected, and what is newly emerging?
+
+**One vocabulary, three channels that already existed** (paper, ink line, motion). No new
+visual dimension was added; the uniform pale "town ground" tint, which encoded nothing, was
+retired to pay for it.
+
+| State | Paper under the place | Its edge | Moves |
+|---|---|---|---|
+| Being worked on | A fresh slip, with its hard shadow | Black, dashed | The edge crawls |
+| Standing | Bare sheet | Black, solid | Still |
+| Quiet | Light foxing | Browned, thin | Still |
+| Dormant | Foxed | Sepia, dotted | Still |
+| Ruins | Stained | Broken dash and dot | Still |
+| Newly founded | A small slip under its mark, a pencil traverse to its neighbour | | Drawn once |
+| Left half built | | Old ink round an open hatch, chalky wash | Still |
+
+Every row survives in greyscale: paper value and line continuity carry it, not hue.
+
+**What else changed, and what each thing encodes:**
+
+- **A town's size is the work in it.** Around the named buildings stand ordinary houses, one
+  for about nine commits. A project with twelve hundred commits is physically several times the
+  size of one with fifty, before any label is read.
+- **Names follow the work.** A wider scale by rank, and within a rank a larger name for more
+  work, never reaching the next rank. Sparks and sites are marks without names from the whole
+  territory. Region names are atmosphere and are never louder than a place.
+- **The land has shape.** Slopes are shaded from the north-west and woodland is a broken tone,
+  everywhere, because geography exists whether or not anyone has built there. Survey detail
+  (hachures, single trees, names) is still reserved for ground near founded places.
+- **Tracks between places that share methods.** Inferred, sparse (each place to its nearest
+  such neighbour), marked as inferred, and running into the town instead of stopping short.
+- **Construction is drawn honestly.** The old left-to-right fill was a progress bar in a
+  footprint. Now the ground is hatched, the wash deepens as the work rises, and the wall is
+  inked round the perimeter as far as the work has got.
+
+**Asked for and refused, with the restrained version of each:**
+
+| Asked for | Verdict | Instead |
+|---|---|---|
+| Smoke | Refused | A true plan cannot draw smoke honestly. The crawling edge says "alive". |
+| Lights, day and night | Refused | This is the "earth at night" direction returning, with glows. The lamp is already the scene. |
+| Carts, boats, tiny transport | Refused for now | Motion that encodes nothing breaks "stillness is information". Revisit only if it can show real traffic: a builder session, a deploy. |
+| Weather | Refused | Foxing and regrowth are the only climate. |
+| Ports, cliffs, wetlands as scatter | Refused | A pier where nothing docks is a fake fact. Bridges where a real road crosses a real river are the exception. |
+| Flags | One | A single red ranging pole on a lot with a live builder session, when sessions exist. |
+
+**Not yet done from the critique, in order:** town form by rank (ribbon, crossroads with a
+square, wards parted by avenues, an old core with extensions), which is the largest remaining
+gain and the riskiest for "nothing moves"; worked fields round a town and woodland creeping
+back over a neglected one; the district and building zoom layers (criteria ticks, built-order
+numbers, revision slips); bridges; and orienting each town to the ground it stands on.
+
 ## The scene
 
 Patrick at his desk in the evening, a large monitor, a lamp. The atlas sheet lies under the

@@ -2,7 +2,7 @@
 // How a building is drawn says how far along it is; its wash says what it is.
 
 import type { CityPlan, Lot } from '../plan/types';
-import { KINDS, RANKS, type FeatureKind, type FeatureState, type PlaceState } from '../world/types';
+import { KINDS, RANKS, type FeatureKind, type FeatureState, type PlaceState, type Point } from '../world/types';
 import { addPolygon, addShadow, polygonBounds, scaleAbout } from './ink';
 import { AGING, INK, WASH, agedInk, agedWash, css, mix, type Aging, type RGB } from './palette';
 
@@ -18,6 +18,9 @@ export function coreRadius(plan: CityPlan): number {
   r = 0;
   for (const lot of plan.lots)
     for (const p of lot.parcel) r = Math.max(r, Math.hypot(p.x - plan.center.x, p.y - plan.center.y));
+  // The houses are part of the town: a heavily worked place reaches as far as they do.
+  for (const d of plan.dwellings)
+    for (const p of d.footprint) r = Math.max(r, Math.hypot(p.x - plan.center.x, p.y - plan.center.y) * 0.94);
   cores.set(plan, r);
   return r;
 }
@@ -35,6 +38,14 @@ export interface PlaceArt {
   ruin: boolean;
   lots: DrawnLot[];
   town: Path2D;
+  /** The town limits: the outline of everything that stands or is staked here. */
+  hull: Path2D;
+  /** Length of the limits, in world units, for dashing. */
+  hullLength: number;
+  /** Whether anything here has been left half built. */
+  stalled: boolean;
+  /** The edition's day number: what "recently" is measured from. */
+  today: number;
   blockLines: Path2D;
   slips: Path2D;
   dwellings: Path2D;
@@ -53,7 +64,18 @@ export interface PlaceArt {
   building: DrawnLot[];
 }
 
-export function buildPlaceArt(place: PlaceState, plan: CityPlan): PlaceArt {
+const dayOf = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
+
+/** A half-built thing nobody has touched in this long has stalled. */
+const STALL_DAYS = 28;
+const isStalled = (f: FeatureState, today: number) => {
+  // Where no work is logged against it directly, the day it was begun is the last we know.
+  const last = f.lastWorkAt ?? f.stagedAt.building ?? f.proposedAt;
+  return today - dayOf(last) > STALL_DAYS;
+};
+
+export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): PlaceArt {
+  const today = dayOf(asOf);
   const ruin = place.liveliness === 'ruins';
   const aging = AGING[place.liveliness];
   const features = new Map(place.features.map((f) => [f.id, f]));
@@ -65,6 +87,10 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan): PlaceArt {
     ruin,
     lots: [],
     town: new Path2D(),
+    hull: new Path2D(),
+    hullLength: 0,
+    stalled: false,
+    today,
     blockLines: new Path2D(),
     slips: new Path2D(),
     dwellings: new Path2D(),
@@ -137,7 +163,43 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan): PlaceArt {
     addPolygon(art.blockLines, block.outline);
   });
   for (const d of plan.dwellings) addPolygon(art.dwellings, d.footprint);
+
+  // The town limits, a little clear of the outermost walls.
+  const pts: Point[] = [];
+  for (const lot of plan.lots) pts.push(...lot.parcel);
+  for (const d of plan.dwellings) pts.push(...d.footprint);
+  if (pts.length >= 3) {
+    const hull = convexHull(pts).map((p) => {
+      const d = Math.hypot(p.x - plan.center.x, p.y - plan.center.y) || 1;
+      const out = 7;
+      return { x: p.x + ((p.x - plan.center.x) / d) * out, y: p.y + ((p.y - plan.center.y) / d) * out };
+    });
+    addPolygon(art.hull, hull);
+    for (let i = 0; i < hull.length; i++) {
+      const a = hull[i]!;
+      const b = hull[(i + 1) % hull.length]!;
+      art.hullLength += Math.hypot(b.x - a.x, b.y - a.y);
+    }
+  }
+  art.stalled = art.building.some((b) => isStalled(b.feature, today));
   return art;
+}
+
+function convexHull(points: Point[]): Point[] {
+  const pts = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (o: Point, a: Point, b: Point) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  const lower: Point[] = [];
+  for (const p of pts) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper: Point[] = [];
+  for (let i = pts.length - 1; i >= 0; i--) {
+    const p = pts[i]!;
+    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  return lower.slice(0, -1).concat(upper.slice(0, -1));
 }
 
 const ramp = (v: number, a: number, b: number) => Math.max(0, Math.min(1, (v - a) / (b - a)));
@@ -155,6 +217,8 @@ export interface PlaceDrawOptions {
   /** Feature id → 0–1 progress of its wash draining away, when the edition turns back. */
   drains: Map<string, number>;
   slipPaper: CanvasPattern;
+  /** Brown blotches: what paper does when nobody has turned to it in a long while. */
+  foxing: CanvasPattern;
 }
 
 /** Draw under the camera transform. */
@@ -166,12 +230,31 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   ctx.globalAlpha = o.alpha;
   ctx.lineJoin = 'miter';
 
-  // Occupied ground. From far away a town reads as a paler patch; close to, the blocks are
-  // plain paper, so the only bright paper left is a fresh slip.
-  const tint = 1 - ramp(k, 0.8, 1.7);
-  if (tint > 0) {
-    ctx.fillStyle = css(art.ruin ? mix(INK.town, INK.sepia, 0.12) : INK.town, (art.ruin ? 0.7 : 1) * tint);
-    ctx.fill(art.town);
+  // The ground a place stands on says how recently anyone was here. From far off this is
+  // the first thing the eye reads: fresh paper under what is being worked on, bare sheet under
+  // what is merely standing, foxed paper under what has been left.
+  const far = 1 - ramp(k, 1.3, 2.3);
+  const live = art.place.liveliness;
+  if (far > 0 && art.hullLength > 0) {
+    if (live === 'building') {
+      ctx.save();
+      ctx.globalAlpha = o.alpha * far;
+      ctx.translate(1.4 * px, 2 * px);
+      ctx.fillStyle = css(INK.black, 0.36);
+      ctx.fill(art.hull);
+      ctx.translate(-1.4 * px, -2 * px);
+      o.slipPaper.setTransform(new DOMMatrix().scale(px));
+      ctx.fillStyle = o.slipPaper;
+      ctx.fill(art.hull);
+      ctx.restore();
+    } else if (live === 'quiet' || live === 'dormant' || live === 'ruins') {
+      ctx.save();
+      ctx.globalAlpha = o.alpha * far * (live === 'quiet' ? 0.45 : live === 'dormant' ? 0.85 : 1);
+      o.foxing.setTransform(new DOMMatrix().scale(px));
+      ctx.fillStyle = o.foxing;
+      ctx.fill(art.hull);
+      ctx.restore();
+    }
   }
   const lines = ramp(k, 0.55, 1.3);
   if (lines > 0) {
@@ -199,12 +282,16 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   }
 
   // Housing.
-  const houses = ramp(k, 0.3, 0.8);
+  // Houses: the ordinary fabric. Uncoloured, so that washes stay the named buildings.
+  const houses = ramp(k, 0.12, 0.4);
   if (houses > 0) {
-    ctx.fillStyle = css(mix(INK.linenShade, ink, 0.22), houses);
+    // Strong from afar, where they are the town's mass; lighter close to, where the named
+    // buildings should lead.
+    const weight = 0.34 - 0.16 * ramp(k, 0.9, 2.2);
+    ctx.fillStyle = css(mix(INK.linenShade, ink, weight), houses * (0.55 + 0.45 * art.aging.washStrength));
     ctx.fill(art.dwellings);
-    if (k > 1.6) {
-      ctx.strokeStyle = css(ink, 0.7);
+    if (k > 1.1) {
+      ctx.strokeStyle = css(ink, 0.42 * ramp(k, 1.1, 1.8));
       ctx.lineWidth = 0.6 * px;
       ctx.stroke(art.dwellings);
     }
@@ -303,6 +390,39 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.stroke(art.oldOutline);
     ctx.setLineDash([]);
   }
+
+  // The town limits. How the line is drawn is the place's state, legible without colour:
+  // crawling where work is going on, solid where it stands, thin and browned where it is
+  // quiet, dotted where it sleeps, broken where it is ruins.
+  const limits = 1 - ramp(k, 1.5, 2.6);
+  if (limits > 0 && art.hullLength > 0) {
+    ctx.lineJoin = 'round';
+    if (live === 'building') {
+      ctx.strokeStyle = css(INK.black, 0.95 * limits);
+      ctx.lineWidth = 1.35 * px;
+      ctx.setLineDash([6 * px, 4 * px]);
+      ctx.lineDashOffset = o.crawl ? -(o.time * 0.012) * px : 0;
+    } else if (live === 'settled') {
+      ctx.strokeStyle = css(INK.black, 0.8 * limits);
+      ctx.lineWidth = 0.9 * px;
+    } else if (live === 'quiet') {
+      ctx.strokeStyle = css(ink, 0.75 * limits);
+      ctx.lineWidth = 0.7 * px;
+    } else if (live === 'dormant') {
+      ctx.strokeStyle = css(ink, 0.8 * limits);
+      ctx.lineWidth = 0.9 * px;
+      ctx.lineCap = 'round';
+      ctx.setLineDash([0.1 * px, 3.4 * px]);
+    } else {
+      ctx.strokeStyle = css(ink, 0.85 * limits);
+      ctx.lineWidth = 0.8 * px;
+      ctx.setLineDash([7 * px, 3 * px, 1.2 * px, 3 * px]);
+    }
+    ctx.stroke(art.hull);
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+    ctx.lineCap = 'butt';
+  }
   ctx.restore();
 }
 
@@ -329,36 +449,49 @@ function drawBuilding(
   const path = new Path2D();
   for (const poly of main) addPolygon(path, poly);
 
-  if (o.k < 0.9) {
-    ctx.fillStyle = css(wash, 0.5);
+  // Work that has stopped weathers: old ink, chalky wash, nothing moving.
+  const stale = isStalled(feature, art.today);
+  const ink = stale ? agedInk(AGING.dormant) : art.ink;
+  const tone = stale ? agedWash(feature.kind, AGING.dormant) : wash;
+  if (o.k < 0.28) {
+    ctx.fillStyle = css(tone, 0.35);
     ctx.fill(path);
     return;
   }
 
-  const b = polygonBounds(main);
+  // The ground is opened: hatched all over, and tinted more strongly the further it has risen.
   ctx.save();
   ctx.clip(path);
-  // Raised so far: washed. Still to come: hatched.
-  const edge = b.x + b.w * feature.progress;
-  ctx.fillStyle = css(wash, 0.78);
-  ctx.fillRect(b.x, b.y, edge - b.x, b.h);
-  ctx.strokeStyle = css(art.ink, 0.42);
+  const b = polygonBounds(main);
+  ctx.fillStyle = css(tone, 0.14 + 0.5 * feature.progress);
+  ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.strokeStyle = css(ink, 0.4);
   ctx.lineWidth = 0.6 * px;
   ctx.beginPath();
-  const step = Math.max(2.2, 4.2 * px);
-  for (let x = edge - b.h; x < b.x + b.w; x += step) {
-    ctx.moveTo(Math.max(x, edge), b.y + b.h - Math.max(0, edge - x));
+  const step = Math.max(2.4, 4.2 * px);
+  for (let x = b.x - b.h; x < b.x + b.w; x += step) {
+    ctx.moveTo(x, b.y + b.h);
     ctx.lineTo(x + b.h, b.y);
   }
   ctx.stroke();
   ctx.restore();
 
-  // The outline crawls while work is going on.
-  ctx.strokeStyle = css(art.ink, 0.95);
-  ctx.lineWidth = 1.1 * px;
+  // The wall goes up round the perimeter: inked as far as the work has got, dashed beyond.
+  let perimeter = 0;
+  for (const poly of main)
+    for (let i = 0; i < poly.length; i++) {
+      const p = poly[i]!;
+      const q = poly[(i + 1) % poly.length]!;
+      perimeter += Math.hypot(q.x - p.x, q.y - p.y);
+    }
+  ctx.strokeStyle = css(ink, 0.95);
+  ctx.lineWidth = 1 * px;
   ctx.setLineDash([5 * px, 3.5 * px]);
-  ctx.lineDashOffset = o.crawl ? -(o.time * 0.011) * px : 0;
+  ctx.lineDashOffset = o.crawl && !stale ? -(o.time * 0.011) * px : 0;
+  ctx.stroke(path);
+  ctx.lineDashOffset = 0;
+  ctx.setLineDash([perimeter * feature.progress, perimeter]);
+  ctx.lineWidth = Math.min(2.2 * px, 1.3);
   ctx.stroke(path);
   ctx.setLineDash([]);
-  ctx.lineDashOffset = 0;
 }

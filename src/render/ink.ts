@@ -226,3 +226,34 @@ export function makePaper(base: RGB, seed = 7, size = 256): HTMLCanvasElement {
 }
 
 export const paperTone = INK.linen;
+
+/** Foxing: the brown spotting of paper left alone. Transparent, so it lies over the sheet. */
+export function makeFoxing(seed = 5, size = 256): HTMLCanvasElement {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const g = c.getContext('2d')!;
+  let s = seed >>> 0;
+  const r = () => {
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  g.fillStyle = 'rgb(123 98 72 / 0.1)';
+  g.fillRect(0, 0, size, size);
+  for (let i = 0; i < 70; i++) {
+    const x = r() * size;
+    const y = r() * size;
+    const rad = 2 + r() * r() * 16;
+    for (const ox of [-size, 0, size])
+      for (const oy of [-size, 0, size]) {
+        const grad = g.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, rad);
+        grad.addColorStop(0, `rgb(112 84 54 / ${0.16 + r() * 0.2})`);
+        grad.addColorStop(0.6, 'rgb(123 98 72 / 0.08)');
+        grad.addColorStop(1, 'rgb(123 98 72 / 0)');
+        g.fillStyle = grad;
+        g.fillRect(x + ox - rad, y + oy - rad, rad * 2, rad * 2);
+      }
+  }
+  return c;
+}

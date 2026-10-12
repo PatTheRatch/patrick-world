@@ -830,6 +830,34 @@ input::placeholder {
   margin: 0 6px;
   background: var(--linen-shade);
 }
+.edge {
+  flex: none;
+  display: block;
+  width: 26px;
+  height: 18px;
+  border: 1.4px solid var(--ink);
+}
+.edge-live {
+  background: var(--slip);
+  border-style: dashed;
+  box-shadow: 1px 1.5px 0 rgb(0 0 0 / 0.3);
+}
+.edge-dormant {
+  border: 1.6px dotted var(--sepia);
+  background: rgb(123 98 72 / 0.18);
+}
+.edge-ruin {
+  border: 1.2px dashed var(--sepia);
+  background: rgb(123 98 72 / 0.3);
+}
+.edge-new {
+  width: 16px;
+  height: 16px;
+  margin: 1px 5px;
+  border: 0;
+  background: var(--slip);
+  box-shadow: 1px 1.5px 0 rgb(0 0 0 / 0.3);
+}
 .key-numeral {
   width: 26px;
   text-align: center;

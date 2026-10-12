@@ -84,6 +84,20 @@ Cursor adapters, scaffolding, Patrick OS. **Not now:** drawing revenue, mobile, 
 cartographic ornament, more Key of Methods, finishing the reverse-edition motion (it serves
 reflection, not the loop).
 
+## The world view, second pass
+
+- [x] Attention at a glance: paper, edge and motion per place
+- [x] A town's mass follows its work (houses)
+- [x] Wider name scale; small ideas are marks without names from afar
+- [x] Shaded relief and woodland under the survey
+- [x] Inferred tracks between places that share methods
+- [x] Honest construction drawing; stalled work weathers
+- [x] Newly founded places marked
+- [ ] Town form by rank, growth-stable
+- [ ] Worked fields and regrowth
+- [ ] District and building layers: criteria ticks, built order, revision slips
+- [ ] Bridges; towns oriented to the ground
+
 ## Stage 8: Real data
 
 - [x] GitHub adapter: fetch, transform to events, load in place of the specimen

@@ -54,16 +54,29 @@ const STAGE_WORD: Record<FeatureStage, string> = {
   mature: '',
 };
 
+// A wide scale, so that the biggest words are unmistakably the biggest places.
 const NAME_SIZE: Record<Rank, number> = {
-  major: 25,
-  city: 20,
-  town: 15.5,
-  settlement: 13,
+  major: 33,
+  city: 26,
+  town: 19,
+  settlement: 14.5,
   outpost: 12,
-  site: 11.5,
-  spark: 11.5,
+  site: 11,
+  spark: 11,
 };
 
+/** Within a rank, more work is a larger name, but never as large as the next rank's. */
+function nameSize(place: PlaceState): number {
+  const i = RANKS.indexOf(place.rank);
+  const base = NAME_SIZE[place.rank];
+  const next = RANKS[i + 1];
+  const room = next ? NAME_SIZE[next] - base : 4;
+  const work = Math.pow(Math.min(1, Math.log10(1 + place.commits) / 3.5), 1.8);
+  return base + room * 0.8 * work;
+}
+
+/** How long a newly founded place stays marked as new. */
+const NEW_SURVEY_DAYS = 42;
 const FLOOD_MS = 700;
 const DRAIN_MS = 420;
 const ROAD_MS = 900;
@@ -252,9 +265,10 @@ export class Renderer {
     }
     if (held && held.key === key && held.art.plan === plan) {
       held.art.place = place;
+      held.art.today = Date.UTC(+this.scene!.world.asOf.slice(0, 4), +this.scene!.world.asOf.slice(5, 7) - 1, +this.scene!.world.asOf.slice(8, 10)) / 86400000;
       return held.art;
     }
-    const art = buildPlaceArt(place, plan);
+    const art = buildPlaceArt(place, plan, this.scene!.world.asOf);
     this.arts.set(place.id, { key, art });
     return art;
   }
@@ -375,7 +389,7 @@ export class Renderer {
 
     this.drawRoads(scene, placeById, lit, now);
 
-    const { slip } = territory.patterns(ctx);
+    const { slip, foxing } = territory.patterns(ctx);
     const visible: PlaceArt[] = [];
     this.crawlOnScreen = false;
     for (const place of scene.world.places) {
@@ -387,17 +401,19 @@ export class Renderer {
       const born = this.births.get(place.id);
       const birth = born === undefined ? 1 : Math.min(1, (now - born) / BIRTH_MS);
       const alpha = (lit && !lit.has(place.id) ? 0.22 : 1) * birth;
-      if (art.building.length > 0 && k * e >= 0.9) this.crawlOnScreen = true;
+      // Anything being worked on moves, at every scale: the limits from afar, the walls close to.
+      if (place.liveliness === 'building' && art.hullLength > 0) this.crawlOnScreen = true;
       ctx.save();
       ctx.translate(art.plan.center.x, art.plan.center.y);
       ctx.scale(e, e);
       ctx.translate(-art.plan.center.x, -art.plan.center.y);
-      drawPlace(ctx, art, { k: k * e, time: now, alpha, crawl: !cam.reducedMotion, floods, drains, slipPaper: slip });
+      drawPlace(ctx, art, { k: k * e, time: now, alpha, crawl: !cam.reducedMotion, floods, drains, slipPaper: slip, foxing });
       ctx.restore();
     }
     ctx.restore();
 
     // Everything below is lettered or marked in screen space.
+    this.drawNewSurveys(scene, visible);
     this.drawMarks(scene, visible, lit, now);
     const names = this.layoutNames(scene, visible, lit);
     // Region names keep clear of place names and of the towns themselves.
@@ -490,7 +506,7 @@ export class Renderer {
   private townReach(id: string): number {
     const plan = this.scene?.plans.get(id);
     if (!plan || plan.lots.length === 0) return 9 / this.camera.k;
-    return coreRadius(plan) * this.exag * 0.82;
+    return coreRadius(plan) * this.exag * 0.55;
   }
 
   private letterRoads(scene: Scene, places: Map<string, PlaceState>) {
@@ -521,6 +537,52 @@ export class Renderer {
         angle,
         halo: INK.linen,
       });
+    }
+  }
+
+  /**
+   * Newly emerging: a place founded in the last six weeks has its mark on a small fresh slip,
+   * with a pencil traverse to its nearest neighbour, the way a surveyor ties a new station
+   * into the existing work. It wears off as the slip would.
+   */
+  private drawNewSurveys(scene: Scene, visible: PlaceArt[]) {
+    const { ctx, camera: cam } = this;
+    const day = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
+    const today = day(scene.world.asOf);
+    for (const art of visible) {
+      const { place } = art;
+      const age = today - day(place.foundedAt);
+      if (age > NEW_SURVEY_DAYS || age < 0) continue;
+      const fresh = 1 - age / NEW_SURVEY_DAYS;
+      const c = cam.toScreen(place.position);
+      let near: PlaceState | null = null;
+      let best = Infinity;
+      for (const other of scene.world.places) {
+        if (other.id === place.id || other.foundedAt > place.foundedAt) continue;
+        const d = Math.hypot(other.position.x - place.position.x, other.position.y - place.position.y);
+        if (d < best) {
+          best = d;
+          near = other;
+        }
+      }
+      if (near) {
+        const n = cam.toScreen(near.position);
+        ctx.strokeStyle = css(INK.graphite, 0.75 * fresh + 0.15);
+        ctx.lineWidth = 1;
+        ctx.setLineDash([9, 3, 1.5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(n.x, n.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      // A town that already has limits is on its own slip; a bare mark gets a small one.
+      if (art.hullLength > 0 && place.liveliness === 'building') continue;
+      const r = 13;
+      ctx.fillStyle = css(INK.black, 0.34 * (0.4 + 0.6 * fresh));
+      ctx.fillRect(c.x - r + 1.4, c.y - r + 2, r * 2, r * 2);
+      ctx.fillStyle = css(mix(INK.linen, INK.slip, 0.35 + 0.65 * fresh));
+      ctx.fillRect(c.x - r, c.y - r, r * 2, r * 2);
     }
   }
 
@@ -727,7 +789,9 @@ export class Renderer {
       const rank = RANKS.indexOf(place.rank);
       const pencilled = rank <= 1;
       const forced = place.id === hoverId || place.id === selectedId;
-      const size = NAME_SIZE[place.rank] * grow;
+      // The smallest things whisper: from the whole-territory view they are marks without names.
+      if (pencilled && !forced && k < this.fitK * 1.45) continue;
+      const size = nameSize(place) * grow;
       const style: Lettering = {
         family: SERIF,
         size,

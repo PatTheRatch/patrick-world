@@ -27,7 +27,9 @@ const ladder: readonly Rung[] = [
   { rank: 'site', thoughts: 1 },
   { rank: 'outpost', commits: 1 },
   { rank: 'settlement', working: 1 },
-  { rank: 'town', working: 3, weeks: 8 },
+  // Four weeks, not eight: a month of work with three things standing is a town. Tuned
+  // against real repositories, where two months was keeping busy projects level with idle ones.
+  { rank: 'town', working: 3, weeks: 4 },
   { rank: 'city', working: 6, weeks: 20, releases: 1 },
   { rank: 'major', working: 10, weeks: 40, users: 100 },
 ];

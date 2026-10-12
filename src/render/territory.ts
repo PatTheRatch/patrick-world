@@ -4,7 +4,7 @@
 import type { Terrain } from '../plan/types';
 import { RANKS, type Catalogue, type PlaceState } from '../world/types';
 import type { Camera } from './camera';
-import { GOTHIC, addPolygon, addPolyline, letter, makePaper, measure } from './ink';
+import { GOTHIC, addPolygon, addPolyline, letter, makeFoxing, makePaper, measure } from './ink';
 import { INK, css } from './palette';
 
 const MARGIN = 86;
@@ -21,8 +21,11 @@ export class TerritoryArt {
   private knowledgeKey = '';
   private paper: CanvasPattern | null = null;
   private slipPaper: CanvasPattern | null = null;
+  private foxing: CanvasPattern | null = null;
   /** Blank land far from everything, where the sheet admits it knows nothing. */
   private blanks: { x: number; y: number }[] = [];
+  /** Shaded relief and forest, painted once: the lie of the land under the line work. */
+  private ground: HTMLCanvasElement | null = null;
 
   constructor(
     private terrain: Terrain,
@@ -36,11 +39,98 @@ export class TerritoryArt {
       addPolygon(this.coast, poly);
     }
     for (const lake of terrain.lakes) addPolygon(this.lakes, lake);
+    this.ground = this.paintGround();
     this.shoals = terrain.shoals.map((lines) => {
       const p = new Path2D();
       for (const line of lines) addPolyline(p, line);
       return p;
     });
+  }
+
+  /**
+   * The country itself, as a soft raster: slopes lit from the north-west the way an engraver
+   * shades them, high ground a little darker, and woodland as a broken tone. This is geography,
+   * so it is drawn everywhere. Survey detail (hachures, single trees, names) is what is
+   * reserved for ground near founded places.
+   */
+  private paintGround(): HTMLCanvasElement {
+    const { width, height } = this.terrain.size;
+    const STEP = 4;
+    const w = Math.ceil(width / STEP);
+    const h = Math.ceil(height / STEP);
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const g = canvas.getContext('2d')!;
+    const image = g.createImageData(w, h);
+    const px = image.data;
+    const at = (x: number, y: number) => this.terrain.heightAt({ x, y });
+
+    // Woodland density on a coarse grid, blurred once.
+    const CELL = 36;
+    const cols = Math.ceil(width / CELL) + 1;
+    const rows = Math.ceil(height / CELL) + 1;
+    const raw = new Float32Array(cols * rows);
+    for (const t of this.terrain.woods) raw[Math.floor(t.y / CELL) * cols + Math.floor(t.x / CELL)]! += 1;
+    const wood = new Float32Array(cols * rows);
+    for (let r = 0; r < rows; r++)
+      for (let c = 0; c < cols; c++) {
+        let sum = 0;
+        let n = 0;
+        for (let dr = -2; dr <= 2; dr++)
+          for (let dc = -2; dc <= 2; dc++) {
+            const rr = r + dr;
+            const cc = c + dc;
+            if (rr < 0 || cc < 0 || rr >= rows || cc >= cols) continue;
+            const weight = 3 - Math.max(Math.abs(dr), Math.abs(dc));
+            sum += raw[rr * cols + cc]! * weight;
+            n += weight;
+          }
+        wood[r * cols + c] = sum / n;
+      }
+
+    let seed = 0x2545f491;
+    const noise = () => {
+      seed ^= seed << 13;
+      seed ^= seed >>> 17;
+      seed ^= seed << 5;
+      return ((seed >>> 0) % 1000) / 1000;
+    };
+    let sea = 1;
+    for (const poly of this.terrain.land.slice(0, 1)) for (const p of poly.slice(0, 40)) sea = Math.min(sea, at(p.x, p.y));
+
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        const x = i * STEP;
+        const y = j * STEP;
+        const o = (j * w + i) * 4;
+        if (!this.terrain.isLand({ x, y })) continue;
+        const here = at(x, y);
+        // Lit from the north-west: ground that rises toward the south-east faces the light.
+        const slope = (at(x + 14, y) - at(x - 14, y) + (at(x, y + 14) - at(x, y - 14))) * 26;
+        const high = Math.max(0, here - sea - 0.12) * 0.55;
+        const c = Math.min(cols - 1, Math.round(x / CELL));
+        const r = Math.min(rows - 1, Math.round(y / CELL));
+        const trees = Math.min(1, wood[r * cols + c]! / 1.6);
+        const grain = noise();
+        let dark = Math.max(0, -slope) * 0.9 + high * 0.5 + trees * (0.1 + 0.2 * (grain > 0.45 ? grain : 0));
+        const light = Math.max(0, slope) * 0.55;
+        dark = Math.min(0.42, dark);
+        if (dark > light) {
+          px[o] = 62;
+          px[o + 1] = 54;
+          px[o + 2] = 40;
+          px[o + 3] = Math.round((dark - light) * 255 * 0.34);
+        } else {
+          px[o] = 255;
+          px[o + 1] = 252;
+          px[o + 2] = 240;
+          px[o + 3] = Math.round(Math.min(0.3, light - dark) * 255 * 0.42);
+        }
+      }
+    }
+    g.putImageData(image, 0, 0);
+    return canvas;
   }
 
   /** The ground worth framing: the main landmass, not the whole sheet of sea. */
@@ -61,8 +151,9 @@ export class TerritoryArt {
     if (!this.paper) {
       this.paper = ctx.createPattern(makePaper(INK.linen, 11, 512), 'repeat');
       this.slipPaper = ctx.createPattern(makePaper(INK.slip, 23, 128), 'repeat');
+      this.foxing = ctx.createPattern(makeFoxing(), 'repeat');
     }
-    return { paper: this.paper!, slip: this.slipPaper! };
+    return { paper: this.paper!, slip: this.slipPaper!, foxing: this.foxing! };
   }
 
   /** Decide which relief strokes are known, from the places that exist at this edition. */
@@ -157,6 +248,15 @@ export class TerritoryArt {
     ctx.fillStyle = paper;
     ctx.fillRect(-MARGIN, -MARGIN, width + MARGIN * 2, height + MARGIN * 2);
 
+    if (this.ground) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      // The lie of the land belongs to the wide view. Down among the buildings it steps back.
+      ctx.globalAlpha = 1 - 0.72 * Math.max(0, Math.min(1, (k - 0.7) / 1.6));
+      ctx.drawImage(this.ground, 0, 0, width, height);
+      ctx.globalAlpha = 1;
+    }
+
     // Water: a flat wash over everything that is not land.
     ctx.fillStyle = css(INK.water, 0.62);
     ctx.fill(this.sea, 'evenodd');
@@ -244,7 +344,7 @@ export class TerritoryArt {
     const k = cam.k;
     const fade = Math.max(0, Math.min(1, 1.25 - k / (fitK * 9)));
     if (fade <= 0.02) return;
-    const size = Math.max(11, Math.min(30, 15 * Math.pow(k / fitK, 0.75)));
+    const size = Math.max(11, Math.min(19, 12.5 * Math.pow(k / fitK, 0.6)));
 
     for (const region of this.catalogue.regions) {
       const here = places.filter((p) => p.region === region.id);
@@ -258,7 +358,7 @@ export class TerritoryArt {
         tracking: 0.62,
         upper: true,
         color: INK.black,
-        alpha: 0.4 * fade,
+        alpha: 0.3 * fade,
       };
       const w = measure(ctx, region.name, style);
       const spots = [

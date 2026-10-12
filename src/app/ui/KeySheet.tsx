@@ -126,7 +126,45 @@ export function KeySheet() {
                 </div>
               ))}
             </dl>
-            <h3>The paper and ink say when</h3>
+            <h3>A place's edge and the paper under it say how lately</h3>
+            <dl class="key-list key-age">
+              <div>
+                <dt>
+                  <i class="edge edge-live" />
+                  Fresh slip, moving line
+                </dt>
+                <dd>Being worked on now.</dd>
+              </div>
+              <div>
+                <dt>
+                  <i class="edge edge-steady" />
+                  Bare sheet, solid line
+                </dt>
+                <dd>Standing. Worked on in the last ten weeks.</dd>
+              </div>
+              <div>
+                <dt>
+                  <i class="edge edge-dormant" />
+                  Foxed paper, dotted line
+                </dt>
+                <dd>Quiet, then dormant. Nobody has been back.</dd>
+              </div>
+              <div>
+                <dt>
+                  <i class="edge edge-ruin" />
+                  Stained, broken line
+                </dt>
+                <dd>Ruins. Abandoned, and kept.</dd>
+              </div>
+              <div>
+                <dt>
+                  <i class="edge edge-new" />
+                  Mark on a small slip
+                </dt>
+                <dd>Founded in the last six weeks.</dd>
+              </div>
+            </dl>
+            <h3>The ink of a building says the same, close to</h3>
             <dl class="key-list key-age">
               <div>
                 <dt>
@@ -174,7 +212,7 @@ export function KeySheet() {
                   <i class="road road-track" />
                   Track
                 </dt>
-                <dd>They share a method.</dd>
+                <dd>They share a method. Inferred where you have not said so.</dd>
               </div>
               <div>
                 <dt>
@@ -196,9 +234,9 @@ export function KeySheet() {
               <div>
                 <dt>
                   <i class="age age-house" />
-                  Dwellings
+                  Houses
                 </dt>
-                <dd>People who use it, on a log scale.</dd>
+                <dd>The ordinary work around the named buildings: one house for about nine commits, more where people use it.</dd>
               </div>
               <div>
                 <dt>
