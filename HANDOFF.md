@@ -81,7 +81,8 @@ GitHub adapter would have to emit.
 | Boxout Fantasy and Patrick OS | Real names from your brief; everything inside them is invented. |
 | "Today" | Pinned to 2026-10-12 in `src/app/store.ts`, where the fixture history ends. |
 | Things you add | Real events, kept in this browser's local storage only. |
-| GitHub, Patrick OS, analytics, deploys | Not connected. Only the interface exists. |
+| GitHub | Connected since, read-only (`npm run sync:github`). |
+| Patrick OS, analytics, deploys | Not connected. Only the interface exists. |
 | Stage changes | In the fixture they are authored. "Record as…" in a building's note is your own claim, logged as `manual`. |
 
 ## Architecture choices

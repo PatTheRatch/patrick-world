@@ -152,7 +152,10 @@ reflection, not the loop).
 - [x] "Where to pick up" in a place's note; field notes across the whole territory
 - [x] Wording rules enforced in code: no score, no count of the undone, no guilt
 - [ ] Regenerate understandings from a script (today they were written by an agent in a session)
-- [ ] Fetch the documents READMEs point to (STATUS, ROADMAP, PLAN) as further evidence
+- [x] Fetch the documents READMEs point to (STATUS, ROADMAP, PLAN) as further evidence; the
+      lines they mark as not done are read as evidence of unfinished work
+- [x] `understand.mjs --check` says which readings the repository has moved past, and which
+      documents a reading cites nothing from
 - [ ] TODOs from the working tree (GitHub's code search does not index these repositories)
 - [ ] Understanding shown at building zoom; open questions and architecture on a place's own sheet
 

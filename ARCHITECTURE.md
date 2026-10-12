@@ -96,8 +96,13 @@ repository evidence ──► project understanding ──► continuation sugge
 
 Kept apart from the world on purpose (`src/understanding/`):
 
-- **Evidence** is what was fetched: README, structure, recent commits and the files they
-  changed, issues. Every item carries a source a person could follow.
+- **Evidence** is what was fetched: README, the documents it points to, structure, recent
+  commits and the files they changed, issues. Every item carries a source a person could follow.
+  The further documents are the ones a README links to inside its own repository and the ones
+  at the top under a telling name (STATUS, HANDOFF, ROADMAP, PLAN, TODO), at most four; a
+  long one keeps its opening and its end. From each the evidence keeps its headings, its opening and the lines it marks
+  as not done (unticked checkboxes). A document says what its author meant when it was
+  written, so a reading may cite it but never treats it as current without the commits.
 - **Understanding** is a reading of that evidence: what a project is, who it is for, its
   architecture, what is unfinished. Every field is a claim with a confidence and its sources,
   and the whole carries who generated it and when. It may be written by a model. It is never

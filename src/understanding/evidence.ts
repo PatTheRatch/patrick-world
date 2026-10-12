@@ -27,6 +27,11 @@ export const EVIDENCE_LIMITS = {
   filesPerGroup: 8,
   issues: 40,
   todos: 20,
+  /** Characters kept as the excerpt of a document beside the README. */
+  documentExcerpt: 1200,
+  /** Unticked checklist lines kept per document. */
+  openItems: 12,
+  openItemChars: 160,
 } as const;
 
 /** A fact with where it came from, and when if it has a date (ISO day). */
@@ -64,6 +69,30 @@ export interface WorkGroup {
   files: string[];
 }
 
+/** A line a document itself marks as not done: an unticked checkbox. */
+export interface OpenItem {
+  text: string;
+  /** The heading it stands under, when there is one. */
+  under?: string;
+}
+
+/** A document beside the README: a status, roadmap or plan the repository keeps about itself. */
+export interface EvidenceDocument {
+  path: string;
+  /** `readme`: the README links to it. `name`: found at the top of the repository by its name. */
+  via: 'readme' | 'name';
+  headings: string[];
+  firstParagraph?: string;
+  /** Its opening, markup left as written. */
+  excerpt: string;
+  /** Unticked checklist lines, in the document's order. Says nothing about how current the document is. */
+  openItems: OpenItem[];
+  /** The document lists more open lines than are kept here. */
+  moreOpen: boolean;
+  truncated: boolean;
+  source: string;
+}
+
 export interface ProjectEvidence {
   /** Place id, by the same rule as the map: `gh-<owner>-<name>`. */
   place: string;
@@ -89,6 +118,8 @@ export interface ProjectEvidence {
       }
     | { status: 'none' }
     | { status: 'unread'; reason: string };
+  /** Documents the README points to, or that stand at the top under a telling name. */
+  documents: Section<EvidenceDocument>;
   structure: {
     /** One plain sentence or two: languages, directories, manifests. */
     summary: string;
@@ -197,9 +228,12 @@ export function clip(text: string, limit: number): string {
   return `${head.slice(0, space > 0 ? space : limit).replace(/[,;:\s]+$/, '')}…`;
 }
 
-/** Blocks of a README outside code fences, with headings pulled out. */
-function readReadme(text: string): { headings: string[]; firstParagraph?: string } {
+/** Blocks of a README or other document outside code fences, with headings and unticked checklist lines pulled out. */
+function readReadme(text: string): { headings: string[]; firstParagraph?: string; openItems: OpenItem[]; moreOpen: boolean } {
   const headings: string[] = [];
+  const openItems: OpenItem[] = [];
+  let moreOpen = false;
+  let under: string | undefined;
   const blocks: string[] = [];
   let fenced = false;
   let block: string[] = [];
@@ -220,7 +254,19 @@ function readReadme(text: string): { headings: string[]; firstParagraph?: string
       flush();
       const title = stripMarkup(heading[1] ?? '');
       if (title !== '' && headings.length < EVIDENCE_LIMITS.headings) headings.push(title);
+      under = title === '' ? undefined : title;
       continue;
+    }
+    const box = /^[-*+]\s+\[ \]\s+(.+)$/.exec(line);
+    if (box) {
+      const item = stripMarkup(box[1] ?? '');
+      if (item !== '') {
+        if (openItems.length < EVIDENCE_LIMITS.openItems) {
+          const open: OpenItem = { text: clip(item, EVIDENCE_LIMITS.openItemChars) };
+          if (under !== undefined) open.under = under;
+          openItems.push(open);
+        } else moreOpen = true;
+      }
     }
     // Rules, tables, list items, quotes, badges and bare HTML are not prose paragraphs.
     if (line === '' || /^(---+|===+|\*\*\*+)$/.test(line)) flush();
@@ -231,10 +277,10 @@ function readReadme(text: string): { headings: string[]; firstParagraph?: string
   for (const b of blocks) {
     const prose = stripMarkup(b);
     if (prose.length >= EVIDENCE_LIMITS.paragraphMin && /[a-z]{3,}\s+[a-z]{2,}/i.test(prose)) {
-      return { headings, firstParagraph: clip(prose, EVIDENCE_LIMITS.paragraph) };
+      return { headings, firstParagraph: clip(prose, EVIDENCE_LIMITS.paragraph), openItems, moreOpen };
     }
   }
-  return { headings };
+  return { headings, openItems, moreOpen };
 }
 
 function commitRow(c: GithubCommit): EvidenceCommit {
@@ -279,6 +325,34 @@ export function evidenceFor(repo: GithubRepo, raw?: Pick<GithubRaw, 'fetchedAt'>
       source: ev.readme.path,
     };
     if (read.firstParagraph !== undefined) readme.firstParagraph = read.firstParagraph;
+  }
+
+  // Documents beside the README
+  let documents: ProjectEvidence['documents'];
+  if (ev?.documents !== undefined) {
+    documents = {
+      status: 'present',
+      truncated: ev.documentsTruncated === true,
+      items: ev.documents.map((d) => {
+        const read = readReadme(d.text);
+        const item: EvidenceDocument = {
+          path: d.path,
+          via: d.via,
+          headings: read.headings,
+          excerpt: d.text.slice(0, EVIDENCE_LIMITS.documentExcerpt),
+          openItems: read.openItems,
+          // A document cut short may list more below the cut, but only if it lists any at all.
+          moreOpen: read.moreOpen || (d.truncated === true && read.openItems.length > 0),
+          truncated: d.truncated === true || d.text.length > EVIDENCE_LIMITS.documentExcerpt,
+          source: d.path,
+        };
+        if (read.firstParagraph !== undefined) item.firstParagraph = read.firstParagraph;
+        return item;
+      }),
+    };
+  } else {
+    const older = 'This record predates the reading of further documents (sync version 3). Run: npm run sync:github';
+    documents = { status: 'absent', reason: ev === undefined ? notFetched : (absent.documents ?? older) };
   }
 
   // Structure
@@ -398,6 +472,7 @@ export function evidenceFor(repo: GithubRepo, raw?: Pick<GithubRaw, 'fetchedAt'>
     fullName: repo.full_name,
     topics: repo.topics,
     readme,
+    documents,
     structure: {
       summary: parts.join(' '),
       topLevelFiles,

@@ -49,7 +49,7 @@ Success is an emotional response backed by an honest picture:
 - Planning a feature properly here is easier than not planning it, and "done" means the same
   thing whether he or an agent did the work.
 
-## What it is for, as of 13 October 2026
+## What it is for, as of 12 October 2026
 
 Patrick's World should not only show what he has built. It should understand what each
 project is, show him where he left off, help him decide where to go next, and let him build
@@ -70,8 +70,8 @@ statuses someone typed. Here there is no status field to type: a city's state is
 - Separate from Patrick OS (his personal intelligence and memory system). Patrick OS may later
   supply structured entities and events; the world must work without it.
 - Eventual sources: GitHub, Patrick OS, manually captured ideas, project metadata, deployed
-  applications, project analytics. None are connected yet. All of them arrive through one
-  adapter boundary as an append-only stream of events.
+  applications, project analytics. GitHub is connected, read-only; the rest are not yet. All
+  of them arrive through one adapter boundary as an append-only stream of events.
 - The first build runs entirely on a synthetic fixture world.
 
 ## Capabilities and Constraints
@@ -90,7 +90,8 @@ Confirmed by the brief:
 - Time is a first-class dimension: he should be able to see the world as it was a year ago.
 - New things can be added, expanded and connected from inside the world.
 
-Stated in the second brief (12 October 2026), designed for and not yet built:
+Stated in the second brief (12 October 2026). Build plans, build stages and building by hand
+are in the app; agent builders, scaffolding and Patrick OS are designed for and not yet built:
 
 - **Build plans.** A feature can carry a plan: objective, acceptance criteria, implementation
   steps, dependencies, files expected to change, verification requirements, blockers.
@@ -119,7 +120,8 @@ Hard constraints:
 - Not a dashboard with game icons; no card walls; no sidebar-plus-map layout.
 - Not childish, not ornamented fantasy, not pixel art for its own sake.
 - Must stay readable and fast with dozens to hundreds of projects, ideas and features.
-- No real accounts connected, nothing pushed to a remote, in this phase.
+- No accounts connected beyond read-only GitHub; the code lives in one private repository and
+  is pushed only when Patrick asks.
 
 Undecided (recorded, not invented):
 

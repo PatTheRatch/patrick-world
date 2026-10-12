@@ -146,6 +146,49 @@ describe('evidenceFor', () => {
     expect(root.files).toEqual(['scripts/eink_diagnose.py', 'LAUNCHPAD.md']);
   });
 
+  it('reads the documents a README points to: headings, opening, and the lines they mark as not done', () => {
+    const r = repo();
+    r.evidence!.documents = [
+      {
+        path: 'docs/ROADMAP.md',
+        via: 'readme',
+        text: '# Roadmap\n\nWhere the dashboard goes after the first working panel is hung by the door.\n\n## Now\n\n- [x] Train departures\n- [ ] **Landscape** renderer for the [kitchen](kitchen.md) panel\n\n```\n- [ ] not a real item\n```\n\n## Later\n\n* [ ] Second display\n- plain bullet\n',
+      },
+    ];
+    const e = evidenceFor(r, RAW);
+    if (e.documents.status !== 'present') throw new Error('documents not read');
+    expect(e.documents.items).toHaveLength(1);
+    const doc = e.documents.items[0]!;
+    expect(doc).toMatchObject({ path: 'docs/ROADMAP.md', via: 'readme', source: 'docs/ROADMAP.md', headings: ['Roadmap', 'Now', 'Later'], moreOpen: false });
+    expect(doc.firstParagraph).toMatch(/^Where the dashboard goes/);
+    // Ticked lines, plain bullets and anything inside a code fence are not open items.
+    expect(doc.openItems).toEqual([
+      { text: 'Landscape renderer for the kitchen panel', under: 'Now' },
+      { text: 'Second display', under: 'Later' },
+    ]);
+
+    // A long plan is cut, and says that it was.
+    r.evidence!.documents = [{ path: 'PLAN.md', via: 'name', text: Array.from({ length: 30 }, (_, i) => `- [ ] Step ${i}`).join('\n') }];
+    const long = evidenceFor(r, RAW).documents;
+    if (long.status !== 'present') throw new Error('documents not read');
+    expect(long.items[0]!.openItems).toHaveLength(EVIDENCE_LIMITS.openItems);
+    expect(long.items[0]!.openItems[0]).toEqual({ text: 'Step 0' });
+    expect(long.items[0]!.moreOpen).toBe(true);
+  });
+
+  it('keeps "no documents were pointed to" apart from "documents were not looked for"', () => {
+    const r = repo();
+    // The fixture is a version 2 record: nobody asked.
+    const old = evidenceFor(r, RAW).documents;
+    expect(old.status).toBe('absent');
+    if (old.status === 'absent') expect(old.reason).toMatch(/sync:github/);
+    r.evidence!.documents = [];
+    expect(evidenceFor(r, RAW).documents).toEqual({ status: 'present', truncated: false, items: [] });
+    delete r.evidence!.documents;
+    r.evidence!.absent.documents = 'The top of the repository could not be listed, so no further documents were looked for.';
+    expect(evidenceFor(r, RAW).documents).toEqual({ status: 'absent', reason: r.evidence!.absent.documents });
+  });
+
   it('records a missing section as absent, with its reason, and never as an empty list', () => {
     const r = repo();
     r.evidence = { readme: null, recentChanges: [], absent: { todos: 'Code search unavailable for this repository (403).', issues: 'Issues are turned off for this repository.' } };
@@ -229,6 +272,26 @@ describe('HeuristicUnderstander', () => {
       { value: 'Issue #12 "Calendar shows mock data" is open, last updated 1 August 2026', confidence: 'high', sources: ['issue #12'] },
       { value: 'src/launchpad/display.py carries a TODO: "# TODO: landscape renderer"', confidence: 'high', sources: ['src/launchpad/display.py'] },
     ]);
+  });
+
+  it('reports what the repository\'s own documents list as not done, as a medium claim that names the document', async () => {
+    const r = repo();
+    r.evidence!.documents = [
+      { path: 'STATUS.md', via: 'name', text: '## Hardware\n\n- [ ] Mount the panel!\n- [ ] Wire the button\n- [ ] Third\n- [ ] Fourth\n' },
+      { path: 'docs/ROADMAP.md', via: 'readme', text: '- [ ] Second display\n- [ ] Battery\n- [ ] Solar\n' },
+    ];
+    const u = await new HeuristicUnderstander().understand(read(r), 'p');
+    const listed = u.unfinished.filter((c) => c.value.includes('lists as not done'));
+    expect(listed).toEqual([
+      { value: 'STATUS.md lists as not done, under "Hardware": "Mount the panel"', confidence: 'medium', sources: ['STATUS.md'] },
+      { value: 'STATUS.md lists as not done, under "Hardware": "Wire the button"', confidence: 'medium', sources: ['STATUS.md'] },
+      { value: 'STATUS.md lists as not done, under "Hardware": "Third"', confidence: 'medium', sources: ['STATUS.md'] },
+      { value: 'docs/ROADMAP.md lists as not done: "Second display"', confidence: 'medium', sources: ['docs/ROADMAP.md'] },
+      { value: 'docs/ROADMAP.md lists as not done: "Battery"', confidence: 'medium', sources: ['docs/ROADMAP.md'] },
+    ]);
+    // Still no next step: a list in a document is not a decision about what to do.
+    expect(u.nextSteps).toEqual([]);
+    expect(isProjectUnderstanding(u)).toBe(true);
   });
 
   it('marks its guesses low and never invents a question, a next step, an audience or a pick-up', async () => {

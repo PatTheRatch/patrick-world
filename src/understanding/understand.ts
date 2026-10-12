@@ -21,6 +21,10 @@ export const HEURISTIC_LIMITS = {
   capabilities: 8,
   unfinishedIssues: 5,
   unfinishedTodos: 5,
+  /** Unticked lines taken from the repository's own status, roadmap and plan documents, in all. */
+  unfinishedListed: 5,
+  /** And from any one of them, so that one long plan does not crowd out the rest. */
+  unfinishedListedPerDocument: 3,
   /** Directories named in the summary of recent work. */
   recentGroups: 3,
 } as const;
@@ -115,6 +119,20 @@ export function understandHeuristically(evidence: ProjectEvidence, place: string
   if (evidence.todos.status === 'present') {
     for (const todo of evidence.todos.items.slice(0, L.unfinishedTodos)) {
       unfinished.push(claim(`${todo.path} carries a ${todo.marker}: ${quoted(todo.text)}`, 'high', [todo.source]));
+    }
+  }
+
+  // What the repository's own documents list as not done. The document says so outright; how
+  // current the document is, the record cannot say, so this is `medium` and never `high`.
+  if (evidence.documents.status === 'present') {
+    let taken = 0;
+    for (const doc of evidence.documents.items) {
+      for (const item of doc.openItems.slice(0, L.unfinishedListedPerDocument)) {
+        if (taken >= L.unfinishedListed) break;
+        const where = item.under === undefined ? '' : `, under ${quoted(item.under)}`;
+        unfinished.push(claim(`${doc.path} lists as not done${where}: ${quoted(item.text)}`, 'medium', [doc.source]));
+        taken++;
+      }
     }
   }
 

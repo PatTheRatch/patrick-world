@@ -12,6 +12,8 @@
 //
 // Since version 2 each repository also carries `evidence`: its README, open issue titles,
 // TODO-style lines where code search offers them, and the files its latest commits touched.
+// Since version 3 it also carries `documents`: the files its README points to and the ones
+// at its top with a telling name (STATUS, ROADMAP, PLAN); a long one keeps its opening and its end.
 // That is reading matter for src/understanding/, kept under its own key so that anything
 // written against version 1 reads the file exactly as before.
 //
@@ -25,6 +27,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// The choice of documents is typed and tested in the app's source. Node strips the types.
+import { cutDocument, documentCandidates } from '../src/understanding/documents.ts';
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data', 'github.json');
 
@@ -355,6 +360,38 @@ function fetchEvidence(token, r, recentShas) {
   return evidence;
 }
 
+/**
+ * The documents beside the README: read after the root tree, which says which names exist.
+ * An empty list is a fact (nothing was pointed to); a failure is recorded in `absent`.
+ */
+function fetchDocuments(token, r, repo) {
+  const evidence = repo.evidence;
+  const rootFiles = repo.tree.root.filter((e) => e.type === 'blob').map((e) => e.path);
+  const { candidates, more } = documentCandidates(evidence.readme, rootFiles);
+  const documents = [];
+  let failed = 0;
+  for (const c of candidates) {
+    const path = c.path.split('/').map(encodeURIComponent).join('/');
+    const res = get(token, `/repos/${r.full_name}/contents/${path}?ref=${encodeURIComponent(r.default_branch)}`, { soft: true });
+    // A dead link in a README is the README's business, not a failure of the sync.
+    if (res.status === 404) continue;
+    if (res.status !== 200 || res.body?.type !== 'file' || typeof res.body.content !== 'string' || res.body.encoding !== 'base64') {
+      // A directory, a submodule or a file too large to be sent inline is not a document to read.
+      if (res.status !== 200) failed++;
+      continue;
+    }
+    const text = Buffer.from(res.body.content, 'base64').toString('utf8');
+    const cut = cutDocument(text);
+    documents.push({ path: res.body.path ?? c.path, via: c.via, text: cut.text, chars: text.length, truncated: cut.truncated });
+  }
+  if (failed > 0 && documents.length === 0) evidence.absent.documents = `${failed} of ${candidates.length} documents could not be read.`;
+  else {
+    evidence.documents = documents;
+    evidence.documentsTruncated = more;
+    if (failed > 0) evidence.absent.documentsPartial = `${failed} of ${candidates.length} documents could not be read.`;
+  }
+}
+
 function fetchRepo(token, r, opts) {
   const full = r.full_name;
   const api = `/repos/${full}`;
@@ -435,10 +472,12 @@ function fetchRepo(token, r, opts) {
   const root = get(token, `${api}/git/trees/${encodeURIComponent(r.default_branch)}`);
   if (root.status !== 200 || !Array.isArray(root.body?.tree)) {
     repo.notes.push(`Root tree unavailable (${root.status}).`);
+    repo.evidence.absent.documents = 'The top of the repository could not be listed, so no further documents were looked for.';
     return repo;
   }
   const slim = (e) => ({ path: e.path, type: e.type });
   repo.tree.root = root.body.tree.map(slim);
+  fetchDocuments(token, r, repo);
   for (const e of root.body.tree) {
     if (e.type !== 'tree' || !SOURCE_ROOTS.includes(e.path)) continue;
     const sub = get(token, `${api}/git/trees/${e.sha}`);
@@ -497,7 +536,7 @@ function main() {
   }
 
   const raw = {
-    version: 2,
+    version: 3,
     fetchedAt: new Date().toISOString(),
     accounts,
     // The display name on each account's profile, for recognising the owner's commits
@@ -566,6 +605,7 @@ function main() {
   const sum = (pick) => withEvidence.reduce((a, r) => a + pick(r.evidence), 0);
   console.log(`  evidence for ${withEvidence.length} repositories:`);
   console.log(`    READMEs: ${n((r) => r.evidence.readme)} found, ${n((r) => r.evidence.readme === null)} repositories have none`);
+  console.log(`    further documents: ${sum((e) => e.documents?.length ?? 0)} across ${n((r) => (r.evidence.documents?.length ?? 0) > 0)} repositories`);
   console.log(`    open issues: ${sum((e) => e.issues?.length ?? 0)} across ${n((r) => (r.evidence.issues?.length ?? 0) > 0)} repositories`);
   console.log(`    TODO lines: ${sum((e) => e.todos?.length ?? 0)} across ${n((r) => r.evidence.todos)} repositories`);
   console.log(`    recent commits opened for their files: ${sum((e) => e.recentChanges?.length ?? 0)}`);

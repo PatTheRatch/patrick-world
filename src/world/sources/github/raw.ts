@@ -58,6 +58,18 @@ export interface GithubReadme {
   truncated?: boolean;
 }
 
+/** Since version 3: a document beside the README, chosen by src/understanding/documents.ts. */
+export interface GithubDocument {
+  path: string;
+  /** `readme`: the README links to it. `name`: it stands at the top under a telling name. */
+  via: 'readme' | 'name';
+  /** Decoded text. Past 16,000 characters the middle is left out and a line says how much. */
+  text: string;
+  /** Length before the cut. */
+  chars?: number;
+  truncated?: boolean;
+}
+
 export interface GithubIssue {
   number: number;
   title: string;
@@ -87,6 +99,13 @@ export interface GithubCommitChange {
 export interface GithubEvidence {
   /** `null`: GitHub said there is no README. Missing: it was not read (see `absent.readme`). */
   readme?: GithubReadme | null;
+  /**
+   * Since version 3. At most 4. Empty: nothing was pointed to. Missing: not looked for
+   * (an older record, or see `absent.documents`).
+   */
+  documents?: GithubDocument[];
+  /** More were pointed to than were read. */
+  documentsTruncated?: boolean;
   /** Open issues (pull requests excluded), most recently updated first, at most 40. */
   issues?: GithubIssue[];
   issuesTruncated?: boolean;
@@ -135,7 +154,7 @@ export interface GithubRepo {
 }
 
 export interface GithubRaw {
-  /** 1: the record the map is drawn from. 2: the same, plus `evidence` on each repository. */
+  /** 1: the record the map is drawn from. 2: the same, plus `evidence` on each repository. 3: evidence also carries `documents`. */
   version: number;
   /** ISO timestamp of the sync. The world's "today" when this data is on the map. */
   fetchedAt: string;
