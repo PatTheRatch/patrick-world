@@ -87,6 +87,29 @@ flags a builder needs, and a builder adapter never learns anything about drawing
 Whether this stays a companion beside a web app or becomes the main process of a desktop app
 (Tauri or Electron) is deliberately left open: the boundary is the same either way.
 
+## Understanding: a separate, advisory layer
+
+```
+repository evidence ──► project understanding ──► continuation suggestions ──► the notes
+   (fetched, cited)        (generated, advisory)      (fixed rules, cited)       (presentation)
+```
+
+Kept apart from the world on purpose (`src/understanding/`):
+
+- **Evidence** is what was fetched: README, structure, recent commits and the files they
+  changed, issues. Every item carries a source a person could follow.
+- **Understanding** is a reading of that evidence: what a project is, who it is for, its
+  architecture, what is unfinished. Every field is a claim with a confidence and its sources,
+  and the whole carries who generated it and when. It may be written by a model. It is never
+  treated as true, never used to derive state, and is shown with its provenance beside it.
+- **Suggestions** are fixed, tested rules over canonical state (build plans first, then stages
+  and work), which may quote a high-confidence claim but are never overruled by one. Each
+  says "Pick up here because…" and cites its evidence. No score, no count of what is undone.
+- **Nothing in this layer can write an event.** A model may interpret and suggest; only
+  Patrick and builders' reports change the world.
+
+The understanding file and the evidence packs are private: git-ignored and stripped from builds.
+
 ## Module map
 
 ```
@@ -104,6 +127,7 @@ src/
     terrain.ts        Coast, rivers, relief, region outlines
     settlement.ts     WorldState place → a town: latent skeleton, lots, streets, square, fabric
     roads.ts          Routes between places
+  understanding/    Advisory. Evidence, a generated reading of each project, and suggestion rules.
   render/           Canvas. Reads plans and state; writes pixels.
     camera.ts         World↔screen transform, inertial pan, eased flights
     ink.ts            The primitives: pencil, pen, wash, hatch, slip, shadow, lettering

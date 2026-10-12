@@ -139,6 +139,19 @@ reflection, not the loop).
 - [ ] How each criterion passed drawn on the wall itself; rewritten promises carry a slip
 - [ ] "Since you were last here"
 
+## Project understanding and resume
+
+- [x] Evidence fetched per repository: README, recent commits and the files they changed, issues
+- [x] An advisory understanding of each project, every claim with confidence and sources
+- [x] "What this is" in each place's note, with its provenance
+- [x] Suggestion rules over build plans, stages and work: "Pick up here because…", with evidence
+- [x] "Where to pick up" in a place's note; field notes across the whole territory
+- [x] Wording rules enforced in code: no score, no count of the undone, no guilt
+- [ ] Regenerate understandings from a script (today they were written by an agent in a session)
+- [ ] Fetch the documents READMEs point to (STATUS, ROADMAP, PLAN) as further evidence
+- [ ] TODOs from the working tree (GitHub's code search does not index these repositories)
+- [ ] Understanding shown at building zoom; open questions and architecture on a place's own sheet
+
 ## Stage 11: The companion and the first agent
 
 - [ ] The local companion: event channel, log on disk

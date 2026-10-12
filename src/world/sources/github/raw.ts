@@ -43,6 +43,62 @@ export interface GithubPathHistory {
   truncated?: boolean;
 }
 
+// ───────────────────────── Evidence (version 2) ─────────────────────────
+// Reading matter for src/understanding/. Every section is optional. A section that could
+// not be read is LEFT OUT and its reason given in `absent`; it is never an empty list,
+// because "not asked" and "GitHub said there are none" are different facts.
+
+export interface GithubReadme {
+  /** Path in the repository: `README.md`. */
+  path: string;
+  /** Decoded text, cut at 12,000 characters. */
+  text: string;
+  /** Length before the cut. */
+  chars?: number;
+  truncated?: boolean;
+}
+
+export interface GithubIssue {
+  number: number;
+  title: string;
+  labels: string[];
+  created_at?: string | null;
+  updated_at: string | null;
+}
+
+export interface GithubTodoLine {
+  path: string;
+  /** TODO, FIXME, HACK or XXX. */
+  marker: string;
+  /** The line, trimmed and cut at 200 characters. */
+  text: string;
+}
+
+export interface GithubCommitChange {
+  sha7: string;
+  date: string | null;
+  /** At most 30 file paths. */
+  files: string[];
+  /** How many files the commit touched in all. */
+  fileCount?: number;
+  truncated?: boolean;
+}
+
+export interface GithubEvidence {
+  /** `null`: GitHub said there is no README. Missing: it was not read (see `absent.readme`). */
+  readme?: GithubReadme | null;
+  /** Open issues (pull requests excluded), most recently updated first, at most 40. */
+  issues?: GithubIssue[];
+  issuesTruncated?: boolean;
+  /** At most 20 lines. Missing whenever code search could not vouch for the repository. */
+  todos?: GithubTodoLine[];
+  todosTruncated?: boolean;
+  /** Files touched by the 15 most recent commits on the default branch, newest first. */
+  recentChanges?: GithubCommitChange[];
+  /** Section name to the reason it is not here. */
+  absent: Record<string, string>;
+}
+
 export interface GithubRepo {
   owner: string;
   name: string;
@@ -74,9 +130,12 @@ export interface GithubRepo {
   paths: Record<string, GithubPathHistory>;
   pathsConsidered?: { path: string; count?: number; asked: boolean }[];
   notes?: string[];
+  /** Since version 2. Absent in older files, and in a repository the sync could not finish. */
+  evidence?: GithubEvidence;
 }
 
 export interface GithubRaw {
+  /** 1: the record the map is drawn from. 2: the same, plus `evidence` on each repository. */
   version: number;
   /** ISO timestamp of the sync. The world's "today" when this data is on the map. */
   fetchedAt: string;

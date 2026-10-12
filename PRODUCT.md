@@ -49,6 +49,12 @@ Success is an emotional response backed by an honest picture:
 - Planning a feature properly here is easier than not planning it, and "done" means the same
   thing whether he or an agent did the work.
 
+## What it is for, as of 13 October 2026
+
+Patrick's World should not only show what he has built. It should understand what each
+project is, show him where he left off, help him decide where to go next, and let him build
+from inside the world. Morphology work is paused behind that.
+
 ## Positioning
 
 Everything visible is evidence. Size, light, construction, roads, ruins and unlocked

@@ -15,6 +15,8 @@ import {
   catalogue,
   isPresent,
   method,
+  resumeHere,
+  understanding,
   selectedFeature,
   selectedPlace,
   stakeLot,
@@ -22,6 +24,7 @@ import {
 } from '../store';
 import { enter, inspect, stepOut } from '../view';
 import { BUILDER_NAME } from '../builds';
+import { ResumeSection, WhatThisIs } from './FieldNotes';
 import { CriterionMark, STAGE_WORD, planOpen, verdicts } from './PlanSheet';
 import { RANK_NAME, RankGlyph, STAGE_NAME, STAGE_SHORT, StageSwatch, WashSwatch } from './Swatch';
 
@@ -167,11 +170,16 @@ function PlaceNote({ place }: { place: PlaceState }) {
   const small = RANKS.indexOf(place.rank) <= 3;
   const links = world.value.links.filter((l) => l.a === place.id || l.b === place.id);
   const methods = [...new Set(place.features.flatMap((x) => x.methods))];
+  const reading = understanding.value.get(place.id);
 
   return (
     <article>
       <h2>{place.name}</h2>
-      <p class="note-words">{place.note}</p>
+      {reading ? (
+        <WhatThisIs key={place.id} of={reading} />
+      ) : (
+        <p class="note-words">{place.note}</p>
+      )}
       {place.abandonedNote && <p class="note-words">“{place.abandonedNote}”</p>}
       <p class="note-standing">
         {standing(place)} {region ? `In ${region.name}.` : ''}
@@ -179,7 +187,9 @@ function PlaceNote({ place }: { place: PlaceState }) {
 
       {place.series.length > 1 && <Strip series={place.series} />}
 
-      {building.length > 0 && (
+      {isPresent.value && <ResumeSection points={resumeHere.value} />}
+
+      {building.length > 0 && resumeHere.value.length === 0 && (
         <section>
           <h3>{place.liveliness === 'building' || place.liveliness === 'settled' ? 'Being built now' : 'Left unfinished'}</h3>
           <ul class="note-list">
@@ -195,7 +205,7 @@ function PlaceNote({ place }: { place: PlaceState }) {
         </section>
       )}
 
-      {staked.length > 0 && (
+      {staked.length > 0 && resumeHere.value.length === 0 && (
         <section>
           <h3>Staked for later</h3>
           <ul class="note-list">
@@ -232,7 +242,7 @@ function PlaceNote({ place }: { place: PlaceState }) {
         </section>
       )}
 
-      {links.length > 0 && (
+      {links.length > 0 && resumeHere.value.length === 0 && (
         <p class="note-links">
           {links.some((l) => l.grade !== 'surveyed') ? 'Roads to ' : 'Surveyed toward '}
           {list(

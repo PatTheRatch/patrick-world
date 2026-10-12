@@ -6,6 +6,7 @@ import { enter, getRenderer, inspect, play, visit } from './view';
 import { RoadHint, SiteCapture } from './ui/Capture';
 import { Cartouche } from './ui/Cartouche';
 import { EditionDial } from './ui/EditionDial';
+import { FieldNotes } from './ui/FieldNotes';
 import { KeySheet, MethodNote } from './ui/KeySheet';
 import { PlanSheet, planOpen } from './ui/PlanSheet';
 import { SurveyNote } from './ui/SurveyNote';
@@ -64,6 +65,7 @@ export function App() {
       <PlaceIndex />
       <SurveyNote />
       <MethodNote />
+      <FieldNotes />
       <SiteCapture />
       <RoadHint />
       <Cartouche />

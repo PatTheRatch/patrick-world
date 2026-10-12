@@ -11,6 +11,10 @@ import { overlayBuilds } from '../world/buildlog';
 import { derive } from '../world/derive';
 import { buildFixtureEvents } from '../world/fixtures/builds';
 import { fixtureBuilds, openBuildLog, recordedBuilds } from './builds';
+import { fixtureUnderstanding } from '../understanding/fixtures';
+import { resumePoints, worldSuggestions } from '../understanding/resume';
+import { loadUnderstanding } from '../understanding/source';
+import type { ProjectUnderstanding } from '../understanding/types';
 import { inferWays } from '../world/ways';
 import { catalogue } from '../world/fixtures/catalogue';
 import { FIXTURE_TODAY } from '../world/fixtures/world';
@@ -150,6 +154,23 @@ effect(() => {
   }
 });
 
+// ───────────────────────── Understanding: advisory, never canonical ─────────────────────────
+// A reading of each project, generated from evidence and stored with where it came from.
+// Nothing here can change the world; it can only be shown beside it.
+
+export const understanding = signal<ReadonlyMap<string, ProjectUnderstanding>>(new Map());
+
+/** Where to pick up in the selected place. Always about today, whatever edition is on screen. */
+export const resumeHere = computed(() => {
+  const s = selection.value;
+  const id = s ? (s.type === 'place' ? s.id : s.place) : null;
+  const place = id ? present.value.places.find((p) => p.id === id) : undefined;
+  return place ? resumePoints(place, TODAY.value, understanding.value.get(place.id)) : [];
+});
+
+/** A few suggestions across the whole world, each with its evidence. */
+export const worldNotes = computed(() => worldSuggestions(present.value, TODAY.value, new Map(understanding.value)));
+
 // ───────────────────────── Loading ─────────────────────────
 
 export async function load() {
@@ -162,6 +183,7 @@ export async function load() {
     worldKind.value = 'github';
     // Marks made on the fiction do not belong on the survey, nor the other way round.
     manual = new ManualSource(undefined, MANUAL_EVENTS_GITHUB_KEY);
+    understanding.value = await loadUnderstanding();
   } else {
     const base = await fixture.load();
     const copies = Number(params.get('stress') ?? 0);
@@ -169,6 +191,7 @@ export async function load() {
     surveyedAt.value = null;
     worldKind.value = 'specimen';
     fixtureBuilds.value = copies > 0 ? [] : buildFixtureEvents();
+    understanding.value = fixtureUnderstanding;
   }
   openBuildLog(worldKind.value, () => TODAY.value, () => isPresent.value);
   asOf.value = TODAY.value;

@@ -10,6 +10,11 @@
 // from `gh auth token --user <login>` and handed to `gh` in the GH_TOKEN environment
 // variable; it is never printed and never written anywhere.
 //
+// Since version 2 each repository also carries `evidence`: its README, open issue titles,
+// TODO-style lines where code search offers them, and the files its latest commits touched.
+// That is reading matter for src/understanding/, kept under its own key so that anything
+// written against version 1 reads the file exactly as before.
+//
 // The file is a record of what GitHub said. The one choice made here is WHICH directories
 // to ask about (`candidateDirs`, which must stay in step with the same rule in
 // src/world/sources/github/transform.ts). What any of it means is the transform's business.
@@ -32,6 +37,20 @@ const MAX_DIRS = 14;
 const MAX_PATH_COMMITS = 1000;
 /** Tags are only dated (one call each) when there are this few of them. */
 const MAX_TAGS_DATED = 30;
+
+/** Limits on the evidence recorded per repository. */
+const EVIDENCE = {
+  readmeChars: 12000,
+  issues: 40,
+  todoLines: 20,
+  todoLineChars: 200,
+  commitsWithFiles: 15,
+  filesPerCommit: 30,
+  /** Code search allows very few calls a minute. Wait for its window at most this many times, then stop asking. */
+  searchWaits: 2,
+  searchWaitMaxSeconds: 70,
+};
+const TODO_MARKERS = /\b(TODO|FIXME|HACK|XXX)\b/;
 
 // ───────────────────────── arguments ─────────────────────────
 
@@ -94,9 +113,9 @@ let calls = 0;
  * One GET. Returns { status, headers, body } and never throws on a 4xx: the caller decides
  * what a 404 or a 409 means. A spent rate limit throws RateLimited.
  */
-function get(token, path) {
+function get(token, path, { accept = 'application/vnd.github+json', soft = false } = {}) {
   calls++;
-  const r = gh(['api', '--hostname', 'github.com', '-i', '-H', 'Accept: application/vnd.github+json', path], {
+  const r = gh(['api', '--hostname', 'github.com', '-i', '-H', `Accept: ${accept}`, path], {
     GH_TOKEN: token,
   });
   const out = r.stdout ?? '';
@@ -111,7 +130,10 @@ function get(token, path) {
     if (at > 0) headers[line.slice(0, at).trim().toLowerCase()] = line.slice(at + 1).trim();
   }
   if (!status) throw new Error(`gh api failed for ${path}: ${(r.stderr ?? '').trim().split('\n')[0]}`);
-  if (status === 429 || (status === 403 && (headers['x-ratelimit-remaining'] === '0' || 'retry-after' in headers))) {
+  const limited = status === 429 || (status === 403 && (headers['x-ratelimit-remaining'] === '0' || 'retry-after' in headers));
+  // `soft`: an optional section must never stop the sync. The caller is told and moves on.
+  if (limited && soft) return { status, headers, body: null, limited: true };
+  if (limited) {
     throw new RateLimited(`GitHub rate limit reached (resets at epoch ${headers['x-ratelimit-reset'] ?? 'unknown'}).`);
   }
   let body = null;
@@ -205,6 +227,134 @@ function candidateDirs(root, inside) {
   return out;
 }
 
+// ───────────────────────── evidence ─────────────────────────
+// Reading matter for the understanding layer. Every section is optional. A section that
+// could not be read is LEFT OUT and its reason written to `absent`; it is never recorded
+// as an empty list, because "GitHub was not asked" and "GitHub said there are none" are
+// different facts.
+
+const search = { waits: 0, stopped: null };
+
+function sleepSeconds(seconds) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Math.max(0, seconds) * 1000);
+}
+
+/**
+ * TODO-style lines, from the code search API: one call per repository, and only while the
+ * search window allows it. Returns { lines } or { absent: reason }.
+ */
+function fetchTodos(token, full) {
+  if (search.stopped) return { absent: search.stopped };
+  const q = encodeURIComponent(`TODO OR FIXME OR HACK OR XXX repo:${full}`);
+  const ask = () =>
+    get(token, `/search/code?q=${q}&per_page=30`, { accept: 'application/vnd.github.text-match+json', soft: true });
+  let res = ask();
+  if (res.limited) {
+    const reset = Number(res.headers['x-ratelimit-reset'] ?? 0);
+    const wait = reset > 0 ? Math.ceil(reset - Date.now() / 1000) + 2 : Number(res.headers['retry-after'] ?? 999);
+    if (search.waits < EVIDENCE.searchWaits && wait <= EVIDENCE.searchWaitMaxSeconds) {
+      search.waits++;
+      sleepSeconds(wait);
+      res = ask();
+    }
+    if (res.limited) {
+      search.stopped = 'Code search rate limit reached; not asked.';
+      return { absent: search.stopped };
+    }
+  }
+  if (res.status !== 200 || !Array.isArray(res.body?.items)) {
+    return { absent: `Code search unavailable for this repository (${res.status}).` };
+  }
+  const lines = [];
+  const seen = new Set();
+  for (const item of res.body.items) {
+    for (const m of item.text_matches ?? []) {
+      for (const line of String(m.fragment ?? '').split('\n')) {
+        const text = line.trim().slice(0, EVIDENCE.todoLineChars);
+        const hit = TODO_MARKERS.exec(text);
+        if (!hit) continue;
+        const key = `${item.path}\n${text}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        if (lines.length < EVIDENCE.todoLines) lines.push({ path: item.path, marker: hit[1], text });
+      }
+    }
+  }
+  // Zero results is not evidence of zero TODOs: GitHub's code search does not index every
+  // repository, and answers an unindexed one with an empty list and a 200.
+  if (lines.length === 0) {
+    return { absent: 'Code search returned nothing; the repository may not be indexed, so this is not evidence that there are none.' };
+  }
+  return { lines, truncated: seen.size > lines.length || Number(res.body.total_count ?? 0) > res.body.items.length };
+}
+
+function fetchEvidence(token, r, recentShas) {
+  const api = `/repos/${r.full_name}`;
+  const evidence = { absent: {} };
+
+  // README. A 404 is a fact (there is none) and is recorded as null, not as absent.
+  const readme = get(token, `${api}/readme`, { soft: true });
+  if (readme.status === 200 && typeof readme.body?.content === 'string') {
+    const text = Buffer.from(readme.body.content, readme.body.encoding === 'base64' ? 'base64' : 'utf8').toString('utf8');
+    evidence.readme = {
+      path: readme.body.path ?? 'README.md',
+      text: text.slice(0, EVIDENCE.readmeChars),
+      chars: text.length,
+      truncated: text.length > EVIDENCE.readmeChars,
+    };
+  } else if (readme.status === 404) evidence.readme = null;
+  else evidence.absent.readme = `README could not be read (${readme.status}).`;
+
+  // Open issues, most recently updated first. The issues endpoint also lists pull requests; those are skipped.
+  if (r.has_issues === false) evidence.absent.issues = 'Issues are turned off for this repository.';
+  else {
+    const res = get(token, `${api}/issues?state=open&sort=updated&direction=desc&per_page=100`, { soft: true });
+    if (res.status === 200 && Array.isArray(res.body)) {
+      const open = res.body.filter((i) => !i.pull_request);
+      evidence.issues = open.slice(0, EVIDENCE.issues).map((i) => ({
+        number: i.number,
+        title: firstLine(i.title),
+        labels: (i.labels ?? []).map((l) => (typeof l === 'string' ? l : l?.name)).filter(Boolean),
+        created_at: i.created_at ?? null,
+        updated_at: i.updated_at ?? null,
+      }));
+      evidence.issuesTruncated = open.length > EVIDENCE.issues || nextLink(res.headers) !== null;
+    } else evidence.absent.issues = `Issues could not be read (${res.status}).`;
+  }
+
+  const todos = fetchTodos(token, r.full_name);
+  if (todos.lines) {
+    evidence.todos = todos.lines;
+    evidence.todosTruncated = todos.truncated;
+  } else evidence.absent.todos = todos.absent;
+
+  // Which files the latest commits touched: one call each.
+  const changes = [];
+  let failed = 0;
+  for (const sha of recentShas) {
+    const c = get(token, `${api}/commits/${sha}`, { soft: true });
+    if (c.status !== 200 || !Array.isArray(c.body?.files)) {
+      failed++;
+      continue;
+    }
+    const names = c.body.files.map((f) => f.filename).filter((n) => typeof n === 'string');
+    changes.push({
+      sha7: sha.slice(0, 7),
+      date: c.body.commit?.author?.date ?? c.body.commit?.committer?.date ?? null,
+      files: names.slice(0, EVIDENCE.filesPerCommit),
+      fileCount: names.length,
+      truncated: names.length > EVIDENCE.filesPerCommit,
+    });
+  }
+  if (changes.length > 0 || recentShas.length === 0) evidence.recentChanges = changes;
+  if (failed > 0) {
+    const why = `${failed} of ${recentShas.length} recent commits could not be opened.`;
+    if (changes.length === 0) evidence.absent.recentChanges = why;
+    else evidence.absent.recentChangesPartial = why;
+  }
+  return evidence;
+}
+
 function fetchRepo(token, r, opts) {
   const full = r.full_name;
   const api = `/repos/${full}`;
@@ -248,6 +398,8 @@ function fetchRepo(token, r, opts) {
   }
   repo.commits = commits.items.map(commitRow);
   repo.commitsTruncated = commits.truncated;
+  // Kept aside for the evidence pass below; never written to the file.
+  const recentShas = commits.items.slice(0, EVIDENCE.commitsWithFiles).map((c) => String(c.sha));
   if (commits.truncated) repo.notes.push(`Commit history cut at ${opts.maxCommits}.`);
 
   const releases = getAll(token, `${api}/releases?per_page=100`);
@@ -277,6 +429,8 @@ function fetchRepo(token, r, opts) {
     return { name: t.name, sha7, date };
   });
   if (lookups > 0) repo.notes.push(`Dated ${lookups} tag(s) by their commit.`);
+
+  repo.evidence = fetchEvidence(token, r, recentShas);
 
   const root = get(token, `${api}/git/trees/${encodeURIComponent(r.default_branch)}`);
   if (root.status !== 200 || !Array.isArray(root.body?.tree)) {
@@ -343,7 +497,7 @@ function main() {
   }
 
   const raw = {
-    version: 1,
+    version: 2,
     fetchedAt: new Date().toISOString(),
     accounts,
     // The display name on each account's profile, for recognising the owner's commits
@@ -406,6 +560,23 @@ function main() {
   console.log(`  ${raw.repos.length} repositories (${raw.forksSkipped} forks skipped), ${total} commits on default branches, ${calls} API calls`);
   console.log(`  ${linked} commits linked to the owner's accounts; ${total - linked} not:`);
   for (const [who, n] of [...others].sort((a, b) => b[1] - a[1])) console.log(`    ${String(n).padStart(5)}  ${who}`);
+  // Evidence: counts and reasons only. No README, issue or TODO text is echoed.
+  const withEvidence = raw.repos.filter((r) => r.evidence);
+  const n = (test) => withEvidence.filter(test).length;
+  const sum = (pick) => withEvidence.reduce((a, r) => a + pick(r.evidence), 0);
+  console.log(`  evidence for ${withEvidence.length} repositories:`);
+  console.log(`    READMEs: ${n((r) => r.evidence.readme)} found, ${n((r) => r.evidence.readme === null)} repositories have none`);
+  console.log(`    open issues: ${sum((e) => e.issues?.length ?? 0)} across ${n((r) => (r.evidence.issues?.length ?? 0) > 0)} repositories`);
+  console.log(`    TODO lines: ${sum((e) => e.todos?.length ?? 0)} across ${n((r) => r.evidence.todos)} repositories`);
+  console.log(`    recent commits opened for their files: ${sum((e) => e.recentChanges?.length ?? 0)}`);
+  const reasons = new Map();
+  for (const r of withEvidence) {
+    for (const [section, why] of Object.entries(r.evidence.absent)) {
+      const key = `${section}: ${why}`;
+      reasons.set(key, (reasons.get(key) ?? 0) + 1);
+    }
+  }
+  for (const [why, count] of reasons) console.log(`    absent in ${count}: ${why}`);
   console.log(`  wrote ${OUT}`);
   if (!raw.complete) {
     console.log(`  INCOMPLETE: ${raw.stoppedBecause} The file holds what was fetched before stopping; run again later.`);

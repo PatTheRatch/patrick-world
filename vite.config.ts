@@ -1,4 +1,4 @@
-import { rm, rmdir } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import preact from '@preact/preset-vite';
 import type { Plugin } from 'vite';
@@ -18,9 +18,9 @@ function keepPrivateDataOut(): Plugin {
       outDir = resolve(config.root, config.build.outDir);
     },
     async closeBundle() {
-      await rm(resolve(outDir, 'data', 'github.json'), { force: true });
-      // Leave no empty folder behind; if anything else lives there, it stays.
-      await rmdir(resolve(outDir, 'data')).catch(() => undefined);
+      // Everything under data/ is private: the GitHub record, evidence packs (README text)
+      // and the generated understanding. None of it ships.
+      await rm(resolve(outDir, 'data'), { recursive: true, force: true });
     },
   };
 }
