@@ -1,0 +1,1024 @@
+/* Lettering laid over the sheet. Every colour here is an ink from the Key (src/render/palette.ts). */
+
+:root {
+  --table: #141714;
+  --linen: #d6d3c4;
+  --linen-shade: #c9c5b4;
+  --slip: #f1eee2;
+  --ink: #1c1a18;
+  --ink-soft: #3e3a35;
+  --sepia: #7b6248;
+  --graphite: #565b61;
+  --red: #b52f1a;
+  --water-line: #47768c;
+  --rule: rgb(28 26 24 / 0.24);
+
+  --serif: 'Besley', 'Clarendon', Georgia, serif;
+  --gothic: 'Archivo Variable', 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+
+  --lift: 0 1px 0 rgb(0 0 0 / 0.22), 2px 5px 14px rgb(0 0 0 / 0.3);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: var(--table);
+  color: var(--ink);
+  font-family: var(--gothic);
+  font-size: 13px;
+  line-height: 1.45;
+  font-stretch: 98%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--red);
+  color: var(--slip);
+}
+
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+fieldset {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+fieldset {
+  border: 0;
+  min-width: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+kbd {
+  font: inherit;
+  font-size: 0.86em;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 0 4px;
+  margin-left: 3px;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  color: #a9a594;
+}
+
+/* ───────────── The world ───────────── */
+
+.world {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+  touch-action: none;
+  outline: none;
+}
+.world.is-pointing {
+  cursor: pointer;
+}
+.world.is-dragging {
+  cursor: grabbing;
+}
+
+.index {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ───────────── Paper ───────────── */
+
+.slip {
+  background-color: var(--slip);
+  background-image:
+    radial-gradient(rgb(70 60 40 / 0.05) 0.6px, transparent 0.7px),
+    radial-gradient(rgb(255 255 250 / 0.5) 0.6px, transparent 0.7px);
+  background-size:
+    7px 7px,
+    11px 11px;
+  background-position:
+    0 0,
+    3px 5px;
+  box-shadow: var(--lift);
+  color: var(--ink);
+}
+
+/* A lettered action: gothic caps over a ruled line. */
+.link {
+  font-family: var(--gothic);
+  font-size: 10.5px;
+  font-weight: 650;
+  font-stretch: 112%;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  line-height: 1;
+  padding: 9px 0 6px;
+  border-bottom: 1px solid var(--ink);
+  white-space: nowrap;
+  transition:
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+.link:hover,
+.link.is-on {
+  color: var(--red);
+  border-color: var(--red);
+}
+.link:active {
+  transform: translateY(1px);
+}
+.link:disabled {
+  color: var(--graphite);
+  border-color: transparent;
+  cursor: default;
+}
+
+/* ───────────── Cartouche ───────────── */
+
+.cartouche {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  width: 272px;
+  padding: 16px 18px 13px;
+  border: 2px solid var(--ink);
+  outline: 1px solid var(--ink);
+  outline-offset: -6px;
+}
+.cartouche h1 {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 23px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.cartouche-where {
+  margin-top: 5px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 118%;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.cartouche-edition {
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+}
+.cartouche-edition.is-past {
+  color: var(--red);
+}
+.cartouche-tally {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.cartouche-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  margin-top: 8px;
+}
+.cartouche-specimen {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rule);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--graphite);
+}
+
+/* ───────────── Edition dial ───────────── */
+
+.dial {
+  position: fixed;
+  left: 308px;
+  right: 18px;
+  bottom: 18px;
+  height: 62px;
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 0 16px 0 6px;
+}
+.dial-play {
+  flex: none;
+  width: 40px;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--rule);
+}
+.dial-play svg {
+  fill: var(--ink);
+  transition: fill 140ms var(--ease-out);
+}
+.dial-play:hover svg {
+  fill: var(--red);
+}
+.dial-rule {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.dial-work {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
+  width: 100%;
+  height: 26px;
+  fill: var(--ink);
+}
+.dial-work .is-ahead {
+  fill: var(--graphite);
+  opacity: 0.38;
+}
+.dial-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34px;
+  border-top: 1px solid var(--ink);
+}
+.dial-year {
+  position: absolute;
+  top: 34px;
+  padding: 5px 0 0 5px;
+  border-left: 1px solid var(--ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.dial-index {
+  position: absolute;
+  top: 3px;
+  bottom: 6px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--red);
+  pointer-events: none;
+}
+.dial-index::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: -3px;
+  border: 5px solid transparent;
+  border-top: 7px solid var(--red);
+  border-bottom: 0;
+}
+.dial-now {
+  align-self: center;
+}
+
+/* ───────────── Survey note ───────────── */
+
+.leader {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.leader line {
+  stroke: var(--red);
+  stroke-width: 1.2;
+}
+
+.note {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 304px;
+  max-height: calc(100vh - 124px);
+  overflow-y: auto;
+  padding: 16px 18px 14px;
+  border-top: 2px solid var(--red);
+  scrollbar-width: thin;
+  scrollbar-color: var(--graphite) transparent;
+  will-change: transform;
+}
+.note:empty {
+  display: none;
+}
+.note article {
+  animation: paste 260ms var(--ease-out);
+}
+@keyframes paste {
+  from {
+    opacity: 0;
+    transform: translateY(-5px) rotate(-0.4deg);
+  }
+}
+
+.note h2,
+.site h2,
+.method-note h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+.note h3,
+.key h3 {
+  margin-top: 15px;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 650;
+  font-stretch: 116%;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.note-words {
+  margin-top: 5px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+}
+.note-standing {
+  margin-top: 10px;
+}
+.note-kind {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+.swatch {
+  flex: none;
+  display: block;
+}
+
+.strip {
+  margin-top: 13px;
+}
+.strip svg {
+  display: block;
+}
+.strip-bar {
+  fill: var(--ink);
+}
+.strip-base,
+.strip-year {
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+.strip figcaption {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--graphite);
+  font-variant-numeric: tabular-nums;
+}
+
+.note-list li + li {
+  border-top: 1px solid var(--rule);
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  padding: 5px 0;
+  text-align: left;
+  transition: color 140ms var(--ease-out);
+}
+.row:hover {
+  color: var(--red);
+}
+.row-aside {
+  flex: none;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12px;
+  color: var(--graphite);
+}
+.note-more,
+.note-links {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--graphite);
+}
+.note-links {
+  margin-top: 12px;
+}
+.note-grow {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+
+.note-methods {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  margin-top: 12px;
+}
+.note-methods-lead {
+  margin-right: 2px;
+  font-size: 12px;
+  color: var(--graphite);
+}
+.chip {
+  padding: 2px 6px 1px;
+  border: 1px solid var(--rule);
+  font-size: 11.5px;
+  font-stretch: 92%;
+  line-height: 1.3;
+  transition:
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+.chip:hover,
+.chip.is-on {
+  color: var(--red);
+  border-color: var(--red);
+}
+
+.note-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  margin-top: 13px;
+}
+
+/* The six stages, as the six drawings. */
+.ladder {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  margin: 14px -6px 0;
+}
+.ladder li {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid transparent;
+  font-size: 8.5px;
+  font-weight: 600;
+  font-stretch: 78%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.1;
+  color: var(--graphite);
+}
+.ladder .swatch {
+  width: 36px;
+  height: 27px;
+}
+.ladder .is-ahead .swatch {
+  opacity: 0.4;
+}
+.ladder .is-here {
+  color: var(--ink);
+  border-color: var(--red);
+}
+
+/* Forms: ruled lines on a slip. */
+.stake,
+.site {
+  display: grid;
+}
+.stake {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+.stake > label,
+.site > label,
+.stake legend {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.stake legend {
+  margin: 12px 0 4px;
+}
+.site > label {
+  margin-top: 11px;
+}
+.stake input[type='text'],
+.site input[type='text'] {
+  width: 100%;
+  margin-top: 1px;
+  padding: 4px 0 4px;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--ink);
+  caret-color: var(--red);
+}
+.stake input[type='text']:focus,
+.site input[type='text']:focus {
+  outline: none;
+  border-bottom: 2px solid var(--red);
+  padding-bottom: 3px;
+}
+input::placeholder {
+  color: var(--graphite);
+  font-style: italic;
+  opacity: 1;
+}
+.kind {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 6px;
+  margin: 0 -6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.kind b {
+  font-weight: 650;
+  color: var(--ink);
+}
+.kind input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.kind:hover {
+  border-color: var(--rule);
+}
+.kind.is-on {
+  border-color: var(--ink);
+}
+.kind:has(input:focus-visible) {
+  outline: 2px solid var(--red);
+  outline-offset: 1px;
+}
+
+.site {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 280px;
+  padding: 15px 18px 13px;
+  border-top: 2px solid var(--red);
+  animation: paste 240ms var(--ease-out) backwards;
+}
+.site-hint {
+  margin-top: 11px;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--graphite);
+}
+
+.hint {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 9px 16px;
+  border-top: 2px solid var(--red);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 13.5px;
+}
+.hint kbd {
+  font-style: normal;
+  font-family: var(--gothic);
+}
+
+/* ───────────── Method slip ───────────── */
+
+.method-note {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  width: 272px;
+  padding: 15px 18px 13px;
+  border-top: 2px solid var(--red);
+  animation: paste 260ms var(--ease-out) backwards;
+}
+.method-note p {
+  margin-top: 6px;
+}
+.method-note ol {
+  margin-top: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.method-note li {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+}
+.method-note li + li {
+  border-top: 1px solid var(--rule);
+}
+.method-note li span:last-child {
+  color: var(--graphite);
+}
+
+/* ───────────── Key ───────────── */
+
+.key-backdrop {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 26px;
+  background: rgb(14 16 14 / 0.62);
+  animation: dim 220ms ease-out;
+}
+@keyframes dim {
+  from {
+    background: rgb(14 16 14 / 0);
+  }
+}
+.key {
+  width: min(1120px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 26px 34px 30px;
+  border: 2px solid var(--ink);
+  outline: 1px solid var(--ink);
+  outline-offset: -7px;
+  background-color: var(--linen);
+  scrollbar-width: thin;
+  scrollbar-color: var(--graphite) transparent;
+  animation: turn 380ms var(--ease-out);
+}
+@keyframes turn {
+  from {
+    opacity: 0;
+    transform: translateY(26px) rotate(0.5deg);
+  }
+}
+.key:focus {
+  outline: 1px solid var(--ink);
+}
+.key-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--ink);
+}
+.key-head h2 {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+}
+.key h3 {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.key-columns {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 1fr;
+  gap: 0 40px;
+}
+.key-list > div {
+  display: grid;
+  grid-template-columns: 148px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--rule);
+}
+.key-list dt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 650;
+  font-size: 12.5px;
+}
+.key-list dd {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+.age,
+.road {
+  flex: none;
+  display: block;
+  width: 26px;
+}
+.age {
+  height: 18px;
+  border: 1.2px solid var(--ink);
+}
+.age-slip {
+  background: var(--slip);
+  border-color: transparent;
+  box-shadow: 1px 1.5px 0 rgb(0 0 0 / 0.26);
+}
+.age-sepia {
+  border-color: var(--sepia);
+}
+.age-ruin {
+  border: 1.2px dashed var(--sepia);
+}
+.age-house {
+  height: 12px;
+  width: 14px;
+  margin: 0 6px;
+  background: var(--linen-shade);
+}
+.key-numeral {
+  width: 26px;
+  text-align: center;
+  font-stretch: 80%;
+  font-weight: 700;
+}
+.road {
+  height: 0;
+  border-top: 1.5px solid var(--ink);
+}
+.road-surveyed {
+  border-top: 2px dotted var(--graphite);
+}
+.road-track {
+  border-top-style: dashed;
+}
+.road-made {
+  height: 5px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.road-main {
+  border-top: 2px solid var(--water-line);
+}
+
+.methods {
+  margin-top: 8px;
+}
+.methods h3 {
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 2px solid var(--ink);
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 700;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.methods-lead {
+  max-width: 68ch;
+  color: var(--ink-soft);
+}
+.methods-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.methods-levels li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.methods-scroll {
+  margin-top: 20px;
+  padding-bottom: 6px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--graphite) transparent;
+}
+.methods-tree {
+  position: relative;
+}
+.methods-tree svg {
+  position: absolute;
+  inset: 0;
+}
+.methods-tree path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+  opacity: 0.55;
+}
+.methods-tree path.is-faint {
+  stroke: var(--graphite);
+  stroke-dasharray: 1 4;
+  stroke-linecap: round;
+}
+
+.method-node {
+  position: absolute;
+  display: grid;
+  align-content: center;
+  gap: 1px;
+  padding: 0 11px;
+  text-align: left;
+  border: 1.2px solid var(--ink);
+  background: var(--linen);
+  transition:
+    border-color 140ms var(--ease-out),
+    color 140ms var(--ease-out);
+}
+.method-node b {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+.method-node span {
+  font-size: 10.5px;
+  font-stretch: 88%;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.method-node.is-unknown {
+  border: 1.2px dotted var(--graphite);
+  color: var(--graphite);
+}
+.method-node.is-unknown span,
+.method-node.is-noted span {
+  color: var(--graphite);
+}
+.method-node.is-noted {
+  border-color: var(--graphite);
+  color: var(--ink-soft);
+}
+.method-node.is-fluent {
+  background: var(--linen-shade);
+}
+.method-node.is-mastered {
+  background: var(--linen-shade);
+  border-width: 2px;
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+.method-node:hover,
+.method-node.is-on {
+  border-color: var(--red);
+  color: var(--red);
+}
+.method-node.is-mastered:hover,
+.method-node.is-mastered.is-on {
+  outline-color: var(--red);
+}
+.method-node:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 3px;
+}
+.method-node.is-sample {
+  position: static;
+  display: inline-block;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--ink);
+  pointer-events: none;
+}
+.method-node.is-sample.is-noted {
+  color: var(--ink-soft);
+}
+
+.perf {
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  padding: 3px 8px;
+  background: rgb(0 0 0 / 0.72);
+  color: #e9e6d8;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+@media (max-width: 860px) {
+  .cartouche {
+    width: 232px;
+    padding: 12px 14px 10px;
+  }
+  .cartouche h1 {
+    font-size: 19px;
+  }
+  .cartouche-specimen,
+  .cartouche-tally {
+    display: none;
+  }
+  .dial {
+    left: 262px;
+  }
+  .key-columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .cartouche {
+    left: 10px;
+    right: 10px;
+    bottom: 80px;
+    width: auto;
+  }
+  .dial {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+  }
+  .note {
+    width: min(304px, calc(100vw - 20px));
+  }
+  .key-backdrop {
+    padding: 8px;
+  }
+  .key {
+    padding: 18px 18px 22px;
+  }
+}
+
+/* ?still: for captures and for anyone who wants no motion at all. */
+.is-still *,
+.is-still *::before,
+.is-still *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important;
+  }
+}
