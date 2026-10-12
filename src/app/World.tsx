@@ -40,6 +40,9 @@ export function World() {
         lastLocate = t;
         locate(k);
       }
+      // The last frame of a move must be located too, or the cartouche goes stale.
+      clearTimeout(trailing);
+      trailing = window.setTimeout(() => locate(renderer.camera.k), 200);
     };
 
     const stop = effect(() => {
@@ -67,6 +70,8 @@ export function World() {
     let lastMove = { x: 0, y: 0, t: 0 };
     let velocity = { x: 0, y: 0 };
     let lastClick = 0;
+    let lastHit: typeof hover.value = null;
+    let trailing = 0;
 
     const onDown = (e: PointerEvent) => {
       if (e.button !== 0) return;
@@ -121,10 +126,14 @@ export function World() {
       const double = e.timeStamp - lastClick < 320;
       lastClick = e.timeStamp;
       if (double) {
-        if (hit?.type === 'place') return enter(hit.id);
-        if (hit?.type === 'feature') return;
+        // The first click may already have moved the camera, so the second lands somewhere
+        // else. What was double-clicked is whatever the first click hit.
+        const first = lastHit;
+        if (first?.type === 'place') return enter(first.id);
+        if (first || hit) return;
         return beginSite(p);
       }
+      lastHit = hit;
       click(hit, p);
     };
 
@@ -134,9 +143,14 @@ export function World() {
       cam.zoomAt(point(e), Math.exp(-e.deltaY * scale));
       cam.constrain(catalogue.size, 86);
       renderer.invalidate();
+      // The map moved under a still pointer: what is under it has changed.
+      const hit = renderer.hitTest(point(e));
+      if (!sameHit(hit, hover.value)) hover.value = hit;
+      canvas.classList.toggle('is-pointing', !!hit);
     };
 
     const onLeave = () => {
+      lastPointer = null;
       if (hover.value) hover.value = null;
     };
 
@@ -149,6 +163,8 @@ export function World() {
         return;
       }
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
+      // While the Key is open the map behind it is not listening.
+      if (keyOpen.value && e.key.toLowerCase() !== 'k') return;
       switch (e.key) {
         case '0':
           selection.value = null;
@@ -162,7 +178,8 @@ export function World() {
         case 'N':
           if (isPresent.value && !keyOpen.value) {
             e.preventDefault();
-            beginSite(lastPointer ?? { x: cam.width / 2, y: cam.height / 2 });
+            const at = lastPointer ?? { x: cam.width / 2, y: cam.height / 2 };
+            if (!renderer.hitTest(at)) beginSite(at);
           }
           break;
         case '[':

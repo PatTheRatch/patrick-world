@@ -1,7 +1,7 @@
 // Application state. The log and the edition date are the only inputs; the world,
 // its plans and its roads are all computed from them.
 
-import { computed, signal } from '@preact/signals';
+import { computed, effect, signal } from '@preact/signals';
 import { planCity } from '../plan/city';
 import { planRoads } from '../plan/roads';
 import { buildTerrain } from '../plan/terrain';
@@ -51,7 +51,8 @@ export const world = computed(() => {
 /** The world as it stands today, whatever edition is on screen. */
 export const present = computed(() => (isPresent.value ? world.value : derive(events.value, catalogue, TODAY)));
 
-const planCache = new Map<string, { key: string; plan: CityPlan }>();
+// Scrubbing revisits the same states over and over, so plans are kept per place and state.
+const planCache = new Map<string, Map<string, CityPlan>>();
 const planKey = (p: PlaceState) =>
   `${p.users}|${p.features.map((f) => `${f.id}${f.stage[0]}${f.storeys}`).join(',')}`;
 
@@ -59,13 +60,14 @@ export const plans = computed(() => {
   const out = new Map<string, CityPlan>();
   for (const place of world.value.places) {
     const key = planKey(place);
-    const hit = planCache.get(place.id);
-    if (hit && hit.key === key) {
-      out.set(place.id, hit.plan);
-      continue;
+    let known = planCache.get(place.id);
+    if (!known) planCache.set(place.id, (known = new Map()));
+    let plan = known.get(key);
+    if (!plan) {
+      if (known.size > 400) known.clear();
+      plan = planCity(place);
+      known.set(key, plan);
     }
-    const plan = planCity(place);
-    planCache.set(place.id, { key, plan });
     out.set(place.id, plan);
   }
   return out;
@@ -112,6 +114,14 @@ export const selectedFeature = computed(() => {
   return selectedPlace.value?.features.find((f) => f.id === s.id) ?? null;
 });
 
+// Leaving the present puts down whatever the hand was in the middle of.
+effect(() => {
+  if (!isPresent.value && (capture.peek() || draft.peek())) {
+    capture.value = null;
+    draft.value = null;
+  }
+});
+
 // ───────────────────────── Loading ─────────────────────────
 
 export async function load() {
@@ -139,6 +149,8 @@ const slug = (name: string) =>
     .slice(0, 32) || 'site';
 
 function record(list: WorldEvent[]) {
+  // An earlier edition is a record, not a draft: nothing is written while looking at the past.
+  if (!isPresent.value) return;
   manual.add(list);
   manualEvents.value = manual.all();
 }
@@ -190,6 +202,7 @@ export function stakeLot(place: string, name: string, kind: FeatureKind): string
 
 export function surveyRoad(a: string, b: string) {
   if (a === b) return;
+  if (world.value.links.some((l) => (l.a === a && l.b === b) || (l.a === b && l.b === a))) return;
   record([{ id: newId('link'), at: TODAY, source: 'manual', type: 'link.formed', a, b, kind: 'related' }]);
 }
 
@@ -198,6 +211,7 @@ export function recordStage(place: string, feature: string, stage: FeatureStage)
 }
 
 export function clearManual() {
+  if (!isPresent.value) return;
   manual.clear();
   manualEvents.value = manual.all();
   selection.value = null;

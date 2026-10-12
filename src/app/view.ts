@@ -1,5 +1,6 @@
 // Moving around the world. The one place that knows both the renderer and the store.
 
+import { signal } from '@preact/signals';
 import { RANKS, type Point } from '../world/types';
 import type { Renderer, Selection } from '../render/renderer';
 import { dayNumber, isoFromDay } from './dates';
@@ -78,13 +79,13 @@ export function inspect(place: string, feature: string, fly = false) {
 /** Step back out one scale. */
 export function stepOut() {
   if (!renderer) return;
+  if (keyOpen.value) {
+    keyOpen.value = false;
+    return;
+  }
   if (capture.value) {
     capture.value = null;
     draft.value = null;
-    return;
-  }
-  if (keyOpen.value) {
-    keyOpen.value = false;
     return;
   }
   const s = selection.value;
@@ -199,10 +200,13 @@ export function locate(k: number) {
 // ───────────────────────── Editions ─────────────────────────
 
 let playing = 0;
+/** Whether the editions are running forward, for anything that shows it. */
+export const isRunning = signal(false);
 
 export function stopPlaying() {
   cancelAnimationFrame(playing);
   playing = 0;
+  isRunning.value = false;
 }
 
 export const isPlaying = () => playing !== 0;
@@ -216,6 +220,7 @@ export function play(durationMs = 9000, onDone?: () => void) {
   if (from >= end - 7) from = begin;
   const scaled = durationMs * Math.max(0.25, (end - from) / Math.max(1, end - begin));
   const start = now();
+  isRunning.value = true;
   const step = (t: number) => {
     const raw = Math.min(1, (t - start) / scaled);
     // Linger at the end: the present is where the detail is.
@@ -224,6 +229,7 @@ export function play(durationMs = 9000, onDone?: () => void) {
     if (raw < 1) playing = requestAnimationFrame(step);
     else {
       playing = 0;
+      isRunning.value = false;
       asOf.value = TODAY;
       onDone?.();
     }

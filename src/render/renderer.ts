@@ -76,7 +76,7 @@ export class Renderer {
   private ctx: CanvasRenderingContext2D;
   private scene: Scene | null = null;
   private territory: TerritoryArt | null = null;
-  private arts = new Map<string, PlaceArt>();
+  private arts = new Map<string, { key: string; art: PlaceArt }>();
   private artWorld: WorldState | null = null;
   private labels: LabelBox[] = [];
   private floods = new Map<string, number>();
@@ -154,7 +154,6 @@ export class Renderer {
     this.scene = scene;
     if (scene.world !== this.artWorld) {
       this.artWorld = scene.world;
-      this.arts.clear();
       this.territory.updateKnowledge(scene.world.places);
     }
     if (firstScene) {
@@ -242,12 +241,21 @@ export class Renderer {
   }
 
   art(place: PlaceState): PlaceArt | null {
-    let art = this.arts.get(place.id);
-    if (art) return art;
     const plan = this.scene?.plans.get(place.id);
     if (!plan) return null;
-    art = buildPlaceArt(place, plan);
-    this.arts.set(place.id, art);
+    const held = this.arts.get(place.id);
+    if (held && held.art.place === place) return held.art;
+    // Most places look the same from one edition to the next: redraw only what changed.
+    let key = `${place.liveliness}|${place.revived ? 1 : 0}|${place.rank}|${place.name}`;
+    for (const f of place.features) {
+      key += `|${f.stage[0]}${f.storeys}${f.heat > 0.1 ? 'h' : ''}${f.landmark ? 'l' : ''}${f.stage === 'building' ? Math.round(f.progress * 20) : ''}`;
+    }
+    if (held && held.key === key && held.art.plan === plan) {
+      held.art.place = place;
+      return held.art;
+    }
+    const art = buildPlaceArt(place, plan);
+    this.arts.set(place.id, { key, art });
     return art;
   }
 

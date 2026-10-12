@@ -76,12 +76,29 @@ export class TerritoryArt {
       y: p.position.y,
       r: 250 + 95 * RANKS.indexOf(p.rank),
     }));
+    // How well each patch of ground is known, on a coarse grid: each place only writes the
+    // cells it can reach, so the cost follows the places and not places times strokes.
+    const CELL = 48;
+    const cols = Math.ceil(this.terrain.size.width / CELL) + 1;
+    const rows = Math.ceil(this.terrain.size.height / CELL) + 1;
+    const field = new Float32Array(cols * rows).fill(Infinity);
+    for (const k of known) {
+      const reach = k.r * 1.12;
+      const c0 = Math.max(0, Math.floor((k.x - reach) / CELL));
+      const c1 = Math.min(cols - 1, Math.ceil((k.x + reach) / CELL));
+      const r0 = Math.max(0, Math.floor((k.y - reach) / CELL));
+      const r1 = Math.min(rows - 1, Math.ceil((k.y + reach) / CELL));
+      for (let r = r0; r <= r1; r++)
+        for (let c = c0; c <= c1; c++) {
+          const d = Math.hypot(c * CELL - k.x, r * CELL - k.y) / k.r;
+          const i = r * cols + c;
+          if (d < field[i]!) field[i] = d;
+        }
+    }
     const bucketOf = (x: number, y: number): number => {
-      let best = Infinity;
-      for (const k of known) {
-        const d = Math.hypot(x - k.x, y - k.y) / k.r;
-        if (d < best) best = d;
-      }
+      const c = Math.max(0, Math.min(cols - 1, Math.round(x / CELL)));
+      const r = Math.max(0, Math.min(rows - 1, Math.round(y / CELL)));
+      const best = field[r * cols + c]!;
       if (best < 0.55) return 0;
       if (best < 0.82) return 1;
       if (best < 1.08) return 2;

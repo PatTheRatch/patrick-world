@@ -78,7 +78,7 @@ function PlaceIndex() {
       <ul>
         {places.map((p) => (
           <li key={p.id}>
-            <button type="button" onFocus={() => visit(p.id)} onClick={() => visit(p.id)}>
+            <button type="button" onFocus={() => visit(p.id)} onClick={() => enter(p.id)}>
               {p.name}, {p.rank === 'major' ? 'major city' : p.rank}, {p.liveliness}
             </button>
           </li>

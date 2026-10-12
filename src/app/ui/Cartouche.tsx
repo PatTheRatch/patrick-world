@@ -60,7 +60,7 @@ export function Cartouche() {
         >
           Whole sheet <kbd>0</kbd>
         </button>
-        {hasManual.value && (
+        {hasManual.value && present && (
           <button type="button" class="link" onClick={clearManual}>
             Erase my marks
           </button>

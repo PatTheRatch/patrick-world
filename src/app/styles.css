@@ -366,6 +366,11 @@ kbd {
   scrollbar-color: var(--graphite) transparent;
   will-change: transform;
 }
+.note.is-through {
+  /* While a road is being surveyed the note must not hide the place it should reach. */
+  pointer-events: none;
+  opacity: 0.35;
+}
 .note:empty {
   display: none;
 }

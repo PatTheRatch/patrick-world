@@ -1,15 +1,15 @@
 // The edition dial: a rule along the bottom of the sheet, lettered with years.
 // The marks above the rule are the work done across the whole world each month.
 
-import { useComputed, useSignal } from '@preact/signals';
+import { useComputed } from '@preact/signals';
 import { useRef } from 'preact/hooks';
 import { dayNumber, isoFromDay, monthYear, yearOf } from '../dates';
 import { TODAY, asOf, isPresent, present } from '../store';
-import { isPlaying, play, stepEdition, stopPlaying } from '../view';
+import { isPlaying, isRunning, play, stepEdition, stopPlaying } from '../view';
 
 export function EditionDial() {
   const rule = useRef<HTMLDivElement>(null);
-  const playing = useSignal(false);
+  const playing = isRunning;
   const begin = dayNumber(present.value.beginsAt);
   const end = dayNumber(TODAY);
   const total = Math.max(1, end - begin);
@@ -42,7 +42,6 @@ export function EditionDial() {
 
   const onDown = (e: PointerEvent) => {
     stopPlaying();
-    playing.value = false;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setFromPointer(e.clientX);
   };
@@ -61,13 +60,8 @@ export function EditionDial() {
   };
 
   const toggle = () => {
-    if (isPlaying()) {
-      stopPlaying();
-      playing.value = false;
-    } else {
-      playing.value = true;
-      play(11000, () => (playing.value = false));
-    }
+    if (isPlaying()) stopPlaying();
+    else play(11000);
   };
 
   return (
@@ -115,7 +109,6 @@ export function EditionDial() {
         disabled={isPresent.value}
         onClick={() => {
           stopPlaying();
-          playing.value = false;
           asOf.value = TODAY;
         }}
       >

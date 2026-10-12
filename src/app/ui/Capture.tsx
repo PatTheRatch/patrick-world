@@ -2,7 +2,7 @@
 
 import { useSignal } from '@preact/signals';
 import { useEffect, useRef } from 'preact/hooks';
-import { capture, draft, markSite } from '../store';
+import { capture, draft, isPresent, markSite } from '../store';
 import { visit } from '../view';
 
 export function SiteCapture() {
@@ -32,7 +32,7 @@ export function SiteCapture() {
     if (!n) return input.current?.focus();
     const id = markSite(n, note.value.trim() || 'No note yet.', c.at);
     cancel();
-    visit(id);
+    if (isPresent.value) visit(id);
   };
 
   const x = Math.min(c.screen.x + 18, window.innerWidth - 300);

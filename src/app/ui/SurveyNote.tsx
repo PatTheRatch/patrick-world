@@ -114,7 +114,7 @@ export function SurveyNote() {
       <svg class="leader" aria-hidden="true">
         <line ref={leader} style={{ visibility: 'hidden' }} />
       </svg>
-      <aside ref={box} class="note slip" style={{ visibility: 'hidden' }} aria-live="polite" aria-label="Survey note">
+      <aside ref={box} class={`note slip${capture.value?.type === 'road' ? ' is-through' : ''}`} style={{ visibility: 'hidden' }} aria-live="polite" aria-label="Survey note">
         {p && f ? <FeatureNote place={p} feature={f} /> : p ? <PlaceNote place={p} /> : null}
       </aside>
     </>
@@ -246,7 +246,7 @@ function PlaceNote({ place }: { place: PlaceState }) {
 
       {methods.length > 0 && <Methods ids={methods} />}
 
-      {staking ? (
+      {staking && editable ? (
         <StakeForm place={place.id} />
       ) : (
         <nav class="note-actions" aria-label={place.name}>
