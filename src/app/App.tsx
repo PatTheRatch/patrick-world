@@ -39,6 +39,10 @@ export function App() {
           return;
         }
         if (params.has('still')) r.camera.reducedMotion = true;
+        if (params.has('nolabels')) {
+          r.showLabels = false;
+          document.documentElement.classList.add('is-bare');
+        }
         const m = params.get('method');
         if (m) method.value = m;
         if (params.has('key')) keyOpen.value = true;

@@ -96,22 +96,61 @@ Every row survives in greyscale: paper value and line continuity carry it, not h
   footprint. Now the ground is hatched, the wash deepens as the work rises, and the wall is
   inked round the perimeter as far as the work has got.
 
-**Asked for and refused, with the restrained version of each:**
+**Motion and life, under the rule Patrick set on 13 October.** The first version of this
+section refused smoke, lights, traffic and weather on the ground that a survey atlas could not
+contain them. That was the wrong test, and he replaced it: *important visual signals must
+correspond to real underlying state, but they may use metaphor, animation and world
+simulation to communicate that state.* The atlas is the foundation, not a veto. So the
+question for each motion is what it encodes:
 
-| Asked for | Verdict | Instead |
+| Motion | Encodes | State |
 |---|---|---|
-| Smoke | Refused | A true plan cannot draw smoke honestly. The crawling edge says "alive". |
-| Lights, day and night | Refused | This is the "earth at night" direction returning, with glows. The lamp is already the scene. |
-| Carts, boats, tiny transport | Refused for now | Motion that encodes nothing breaks "stillness is information". Revisit only if it can show real traffic: a builder session, a deploy. |
-| Weather | Refused | Foxing and regrowth are the only climate. |
-| Ports, cliffs, wetlands as scatter | Refused | A pier where nothing docks is a fake fact. Bridges where a real road crosses a real river are the exception. |
-| Flags | One | A single red ranging pole on a lot with a live builder session, when sessions exist. |
+| A place's edge crawling | Work logged there in the last three weeks | Built |
+| A building's wall crawling | That feature is under construction and was touched recently | Built |
+| Traffic along a route | Code or data really flows between two places, and one end is being worked on now | Built, for declared mains |
+| Construction on one lot (scaffold, a ranging pole) | A builder session is open on that feature right now | Needs builder sessions |
+| Inspection at a building | A verification is running against its criteria | Needs builder sessions |
+| Something leaving a town | A release or deploy just went out | Data exists (releases); not drawn |
+| Stillness | Nothing has happened. A quiet town must genuinely not move | Built |
 
-**Not yet done from the critique, in order:** town form by rank (ribbon, crossroads with a
-square, wards parted by avenues, an old core with extensions), which is the largest remaining
-gain and the riskiest for "nothing moves"; worked fields round a town and woodland creeping
+Still refused, because they encode nothing: weather, a day and night cycle, drifting smoke
+with no source, and ports or cliffs scattered for texture.
+
+**Town form by rank is now built** (see "Settlements" below). **Not yet done:** worked fields round a town and woodland creeping
 back over a neglected one; the district and building zoom layers (criteria ticks, built-order
 numbers, revision slips); bridges; and orienting each town to the ground it stands on.
+
+## Settlements: form that changes in kind
+
+The first town generator laid every place out on the same rotated block grid, so maturity read
+as small grid, larger grid, larger grid. It was replaced (`src/plan/settlement.ts`).
+
+Every place has a **latent skeleton**, fixed by its id before anything is built: a through
+route, a crossing route, side streets off each, and room for later quarters. Evidence does not
+shape the skeleton; it only reveals it. Each feature takes the nearest free frontage, so:
+
+| What exists | What it looks like |
+|---|---|
+| A thought | A survey mark |
+| Proposed features, nothing real | Pencilled lots standing alone, no street |
+| Two or three buildings | A few buildings strung along a track |
+| A handful | A ribbon reaching a crossing, frontages stepping in and out |
+| A dozen or more, a town's rank | A crossroads with a square, side streets, back rows of terraces |
+| Several quarters | An old irregular core, and later quarters at their own angle, each founded at the edge of the town as it stood that day |
+
+Nothing already standing ever moves: the lot for a feature depends only on the features
+before it. Rank changes how made the streets are (a dashed track, a single lane, a ruled
+street, an avenue) and whether the middle is a common, a square or a plaza. It never moves a wall.
+
+**What a place is made of shows in its shape**, without colour. Terraces are narrow lots hard
+on a high street, and a quarter founded on them runs on down its street instead of turning the
+corner. Works are solid blocks with yards. Reservoirs are round tanks standing in open ground.
+Observatories are octagonal domes in their own grounds. Utilities are long sheds along the
+line. A place that is mostly data and one that is mostly interface have different outlines.
+
+**Effort thickens a town; it does not sprawl it.** Ordinary fabric is aggregated terraces:
+infill in the gaps between named buildings, and rows on the back lanes. It grows with the
+logarithm of the work, so twelve hundred commits is a dense town, not a plain of houses.
 
 ## The scene
 

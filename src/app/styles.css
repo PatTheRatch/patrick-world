@@ -1071,6 +1071,14 @@ input::placeholder {
   }
 }
 
+/* ?nolabels: the drawing alone, for judging whether places differ without their names. */
+.is-bare .cartouche,
+.is-bare .dial,
+.is-bare .note,
+.is-bare .leader {
+  display: none;
+}
+
 /* ?still: for captures and for anyone who wants no motion at all. */
 .is-still *,
 .is-still *::before,

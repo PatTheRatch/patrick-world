@@ -102,14 +102,14 @@ src/
   plan/             Geometry. Pure, seeded, deterministic. Unit-tested.
     rng.ts            Seeded random
     terrain.ts        Coast, rivers, relief, region outlines
-    city.ts           WorldState place → streets, blocks, lots, footprints
+    settlement.ts     WorldState place → a town: latent skeleton, lots, streets, square, fabric
     roads.ts          Routes between places
   render/           Canvas. Reads plans and state; writes pixels.
     camera.ts         World↔screen transform, inertial pan, eased flights
     ink.ts            The primitives: pencil, pen, wash, hatch, slip, shadow, lettering
     paper.ts          Paper and table textures
     territory.ts      Draws the world layer
-    city.ts           Draws a city at the level of detail the zoom deserves
+    place.ts          Draws a place at the level of detail the zoom deserves
     renderer.ts       Frame loop, culling, layer order, hit-testing
   app/              State and DOM.
     store.ts          Signals: log, edition date, selection, camera target
@@ -127,7 +127,7 @@ Dependencies point one way: `app → render → plan → world`. `world` imports
 2. **Sheet.** Paper pattern, sheet edge and shadow.
 3. **Territory.** Water, relief, region lettering. Detail fades in only near founded places.
 4. **Connections.** Roads and mains.
-5. **Places.** Each drawn by `city.ts` at one of four levels of detail.
+5. **Places.** Each drawn by `place.ts` at one of four levels of detail.
 6. **Lettering.** Names, collision-resolved by rank so big places always win.
 7. **The surveyor's hand.** Selection, hover, in-progress capture: surveyor's red.
 

@@ -109,6 +109,8 @@ export class Renderer {
   /** How much towns are drawn larger than life at this zoom. 1 once close. */
   private exag = 1;
   private observer: ResizeObserver;
+  /** Off for the label-free test: would these places still read as different? */
+  showLabels = true;
   /** Zoom at which the whole sheet fits. */
   fitK = 0.25;
   /** Smoothed frame cost in ms, for `?perf`. */
@@ -415,6 +417,11 @@ export class Renderer {
     // Everything below is lettered or marked in screen space.
     this.drawNewSurveys(scene, visible);
     this.drawMarks(scene, visible, lit, now);
+    if (!this.showLabels) {
+      this.labels = [];
+      this.drawHand(scene, placeById);
+      return;
+    }
     const names = this.layoutNames(scene, visible, lit);
     // Region names keep clear of place names and of the towns themselves.
     const taken = names.map((n) => n.box);
@@ -488,6 +495,24 @@ export class Renderer {
         ctx.stroke(path);
       }
       ctx.setLineDash([]);
+
+      // Traffic: where code or data really flows between two places and one of them is being
+      // worked on now, something is moving along the route. No work, no traffic.
+      if (isMain(link) && !this.camera.reducedMotion && (a.liveliness === 'building' || b.liveliness === 'building') && line.length > 3) {
+        this.crawlOnScreen = true;
+        const span = line.length - 1;
+        for (let n = 0; n < 2; n++) {
+          const along = ((now * 0.000045 * (140 / Math.max(60, road.length / 4)) + n * 0.5) % 1) * span;
+          const i = Math.floor(along);
+          const p0 = line[i]!;
+          const p1 = line[Math.min(span, i + 1)]!;
+          const f = along - i;
+          ctx.fillStyle = css(INK.black, 0.85 * dim);
+          ctx.beginPath();
+          ctx.arc(p0.x + (p1.x - p0.x) * f, p0.y + (p1.y - p0.y) * f, Math.max(1.6 * px, 1.2), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
 
       if (isMain(link)) {
         // A main laid beside the road.

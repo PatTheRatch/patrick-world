@@ -165,6 +165,11 @@ while commits continue; "done" is mostly recorded on his own word.
 Each one names what it gives up. A pillar that cannot say no is not doing any work. When two
 collide, the earlier one wins.
 
+0. **Truthful semantics, free metaphor.** Patrick's World is a metaphorical world, not a
+   historical survey. Every important visual signal must correspond to real underlying state,
+   and it may use metaphor, animation and simulation to say so. The atlas is the visual
+   foundation and never a veto: the question for any element is "what real thing does this
+   encode?", not "could a surveyor have drawn it?". Motion that encodes nothing is still refused.
 1. **Earned ink.** Nothing is drawn that did not happen. *Gives up:* flattering progress, quick
    wins, tidying the map by hand, and a full-looking world on day one.
 2. **Done is proven.** A building stands when its acceptance criteria pass, and the map shows
@@ -179,8 +184,17 @@ collide, the earlier one wins.
 5. **Small is legitimate.** A spark may stay a spark forever. Discipline begins only when he
    chooses to build. *Gives up:* reminders, backlog pressure, and any count of what is undone.
 
-Standing rule from these: **no new visual dimension without retiring one.** The drawing already
-carries stage, kind, effort, recency and age. Anything further goes in the note, not on the map.
+Standing rule from these: **no new visual dimension without retiring one**, and no real thing
+carried by two unrelated devices or two real things fused into one. The assignment:
+
+| Real thing | Carried by |
+|---|---|
+| Breadth: how many capabilities | Footprint: how far the streets run, how many quarters, named buildings |
+| What it is made of | The grain and plan of its lots and quarters; from afar, its silhouette |
+| Effort invested | Density: infill, storeys, ordinary fabric. Saturating, never a field of identical houses |
+| Maturity | How made the streets are; a common, then a square, then a plaza; landmarks |
+| Current attention | Paper, edge and motion: fresh slip, crawling line, construction, traffic |
+| Dependencies and shared systems | Roads, mains and what moves along them |
 
 ## Accessibility & Inclusion
 

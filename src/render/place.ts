@@ -1,7 +1,7 @@
 // One place, drawn the way a survey draws a town: lots, footprints, washes, shadows.
 // How a building is drawn says how far along it is; its wash says what it is.
 
-import type { CityPlan, Lot } from '../plan/types';
+import type { CityPlan, Lot, StreetGrade } from '../plan/types';
 import { KINDS, RANKS, type FeatureKind, type FeatureState, type PlaceState, type Point } from '../world/types';
 import { addPolygon, addShadow, polygonBounds, scaleAbout } from './ink';
 import { AGING, INK, WASH, agedInk, agedWash, css, mix, type Aging, type RGB } from './palette';
@@ -38,6 +38,9 @@ export interface PlaceArt {
   ruin: boolean;
   lots: DrawnLot[];
   town: Path2D;
+  /** Street centre-lines by how made they are. */
+  streets: Partial<Record<StreetGrade, Path2D>>;
+  square: Path2D | null;
   /** The town limits: the outline of everything that stands or is staked here. */
   hull: Path2D;
   /** Length of the limits, in world units, for dashing. */
@@ -87,6 +90,8 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
     ruin,
     lots: [],
     town: new Path2D(),
+    streets: {},
+    square: null,
     hull: new Path2D(),
     hullLength: 0,
     stalled: false,
@@ -163,6 +168,14 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
     addPolygon(art.blockLines, block.outline);
   });
   for (const d of plan.dwellings) addPolygon(art.dwellings, d.footprint);
+  for (const street of plan.streets) {
+    const path = (art.streets[street.grade ?? 'lane'] ??= new Path2D());
+    street.line.forEach((p, i) => (i === 0 ? path.moveTo(p.x, p.y) : path.lineTo(p.x, p.y)));
+  }
+  if (plan.square) {
+    art.square = new Path2D();
+    addPolygon(art.square, plan.square.outline);
+  }
 
   // The town limits, a little clear of the outermost walls.
   const pts: Point[] = [];
@@ -256,6 +269,10 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
       ctx.restore();
     }
   }
+  // Streets. How made they are is the place's maturity, read before any building:
+  // a dashed track, a single lane, a street between two ruled lines, an avenue.
+  drawStreets(ctx, art, k, ink);
+
   const lines = ramp(k, 0.55, 1.3);
   if (lines > 0) {
     ctx.strokeStyle = css(ink, 0.62 * lines);
@@ -287,7 +304,7 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   if (houses > 0) {
     // Strong from afar, where they are the town's mass; lighter close to, where the named
     // buildings should lead.
-    const weight = 0.34 - 0.16 * ramp(k, 0.9, 2.2);
+    const weight = 0.2 + 0.08 * ramp(k, 0.5, 1) - 0.1 * ramp(k, 1.2, 2.4);
     ctx.fillStyle = css(mix(INK.linenShade, ink, weight), houses * (0.55 + 0.45 * art.aging.washStrength));
     ctx.fill(art.dwellings);
     if (k > 1.1) {
@@ -424,6 +441,66 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.lineCap = 'butt';
   }
   ctx.restore();
+}
+
+const STREET_WIDTH: Record<StreetGrade, number> = { track: 0, lane: 3.2, street: 4.8, avenue: 6.4 };
+
+function drawStreets(ctx: CanvasRenderingContext2D, art: PlaceArt, k: number, ink: RGB) {
+  const px = 1 / k;
+  const show = ramp(k, 0.16, 0.42);
+  if (show <= 0) return;
+  ctx.lineCap = 'butt';
+  ctx.lineJoin = 'round';
+  const dashed = art.ruin;
+  for (const grade of ['track', 'lane', 'street', 'avenue'] as StreetGrade[]) {
+    const path = art.streets[grade];
+    if (!path) continue;
+    if (grade === 'track') {
+      ctx.strokeStyle = css(ink, 0.7 * show);
+      ctx.lineWidth = Math.max(0.9 * px, 0.5);
+      ctx.setLineDash([4 * px, 2.6 * px]);
+      ctx.stroke(path);
+      ctx.setLineDash([]);
+      continue;
+    }
+    // Two ruled lines with the sheet between them.
+    const width = STREET_WIDTH[grade];
+    const line = (grade === 'avenue' ? 1.15 : grade === 'street' ? 0.9 : 0.65) * px;
+    if (dashed) ctx.setLineDash([5 * px, 3 * px]);
+    ctx.strokeStyle = css(ink, 0.82 * show);
+    ctx.lineWidth = Math.max(width + line * 2, 1.6 * px);
+    ctx.stroke(path);
+    ctx.setLineDash([]);
+    ctx.strokeStyle = css(INK.linen, show);
+    ctx.lineWidth = Math.max(width, 0.7 * px);
+    ctx.lineCap = 'square';
+    ctx.stroke(path);
+    ctx.lineCap = 'butt';
+  }
+  if (art.square && art.plan.square) {
+    const grade = art.plan.square.grade;
+    if (grade === 'common') {
+      ctx.strokeStyle = css(INK.graphite, 0.8 * show);
+      ctx.lineWidth = 0.8 * px;
+      ctx.setLineDash([1.2 * px, 2.6 * px]);
+      ctx.stroke(art.square);
+      ctx.setLineDash([]);
+    } else {
+      ctx.fillStyle = css(INK.linen, show);
+      ctx.fill(art.square);
+      ctx.strokeStyle = css(ink, 0.85 * show);
+      ctx.lineWidth = (grade === 'plaza' ? 1.2 : 0.9) * px;
+      ctx.stroke(art.square);
+      if (grade === 'plaza') {
+        // A plaza has something standing in the middle of it.
+        const c = art.plan.center;
+        ctx.fillStyle = css(ink, 0.9 * show);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
 }
 
 function fillPoly(ctx: CanvasRenderingContext2D, poly: { x: number; y: number }[]) {

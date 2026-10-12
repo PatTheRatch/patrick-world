@@ -93,7 +93,10 @@ reflection, not the loop).
 - [x] Inferred tracks between places that share methods
 - [x] Honest construction drawing; stalled work weathers
 - [x] Newly founded places marked
-- [ ] Town form by rank, growth-stable
+- [x] Town form by rank, growth-stable (latent skeleton; `src/plan/settlement.ts`)
+- [x] What a place is made of shows in its lots and outline
+- [x] Fabric saturates and infills
+- [x] Traffic on routes where something really flows and work is current
 - [ ] Worked fields and regrowth
 - [ ] District and building layers: criteria ticks, built order, revision slips
 - [ ] Bridges; towns oriented to the ground

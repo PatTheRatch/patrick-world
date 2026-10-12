@@ -2,7 +2,7 @@
 // its plans and its roads are all computed from them.
 
 import { computed, effect, signal } from '@preact/signals';
-import { planCity } from '../plan/city';
+import { planCity } from '../plan/settlement';
 import { planRoads } from '../plan/roads';
 import { buildTerrain } from '../plan/terrain';
 import type { CityPlan, RoadPlan } from '../plan/types';

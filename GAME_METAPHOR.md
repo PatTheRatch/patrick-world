@@ -217,6 +217,14 @@ stated in the note: "uses two methods you have not built with."
 Rejected outright as decoration or overpromise: simulated inhabitants, advisor characters,
 other people's worlds, weather, and anything that speaks first.
 
+## The governing rule, restated
+
+**A metaphorical world with truthful semantics.** The rule at the top of this document, "every
+mark is a claim about something that happened", stands. What it never meant, and what the
+first builds wrongly took it to mean, is that only things a survey atlas could literally
+contain may be drawn. A crawling wall, traffic on a road and a town falling still are all
+permitted, because each says something true. Decoration that says nothing is not.
+
 ## What is deliberately absent
 
 No score. No level-up moment. No streak. No currency. No achievements. No notifications. No

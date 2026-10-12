@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planCity } from './city';
+import { planCity } from './settlement';
 import { citySvg, terrainSvg } from './debug-svg';
 import { polygonArea } from './geometry';
 import { planRoads } from './roads';

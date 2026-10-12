@@ -35,8 +35,12 @@ export interface Block {
   ward?: string;
 }
 
+/** How made a street is: a town's maturity shows in its streets before anything else. */
+export type StreetGrade = 'track' | 'lane' | 'street' | 'avenue';
+
 export interface Street {
   line: Polyline;
+  grade?: StreetGrade;
   /** Main streets are drawn at massing scale; lanes only when buildings are. */
   main: boolean;
   name?: string;
@@ -67,8 +71,10 @@ export interface CityPlan {
   streets: Street[];
   lots: Lot[];
   wards: Ward[];
-  /** Housing around the edge, from measured users. */
+  /** Ordinary fabric: terraces behind the frontages, from work invested and people using it. */
   dwellings: Dwelling[];
+  /** The open middle, once the place has a crossing: a common, then a square, then a plaza. */
+  square?: { outline: Polygon; grade: 'common' | 'square' | 'plaza' };
 }
 
 // ───────────────────────── Territory ─────────────────────────
