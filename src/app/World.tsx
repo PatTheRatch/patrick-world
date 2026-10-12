@@ -17,6 +17,7 @@ import {
   terrain,
   world,
 } from './store';
+import { planOpen } from './ui/PlanSheet';
 import { attach, beginSite, click, enter, goHome, locate, nudgeSelection, stepEdition, stepOut } from './view';
 
 /** Where the selected thing is on screen, for the survey note to sit beside. */
@@ -165,6 +166,7 @@ export function World() {
       if (typing || e.metaKey || e.ctrlKey || e.altKey) return;
       // While the Key is open the map behind it is not listening.
       if (keyOpen.value && e.key.toLowerCase() !== 'k') return;
+      if (planOpen.value) return;
       switch (e.key) {
         case '0':
           selection.value = null;

@@ -1095,3 +1095,284 @@ input::placeholder {
     transition-duration: 1ms !important;
   }
 }
+
+/* ───────────── Build plans ───────────── */
+
+.mark {
+  flex: none;
+  display: block;
+}
+.step-box {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-top: 4px;
+  border: 1.2px solid var(--graphite);
+}
+.is-started > .step-box {
+  border-color: var(--ink);
+  background: linear-gradient(135deg, var(--ink) 50%, transparent 50%);
+}
+.is-done > .step-box {
+  border-color: var(--ink);
+  background: var(--ink);
+}
+
+.build-stage {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--rule);
+}
+.build-stage b {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+}
+.build-session {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.pennant {
+  flex: none;
+  width: 10px;
+  height: 11px;
+  border-left: 1.4px solid var(--ink);
+  background: linear-gradient(to bottom right, var(--red) 50%, transparent 51%) left top / 9px 7px no-repeat;
+}
+.build-blocked {
+  margin-top: 6px;
+  font-family: var(--serif);
+  font-style: italic;
+}
+.build-steps li,
+.build-criteria li {
+  display: flex;
+  gap: 8px;
+  padding: 3px 0;
+  line-height: 1.35;
+}
+.build-steps li:not(.is-done):not(.is-started),
+.build-criteria .is-open {
+  color: var(--ink-soft);
+}
+.build-criteria small,
+.step-title small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--graphite);
+}
+.build-criteria .mark {
+  margin-top: 1px;
+}
+
+.plan {
+  width: min(1040px, 100%);
+}
+.plan-where {
+  margin-top: 8px;
+  color: var(--ink-soft);
+}
+.plan-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 16px;
+  border-top: 1px solid var(--ink);
+}
+.plan-stages li {
+  flex: 1;
+  min-width: 78px;
+  padding: 7px 0 0;
+  border-top: 3px solid transparent;
+  margin-top: -2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-stretch: 112%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--graphite);
+}
+.plan-stages .is-here {
+  color: var(--ink);
+  border-color: var(--red);
+}
+.plan-because {
+  margin-top: 10px;
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+.plan-columns {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 0 44px;
+  margin-top: 6px;
+}
+.plan-objective {
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.45;
+  max-width: 60ch;
+}
+.plan-none,
+.plan-proof {
+  color: var(--ink-soft);
+}
+.plan-proof {
+  margin-top: 8px;
+  font-family: var(--serif);
+  font-style: italic;
+}
+.plan-steps li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--rule);
+}
+.plan-steps .step-title {
+  flex: 1;
+}
+.plan-steps .link,
+.criterion-check {
+  padding: 4px 0 3px;
+}
+.plan-session b {
+  font-weight: 650;
+}
+.plan-builders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin-top: 6px;
+}
+.plan-builders small {
+  display: block;
+  font-size: 10.5px;
+  color: var(--graphite);
+}
+.plan-blocker {
+  font-family: var(--serif);
+  font-style: italic;
+  padding: 3px 0;
+}
+.plan-criteria > li {
+  display: flex;
+  gap: 11px;
+  padding: 9px 0;
+  border-top: 1px solid var(--rule);
+}
+.plan-criteria .mark {
+  margin-top: 2px;
+}
+.criterion-statement {
+  font-weight: 600;
+}
+.criterion-how,
+.criterion-verdict {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.criterion-verdict q {
+  font-family: var(--serif);
+  font-style: italic;
+}
+.is-failed .criterion-verdict b {
+  text-decoration: underline;
+}
+.plan-also {
+  color: var(--ink-soft);
+}
+.plan-log {
+  font-size: 12px;
+}
+.plan-log li {
+  display: grid;
+  grid-template-columns: 132px 1fr;
+  gap: 10px;
+  padding: 3px 0;
+  border-top: 1px solid var(--rule);
+}
+.plan-log time {
+  color: var(--graphite);
+  font-variant-numeric: tabular-nums;
+}
+.plan-inline {
+  display: grid;
+  gap: 2px;
+  margin-top: 8px;
+}
+.plan-inline label,
+.plan-form label,
+.plan-form legend {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.plan-inline-actions {
+  display: flex;
+  gap: 16px;
+}
+.plan input[type='text'],
+.plan textarea,
+.plan select {
+  width: 100%;
+  padding: 4px 0;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--serif);
+  font-size: 14.5px;
+  color: var(--ink);
+  caret-color: var(--red);
+}
+.plan select {
+  font-family: var(--gothic);
+  font-size: 12.5px;
+}
+.plan textarea {
+  resize: vertical;
+  line-height: 1.4;
+}
+.plan input[type='text']:focus,
+.plan textarea:focus,
+.plan select:focus {
+  outline: none;
+  border-bottom: 2px solid var(--red);
+  padding-bottom: 3px;
+}
+.plan-form {
+  display: grid;
+  gap: 4px;
+  margin-top: 18px;
+  max-width: 880px;
+}
+.plan-form fieldset {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  justify-items: start;
+}
+.plan-row {
+  display: grid;
+  grid-template-columns: 1.6fr 170px 1fr;
+  gap: 14px;
+  width: 100%;
+}
+.plan-row.is-step {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 860px) {
+  .plan-columns,
+  .plan-row {
+    grid-template-columns: 1fr;
+  }
+}
+.plan-inline .link,
+.plan-form .link {
+  justify-self: start;
+}

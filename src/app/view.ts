@@ -3,6 +3,7 @@
 import { signal } from '@preact/signals';
 import { RANKS, type Point } from '../world/types';
 import type { Renderer, Selection } from '../render/renderer';
+import { planOpen } from './ui/PlanSheet';
 import { dayNumber, isoFromDay } from './dates';
 import {
   TODAY,
@@ -79,6 +80,10 @@ export function inspect(place: string, feature: string, fly = false) {
 /** Step back out one scale. */
 export function stepOut() {
   if (!renderer) return;
+  if (planOpen.value) {
+    planOpen.value = false;
+    return;
+  }
   if (keyOpen.value) {
     keyOpen.value = false;
     return;

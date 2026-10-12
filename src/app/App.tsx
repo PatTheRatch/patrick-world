@@ -7,6 +7,7 @@ import { RoadHint, SiteCapture } from './ui/Capture';
 import { Cartouche } from './ui/Cartouche';
 import { EditionDial } from './ui/EditionDial';
 import { KeySheet, MethodNote } from './ui/KeySheet';
+import { PlanSheet, planOpen } from './ui/PlanSheet';
 import { SurveyNote } from './ui/SurveyNote';
 import { useSignal } from '@preact/signals';
 
@@ -46,6 +47,7 @@ export function App() {
         const m = params.get('method');
         if (m) method.value = m;
         if (params.has('key')) keyOpen.value = true;
+        if (params.has('plan')) setTimeout(() => (planOpen.value = true), 60);
         const [place, feature] = (params.get('go') ?? '').split('/');
         if (place && feature) inspect(place, feature, true);
         else if (place) (params.has('close') ? enter : visit)(place);
@@ -67,6 +69,7 @@ export function App() {
       <Cartouche />
       <EditionDial />
       <KeySheet />
+      <PlanSheet />
       {params.has('perf') && <Perf />}
     </>
   );

@@ -69,6 +69,12 @@ export interface PlaceArt {
   concept: Path2D;
   stakes: Path2D;
   building: DrawnLot[];
+  /** Built, and waiting on its acceptance criteria. */
+  verifying: DrawnLot[];
+  /** Ready to be begun: pegs at the corners of the plan. */
+  pegs: Path2D;
+  /** Lots with a builder session open on them right now. */
+  sessions: DrawnLot[];
 }
 
 const dayOf = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) / 86400000;
@@ -117,6 +123,9 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
     concept: new Path2D(),
     stakes: new Path2D(),
     building: [],
+    verifying: [],
+    pegs: new Path2D(),
+    sessions: [],
   };
 
   const usedBlocks = new Set<number>();
@@ -130,6 +139,18 @@ export function buildPlaceArt(place: PlaceState, plan: CityPlan, asOf: string): 
 
     // Fresh paper under anything worked on lately.
     if (f.heat > 0.1 && !ruin) addPolygon(art.slips, scaleAbout(lot.parcel, lot.center, 1.16));
+
+    const built = f.build;
+    if (built?.activeSession) art.sessions.push(drawn);
+    if (built?.stage === 'verifying') {
+      // Every step is finished. It stands, but it has not passed.
+      art.verifying.push(drawn);
+      continue;
+    }
+    if (built?.stage === 'ready') {
+      // Planned, unblocked, nothing in the way: the corners are pegged out.
+      for (const p of lot.footprint[0] ?? []) art.pegs.rect(p.x - 0.8, p.y - 0.8, 1.6, 1.6);
+    }
 
     switch (f.stage) {
       case 'concept':
@@ -462,6 +483,24 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   // Under construction.
   for (const { lot, feature } of art.building) drawBuilding(ctx, lot, feature, art, o);
 
+  // Verifying: the whole building washed, no shadow yet, its wall still a dashed line. It is
+  // built; it has not been accepted. The line moves only while someone is on it.
+  for (const { lot, feature } of art.verifying) {
+    const path = new Path2D();
+    for (const poly of lot.footprint.slice(0, 1)) addPolygon(path, poly);
+    ctx.fillStyle = css(agedWash(feature.kind, art.aging), 0.9);
+    ctx.fill(path);
+    if (k > 0.3) {
+      ctx.strokeStyle = css(ink, 0.95);
+      ctx.lineWidth = Math.min(1.5 * px, 1.1);
+      ctx.setLineDash([6 * px, 3 * px]);
+      ctx.lineDashOffset = o.crawl && feature.build?.activeSession ? -(o.time * 0.011) * px : 0;
+      ctx.stroke(path);
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+    }
+  }
+
   // Flooding: a wash arriving. Drawn over the settled wash, which it matches at the end.
   if (o.floods.size > 0) {
     for (const { lot, feature } of art.lots) {
@@ -511,6 +550,8 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     ctx.setLineDash([5 * px, 3 * px]);
     ctx.stroke(art.designed);
     ctx.setLineDash([]);
+    ctx.fillStyle = css(ink, 0.95 * pencilAlpha);
+    ctx.fill(art.pegs);
   }
 
   // Ink.
@@ -690,7 +731,9 @@ function drawBuilding(
   ctx.strokeStyle = css(ink, 0.95);
   ctx.lineWidth = 1 * px;
   ctx.setLineDash([5 * px, 3.5 * px]);
-  const fresh = !!feature.lastWorkAt && art.today - dayOf(feature.lastWorkAt) <= 7;
+  // With a plan, the wall moves only while a builder session is open on it. Without one,
+  // the best we know is that it was worked on this week.
+  const fresh = feature.build ? !!feature.build.activeSession : !!feature.lastWorkAt && art.today - dayOf(feature.lastWorkAt) <= 7;
   ctx.lineDashOffset = o.crawl && fresh ? -(o.time * 0.011) * px : 0;
   ctx.stroke(path);
   ctx.lineDashOffset = 0;

@@ -1,6 +1,8 @@
-// The world's vocabulary. Nothing here imports anything: this file is the contract
+// The world's vocabulary. Nothing here imports anything but the build model's types: this file is the contract
 // between sources (which emit events), the derivation (which gives them meaning),
 // and everything that draws.
+
+import type { BuildState } from './build';
 
 // ───────────────────────── Events: the only stored thing ─────────────────────────
 
@@ -203,6 +205,11 @@ export interface FeatureState {
   heat: number;
   /** True if a release named this feature: drawn as a landmark. */
   landmark: boolean;
+  /**
+   * Its build plan and where that stands, when it has one. When present, `stage` and
+   * `progress` above are derived from this and not from inferred stage events.
+   */
+  build?: BuildState;
 }
 
 export interface PlaceState {

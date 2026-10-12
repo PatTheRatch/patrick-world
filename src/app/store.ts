@@ -2,12 +2,15 @@
 // its plans and its roads are all computed from them.
 
 import { computed, effect, signal } from '@preact/signals';
-import { planCity } from '../plan/settlement';
+import { fabricCount, planCity } from '../plan/settlement';
 import { planRoads } from '../plan/roads';
 import { buildTerrain } from '../plan/terrain';
 import type { CityPlan, RoadPlan } from '../plan/types';
 import type { Draft, Selection } from '../render/renderer';
+import { overlayBuilds } from '../world/buildlog';
 import { derive } from '../world/derive';
+import { buildFixtureEvents } from '../world/fixtures/builds';
+import { fixtureBuilds, openBuildLog, recordedBuilds } from './builds';
 import { inferWays } from '../world/ways';
 import { catalogue } from '../world/fixtures/catalogue';
 import { FIXTURE_TODAY } from '../world/fixtures/world';
@@ -49,6 +52,8 @@ const manualEvents = signal<WorldEvent[]>([]);
 export const loaded = signal(false);
 
 export const events = computed(() => mergeEvents([baseEvents.value, manualEvents.value]));
+/** Every build event: the specimen's scripted build, and whatever has been recorded here. */
+export const buildEvents = computed(() => [...fixtureBuilds.value, ...recordedBuilds.value]);
 export const hasManual = computed(() => manualEvents.value.length > 0);
 
 /** The edition being shown. `load` sets it to the present of whichever sheet it finds. */
@@ -63,17 +68,21 @@ export const world = computed(() => {
   const state = derive(events.value, catalogue, asOf.value);
   // Tracks between places that share methods: inferred, and marked so.
   state.links = [...state.links, ...inferWays(state.places, state.links)];
+  // Build plans and what builders reported, laid over the inferred world.
+  const built = overlayBuilds(state, buildEvents.value, asOf.value);
   deriveMs.value = performance.now() - t0;
-  return state;
+  return built;
 });
 
 /** The world as it stands today, whatever edition is on screen. */
-export const present = computed(() => (isPresent.value ? world.value : derive(events.value, catalogue, TODAY.value)));
+export const present = computed(() =>
+  isPresent.value ? world.value : overlayBuilds(derive(events.value, catalogue, TODAY.value), buildEvents.value, TODAY.value),
+);
 
 // Scrubbing revisits the same states over and over, so plans are kept per place and state.
 const planCache = new Map<string, Map<string, CityPlan>>();
 const planKey = (p: PlaceState) =>
-  `${p.users}|${p.features.map((f) => `${f.id}${f.stage[0]}${f.storeys}`).join(',')}`;
+  `${p.rank}|${p.users}|${fabricCount(p.commits, p.users, p.activeWeeks)}|${p.features.map((f) => `${f.id}${f.stage[0]}${f.storeys}`).join(',')}`;
 
 export const plans = computed(() => {
   const out = new Map<string, CityPlan>();
@@ -159,7 +168,9 @@ export async function load() {
     baseEvents.value = copies > 0 ? [...base, ...stressEvents(base, Math.min(copies, 40), catalogue)] : base;
     surveyedAt.value = null;
     worldKind.value = 'specimen';
+    fixtureBuilds.value = copies > 0 ? [] : buildFixtureEvents();
   }
+  openBuildLog(worldKind.value, () => TODAY.value, () => isPresent.value);
   asOf.value = TODAY.value;
   manualEvents.value = await manual.load();
   manual.subscribe?.(() => {

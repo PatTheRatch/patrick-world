@@ -76,6 +76,16 @@ function nameSize(place: PlaceState): number {
 }
 
 /** How long a newly founded place stays marked as new. */
+const BUILD_WORD: Record<string, string> = {
+  idea: 'Proposed',
+  specified: 'Specified',
+  planned: 'Planned',
+  ready: 'Ready',
+  building: 'Being built',
+  verifying: 'Verifying',
+  done: '',
+};
+
 const NEW_SURVEY_DAYS = 42;
 const FLOOD_MS = 700;
 const DRAIN_MS = 420;
@@ -264,6 +274,7 @@ export class Renderer {
     let key = `${place.liveliness}|${place.revived ? 1 : 0}|${place.rank}|${place.name}`;
     for (const f of place.features) {
       key += `|${f.stage[0]}${f.storeys}${f.heat > 0.1 ? 'h' : ''}${f.landmark ? 'l' : ''}${f.stage === 'building' ? Math.round(f.progress * 20) : ''}`;
+      if (f.build) key += `${f.build.stage}${f.build.activeSession ? '*' : ''}`;
     }
     if (held && held.key === key && held.art.plan === plan) {
       held.art.place = place;
@@ -405,6 +416,7 @@ export class Renderer {
       const alpha = (lit && !lit.has(place.id) ? 0.22 : 1) * birth;
       // Anything being worked on moves, at every scale: the limits from afar, the walls close to.
       if (place.liveliness === 'building' && art.hullLength > 0) this.crawlOnScreen = true;
+      if (art.sessions.length > 0) this.crawlOnScreen = true;
       ctx.save();
       ctx.translate(art.plan.center.x, art.plan.center.y);
       ctx.scale(e, e);
@@ -416,6 +428,7 @@ export class Renderer {
 
     // Everything below is lettered or marked in screen space.
     this.drawNewSurveys(scene, visible);
+    this.drawBuilders(visible);
     this.drawMarks(scene, visible, lit, now);
     if (!this.showLabels) {
       this.labels = [];
@@ -563,6 +576,88 @@ export class Renderer {
         halo: INK.linen,
       });
     }
+  }
+
+  /**
+   * A builder is on this lot right now: a ranging pole with a red pennant, the one mark on
+   * the sheet that says "someone is working here at this moment". Seen from every height.
+   */
+  private drawBuilders(visible: PlaceArt[]) {
+    const { ctx, camera: cam } = this;
+    for (const art of visible) {
+      for (const { lot } of art.sessions) {
+        const c = cam.toScreen(this.drawn(art.plan, lot.center));
+        const h = Math.max(11, Math.min(20, 5 * cam.k * this.exag));
+        ctx.strokeStyle = css(INK.black, 0.9);
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(c.x, c.y);
+        ctx.lineTo(c.x, c.y - h);
+        ctx.stroke();
+        ctx.fillStyle = css(INK.red);
+        ctx.beginPath();
+        ctx.moveTo(c.x, c.y - h);
+        ctx.lineTo(c.x + h * 0.55, c.y - h * 0.78);
+        ctx.lineTo(c.x, c.y - h * 0.56);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+  }
+
+  /**
+   * Acceptance criteria, marked along a building's street front: one mark each. Its shape
+   * is how it is checked (a square for a command, a diamond for a review, a ring for
+   * Patrick's own eye); hollow pencil is not yet checked, solid ink has passed, struck
+   * through has failed.
+   */
+  private drawCriteria(art: PlaceArt, lot: PlaceArt['lots'][number]['lot'], feature: PlaceArt['lots'][number]['feature']) {
+    const build = feature.build;
+    const plan = build?.plan;
+    if (!build || !plan || !lot.front || plan.criteria.length === 0) return;
+    const { ctx, camera: cam } = this;
+    const a = cam.toScreen(this.drawn(art.plan, lot.front[0]));
+    const b = cam.toScreen(this.drawn(art.plan, lot.front[1]));
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    const n = plan.criteria.length;
+    const size = Math.max(2.6, Math.min(4.6, len / (n * 3.2)));
+    const gap = Math.min(size * 3.2, len / (n + 0.5));
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    // Out into the street a little, so the marks sit in front of the wall, not on it.
+    const cxm = (a.x + b.x) / 2;
+    const cym = (a.y + b.y) / 2;
+    const c = cam.toScreen(this.drawn(art.plan, lot.center));
+    const away = Math.hypot(cxm - c.x, cym - c.y) || 1;
+    const ox = ((cxm - c.x) / away) * (size + 2.5);
+    const oy = ((cym - c.y) / away) * (size + 2.5);
+    plan.criteria.forEach((criterion, i) => {
+      const t = (i - (n - 1) / 2) * gap;
+      const x = cxm + ux * t + ox;
+      const y = cym + uy * t + oy;
+      const passed = build.criteriaPassed.includes(criterion.id);
+      const failed = build.criteriaFailed.includes(criterion.id);
+      ctx.beginPath();
+      if (criterion.verification.kind === 'command') ctx.rect(x - size, y - size, size * 2, size * 2);
+      else if (criterion.verification.kind === 'review') {
+        ctx.moveTo(x, y - size * 1.3);
+        ctx.lineTo(x + size * 1.3, y);
+        ctx.lineTo(x, y + size * 1.3);
+        ctx.lineTo(x - size * 1.3, y);
+        ctx.closePath();
+      } else ctx.arc(x, y, size * 1.1, 0, Math.PI * 2);
+      ctx.fillStyle = passed ? css(INK.black) : css(INK.slip);
+      ctx.fill();
+      ctx.strokeStyle = passed || failed ? css(INK.black) : css(INK.graphite, 0.9);
+      ctx.lineWidth = failed ? 1.5 : 1.1;
+      ctx.stroke();
+      if (failed) {
+        ctx.beginPath();
+        ctx.moveTo(x - size * 1.6, y + size * 1.6);
+        ctx.lineTo(x + size * 1.6, y - size * 1.6);
+        ctx.stroke();
+      }
+    });
   }
 
   /**
@@ -725,8 +820,10 @@ export class Renderer {
         }
       }
 
-      if (k < 2) continue;
+      if (k < 1.7) continue;
       for (const { lot, feature } of art.lots) {
+        this.drawCriteria(art, lot, feature);
+        if (k < 2) continue;
         const c = at(lot.center);
         if (c.x < -80 || c.y < -80 || c.x > cam.width + 80 || c.y > cam.height + 80) continue;
         const b = polygonBounds(lot.footprint.slice(0, 1));
@@ -736,7 +833,7 @@ export class Renderer {
           (scene.selection?.type === 'feature' && scene.selection.id === feature.id) ||
           (scene.hover?.type === 'feature' && scene.hover.id === feature.id);
         // Work in hand is always named once a town can be read; the rest when there is room.
-        const underway = feature.stage === 'building' && k >= 1.9 && !art.ruin;
+        const underway = (feature.stage === 'building' || feature.build?.stage === 'ready') && k >= 1.9 && !art.ruin;
         const named = (k >= 3.6 && wPx > 54) || selected || underway;
 
         if (done && !art.ruin && !(named && wPx < 120)) {
@@ -768,7 +865,7 @@ export class Renderer {
         const lines = wrap(ctx, feature.name, style, free ? Math.max(70, wPx - 8) : wPx * 0.86, 3);
         if (!free && lines.some((line) => measure(ctx, line, style) > wPx * 0.92)) continue;
         const lh = style.size * 1.12;
-        const word = STAGE_WORD[feature.stage];
+        const word = feature.build ? BUILD_WORD[feature.build.stage] : STAGE_WORD[feature.stage];
         const total = lines.length * lh + (word ? lh : 0);
         let y = c.y - total / 2 + lh / 2;
         for (const line of lines) {

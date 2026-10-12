@@ -346,6 +346,7 @@ export function planCity(place: PlaceState): CityPlan {
       parcel: placed.parcel,
       footprint,
       center: { x: c.x + c.w / 2, y: c.y + c.h / 2 },
+      front: placed.side === 1 ? [placed.parcel[0]!, placed.parcel[1]!] : [placed.parcel[3]!, placed.parcel[2]!],
       block: quarters.indexOf(quarter),
     };
     lots.push(lot);

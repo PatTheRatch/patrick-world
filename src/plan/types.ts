@@ -26,6 +26,8 @@ export interface Lot {
   footprint: Polygon[];
   /** Centre of the main mass, for numerals and hit-testing. */
   center: Point;
+  /** The edge of the parcel on its street, left to right as seen from the street. */
+  front?: [Point, Point];
   /** Index into `CityPlan.blocks`. */
   block: number;
 }

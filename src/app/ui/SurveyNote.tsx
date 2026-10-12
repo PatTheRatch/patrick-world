@@ -10,18 +10,19 @@ import { anchorListeners } from '../World';
 import { dayNumber, monthYear, span, yearOf } from '../dates';
 import {
   asOf,
+  buildEvents,
   capture,
   catalogue,
   isPresent,
   method,
-  recordStage,
   selectedFeature,
   selectedPlace,
-  selection,
   stakeLot,
   world,
 } from '../store';
 import { enter, inspect, stepOut } from '../view';
+import { BUILDER_NAME } from '../builds';
+import { CriterionMark, STAGE_WORD, planOpen, verdicts } from './PlanSheet';
 import { RANK_NAME, RankGlyph, STAGE_NAME, STAGE_SHORT, StageSwatch, WashSwatch } from './Swatch';
 
 const RANK_NOUN: Record<Rank, string> = {
@@ -399,7 +400,6 @@ function StakeForm({ place }: { place: string }) {
 
 function FeatureNote({ place, feature }: { place: PlaceState; feature: FeatureState }) {
   const at = STAGES.indexOf(feature.stage);
-  const next = STAGES[at + 1];
   const done = feature.stage === 'working' || feature.stage === 'mature';
   const today = dayNumber(asOf.value);
 
@@ -415,27 +415,34 @@ function FeatureNote({ place, feature }: { place: PlaceState; feature: FeatureSt
       </p>
       {feature.note && <p class="note-words">{feature.note}</p>}
 
+      {feature.build ? (
+        <BuildSummary place={place} feature={feature} />
+      ) : (
+        <>
       <ol class="ladder" aria-label="Stage">
-        {STAGES.map((s, i) => (
-          <li key={s} class={i === at ? 'is-here' : i < at ? 'is-past' : 'is-ahead'} aria-current={i === at ? 'step' : undefined}>
-            <StageSwatch stage={s} kind={feature.kind} />
-            <span title={STAGE_NAME[s]}>{STAGE_SHORT[s]}</span>
-          </li>
-        ))}
-      </ol>
+          {STAGES.map((s, i) => (
+            <li key={s} class={i === at ? 'is-here' : i < at ? 'is-past' : 'is-ahead'} aria-current={i === at ? 'step' : undefined}>
+              <StageSwatch stage={s} kind={feature.kind} />
+              <span title={STAGE_NAME[s]}>{STAGE_SHORT[s]}</span>
+            </li>
+          ))}
+        </ol>
 
-      <p class="note-standing">
-        {done
-          ? `Stands ${feature.storeys} ${feature.storeys === 1 ? 'storey' : 'storeys'}: ${feature.commits.toLocaleString('en-US')} commits of work.`
-          : feature.commits > 0
-            ? `${feature.commits.toLocaleString('en-US')} commits so far.`
-            : 'No work logged yet.'}{' '}
-        {feature.builtOrder ? `The ${ordinal(feature.builtOrder)} building to stand here. ` : ''}
-        {feature.lastWorkAt
-          ? `Last worked on ${span(today - dayNumber(feature.lastWorkAt))} ago.`
-          : `Proposed ${monthYear(feature.proposedAt)}.`}
-        {feature.landmark ? ' Shipped in a named release.' : ''}
-      </p>
+        <p class="note-standing">
+          {done
+            ? `Stands ${feature.storeys} ${feature.storeys === 1 ? 'storey' : 'storeys'}: ${feature.commits.toLocaleString('en-US')} commits of work.`
+            : feature.commits > 0
+              ? `${feature.commits.toLocaleString('en-US')} commits so far.`
+              : 'No work logged yet.'}{' '}
+          {feature.builtOrder ? `The ${ordinal(feature.builtOrder)} building to stand here. ` : ''}
+          {feature.lastWorkAt
+            ? `Last worked on ${span(today - dayNumber(feature.lastWorkAt))} ago.`
+            : `Proposed ${monthYear(feature.proposedAt)}.`}
+          {feature.landmark ? ' Shipped in a named release.' : ''}
+        </p>
+
+        </>
+      )}
 
       {feature.methods.length > 0 && <Methods ids={feature.methods} />}
 
@@ -443,21 +450,73 @@ function FeatureNote({ place, feature }: { place: PlaceState; feature: FeatureSt
         <button type="button" class="link" onClick={stepOut}>
           Back to {place.name}
         </button>
-        {isPresent.value && next && (
-          <button
-            type="button"
-            class="link"
-            title="Logged as your own claim, not as observed evidence"
-            onClick={() => {
-              recordStage(place.id, feature.id, next);
-              selection.value = { type: 'feature', place: place.id, id: feature.id };
-            }}
-          >
-            Record as {STAGE_NAME[next].toLowerCase()}
-          </button>
-        )}
+        <button type="button" class="link" onClick={() => (planOpen.value = true)}>
+          {feature.build?.plan ? 'Open the plan' : 'Write a plan'}
+        </button>
       </nav>
     </article>
+  );
+}
+
+/** A building with a plan: why it stands as it does, in the plan's own terms. */
+function BuildSummary({ place, feature }: { place: PlaceState; feature: FeatureState }) {
+  const build = feature.build!;
+  const plan = build.plan;
+  const checks = plan ? verdicts(buildEvents.value, place.id, feature.id, plan.revision) : new Map();
+  const session = build.activeSession;
+  return (
+    <section class="build">
+      <p class="build-stage">
+        <b>{STAGE_WORD[build.stage]}.</b> {build.because}
+      </p>
+      {plan && <p class="note-words">{plan.objective}</p>}
+      {session && (
+        <p class="build-session">
+          <i class="pennant" aria-hidden="true" />
+          {BUILDER_NAME[session.builder] ?? session.builder} is on it now, since {session.since.slice(11, 16)}.
+        </p>
+      )}
+      {build.openBlockers.map((b) => (
+        <p key={b.blocker} class="build-blocked">
+          Blocked: {b.reason}
+        </p>
+      ))}
+      {plan && plan.steps.length > 0 && (
+        <>
+          <h3>
+            Steps, {build.stepsDone.length} of {plan.steps.length} finished
+          </h3>
+          <ol class="build-steps">
+            {plan.steps.map((s) => (
+              <li key={s.id} class={build.stepsDone.includes(s.id) ? 'is-done' : build.stepsStarted.includes(s.id) ? 'is-started' : ''}>
+                <span class="step-box" aria-hidden="true" />
+                {s.title}
+              </li>
+            ))}
+          </ol>
+        </>
+      )}
+      {plan && plan.criteria.length > 0 && (
+        <>
+          <h3>Done means</h3>
+          <ul class="build-criteria">
+            {plan.criteria.map((c) => {
+              const v = checks.get(c.id);
+              const state = v ? (v.passed ? 'passed' : 'failed') : 'open';
+              return (
+                <li key={c.id} class={`is-${state}`}>
+                  <CriterionMark kind={c.verification.kind} state={state} />
+                  <span>
+                    {c.statement}
+                    {v && !v.passed && <small>Failed: {v.evidence}</small>}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
 
