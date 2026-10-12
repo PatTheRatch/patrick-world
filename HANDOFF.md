@@ -14,7 +14,7 @@ drag the dial at the bottom to turn the edition back, `K` for the Key.
 
 A working prototype that meets all fifteen of the brief's success criteria on desktop. The
 independent design review ended at **fix, not ship**: it passed the look and the model and left
-five items open, listed under "What did not work". Nothing is pushed anywhere; eight commits on
+five items open, listed under "What did not work". Nothing is pushed anywhere; 8 commits on
 local `main`.
 
 **Three decisions I made for you while you slept, which you should accept or overrule:**
