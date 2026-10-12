@@ -17,7 +17,7 @@ OWN-WORLD: Cool buff-grey linen paper on a dark baize table. Black ink that fade
 
 STORY: Patrick sees at once which places are large and which are fresh, descends into one, reads what is built, underway and merely staked, then turns the edition back and watches it un-build. He leaves wanting to put his own projects in.
 
-FIRST VIEWPORT: The full territory sheet fills the window. Two or three dense multi-block cities with long shadows and the largest names; towns between; pencil marks toward blank frontier. Roads and blue mains between related places. Cartouche inside the sheet's lower-left corner (title, edition, scale, Key). Edition dial along the sheet's bottom margin. No toolbar, sidebar or panels.
+FIRST VIEWPORT: The full territory sheet fills the window. Two or three dense multi-block cities with long shadows and the largest names; towns between; pencil marks toward blank frontier. Roads and blue mains between related places. Cartouche inside the sheet's lower-left corner (title, edition, tally, Key). Edition dial along the sheet's bottom margin. No toolbar, sidebar or panels.
 
 FORM: Fire-insurance survey atlas, candidate 5 of 7 (assigned). Seed key a2007292. Signature interaction: the edition dial peeling the atlas back through time. Motion grammar: the pen draws, the wash floods, the slip is pasted.
 

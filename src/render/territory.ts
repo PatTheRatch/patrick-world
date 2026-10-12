@@ -158,7 +158,7 @@ export class TerritoryArt {
 
     // Relief and woods, in three strengths of knowing.
     // Relief belongs to the wide view; close in, it steps back behind the town.
-    const far = 1 - 0.7 * Math.max(0, Math.min(1, (k - 0.9) / 1.6));
+    const far = 1 - 0.94 * Math.max(0, Math.min(1, (k - 0.6) / 1.0));
     const reliefAlpha = [0.5 * far, 0.3 * far, 0.14 * far];
     ctx.lineCap = 'round';
     for (let b = 0; b < BUCKETS; b++) {
@@ -169,7 +169,7 @@ export class TerritoryArt {
         ctx.stroke(r);
       }
       const w = this.woods[b];
-      if (w && k > 0.2) {
+      if (w && k > 0.2 && far > 0.1) {
         ctx.strokeStyle = css(INK.graphite, reliefAlpha[b]! * 0.8);
         ctx.lineWidth = Math.min(0.7 * px, 1.2);
         ctx.stroke(w);
@@ -260,6 +260,24 @@ export class TerritoryArt {
       if (!best) continue;
       const at = cam.toScreen(best);
       letter(ctx, region.name, at.x, at.y, style);
+    }
+
+    // Reference letters and figures in the margin, as on any sheet of a series.
+    if (k < fitK * 3) {
+      const { width, height } = this.terrain.size;
+      const ref = { family: GOTHIC, size: 9, weight: 600, stretch: 100, color: INK.black, alpha: 0.7 };
+      for (let i = 0; i * 600 < width; i++) {
+        const top = cam.toScreen({ x: i * 600 + 300, y: -34 });
+        const bottom = cam.toScreen({ x: i * 600 + 300, y: height + 34 });
+        letter(ctx, String.fromCharCode(65 + i), top.x, top.y, ref);
+        letter(ctx, String.fromCharCode(65 + i), bottom.x, bottom.y, ref);
+      }
+      for (let j = 0; j * 600 < height; j++) {
+        const left = cam.toScreen({ x: -34, y: Math.min(height, j * 600 + 300) });
+        const right = cam.toScreen({ x: width + 34, y: Math.min(height, j * 600 + 300) });
+        letter(ctx, String(j + 1), left.x, left.y, ref);
+        letter(ctx, String(j + 1), right.x, right.y, ref);
+      }
     }
 
     for (const b of this.blanks) {

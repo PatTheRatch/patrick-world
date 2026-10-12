@@ -103,6 +103,11 @@ export function EditionDial() {
           </span>
         ))}
         <span class="dial-index" style={{ left: `${at * 100}%` }} />
+        {!isPresent.value && (
+          <span class="dial-date" style={at > 0.8 ? { right: `${(1 - at) * 100}%`, marginRight: '6px' } : { left: `${at * 100}%`, marginLeft: '6px' }}>
+            {monthYear(asOf.value)}
+          </span>
+        )}
       </div>
       <button
         type="button"

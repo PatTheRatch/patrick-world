@@ -99,12 +99,19 @@ The whole territory, drawn. Blank paper at the edges where nothing is known. Two
 cities are unmistakably large from across the room: dense multi-block fields of wash with long
 shadows and big Clarendon names. Around them, towns, and further out, single pencilled marks.
 Roads run between related places. A small title cartouche sits in a corner of the sheet the
-way one does on a real map: title, the edition date, the scale bar, the Key. No toolbar, no
+way one does on a real map: title, the edition date, a tally of what stands, the Key. No toolbar, no
 sidebar, no panel.
 
 The signature interaction is the **edition dial**: drag the edition date backwards and the
 slips peel away, washes drain back to pencil, roads un-draw, and cities shrink to the outposts
 they once were.
+
+There is no scale bar. World distances stand for nothing measurable, and a bar would be the
+one mark on the sheet with no evidence behind it. The cartouche carries a tally instead.
+
+The territory is an island in a sea, which a fire-insurance atlas would never show. That is a
+deliberate adaptation: the atlas supplies the towns, and a coast gives the territory an edge
+and a frontier without a fantasy map's ornament. Water is drawn as a chart draws it.
 
 ## What this direction refuses
 

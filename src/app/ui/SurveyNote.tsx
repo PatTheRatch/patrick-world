@@ -22,7 +22,7 @@ import {
   world,
 } from '../store';
 import { enter, inspect, stepOut } from '../view';
-import { RANK_NAME, RankGlyph, STAGE_NAME, StageSwatch, WashSwatch } from './Swatch';
+import { RANK_NAME, RankGlyph, STAGE_NAME, STAGE_SHORT, StageSwatch, WashSwatch } from './Swatch';
 
 const RANK_NOUN: Record<Rank, string> = {
   spark: 'A spark',
@@ -198,7 +198,7 @@ function PlaceNote({ place }: { place: PlaceState }) {
         <section>
           <h3>Staked for later</h3>
           <ul class="note-list">
-            {staked.slice(0, 5).map((f) => (
+            {staked.slice(0, 3).map((f) => (
               <li key={f.id}>
                 <button type="button" class="row" onClick={() => inspect(place.id, f.id, true)}>
                   <span>{f.name}</span>
@@ -207,7 +207,7 @@ function PlaceNote({ place }: { place: PlaceState }) {
               </li>
             ))}
           </ul>
-          {staked.length > 5 && <p class="note-more">and {staked.length - 5} more</p>}
+          {staked.length > 3 && <p class="note-more">and {staked.length - 3} more, pencilled on the map</p>}
         </section>
       )}
 
@@ -330,7 +330,7 @@ function Methods({ ids }: { ids: string[] }) {
   return (
     <p class="note-methods">
       <span class="note-methods-lead">Built with</span>
-      {ids.slice(0, 8).map((id) => (
+      {ids.slice(0, 8).map((id, i, all) => (
         <button
           key={id}
           type="button"
@@ -339,6 +339,7 @@ function Methods({ ids }: { ids: string[] }) {
           onClick={() => (method.value = method.value === id ? null : id)}
         >
           {names.get(id) ?? id}
+          {i < all.length - 1 ? ',' : '.'}
         </button>
       ))}
     </p>
@@ -418,7 +419,7 @@ function FeatureNote({ place, feature }: { place: PlaceState; feature: FeatureSt
         {STAGES.map((s, i) => (
           <li key={s} class={i === at ? 'is-here' : i < at ? 'is-past' : 'is-ahead'} aria-current={i === at ? 'step' : undefined}>
             <StageSwatch stage={s} kind={feature.kind} />
-            <span>{STAGE_NAME[s]}</span>
+            <span title={STAGE_NAME[s]}>{STAGE_SHORT[s]}</span>
           </li>
         ))}
       </ol>

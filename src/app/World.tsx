@@ -92,7 +92,7 @@ export function World() {
           const dx = p.x - lastMove.x;
           const dy = p.y - lastMove.y;
           cam.panBy(dx, dy);
-          cam.constrain(catalogue.size);
+          cam.constrain(catalogue.size, 86);
           velocity = { x: velocity.x * 0.6 + (dx / dt) * 0.4, y: velocity.y * 0.6 + (dy / dt) * 0.4 };
           lastMove = { ...p, t: e.timeStamp };
           renderer.invalidate();
@@ -132,7 +132,7 @@ export function World() {
       e.preventDefault();
       const scale = e.ctrlKey ? 0.012 : e.deltaMode === 1 ? 0.05 : 0.0018;
       cam.zoomAt(point(e), Math.exp(-e.deltaY * scale));
-      cam.constrain(catalogue.size);
+      cam.constrain(catalogue.size, 86);
       renderer.invalidate();
     };
 

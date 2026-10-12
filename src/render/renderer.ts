@@ -65,6 +65,10 @@ const NAME_SIZE: Record<Rank, number> = {
 };
 
 const FLOOD_MS = 700;
+const DRAIN_MS = 420;
+const ROAD_MS = 900;
+/** Paper beyond the neat line, in world units. Matches the territory's margin. */
+const SHEET_MARGIN = 86;
 const BIRTH_MS = 520;
 
 export class Renderer {
@@ -77,6 +81,9 @@ export class Renderer {
   private labels: LabelBox[] = [];
   private floods = new Map<string, number>();
   private births = new Map<string, number>();
+  private drains = new Map<string, number>();
+  private roadBirths = new Map<string, number>();
+  private prevLinks = new Set<string>();
   private prevStages = new Map<string, FeatureStage>();
   private prevPlaces = new Set<string>();
   private prevAsOf = '';
@@ -125,10 +132,11 @@ export class Renderer {
         ? { top: 16, right: 12, bottom: rect.height * 0.56, left: 12 }
         : { top: 40, right: 40, bottom: 96, left: 40 };
     if (this.scene) {
+      this.camera.minK = this.coverK();
       const home = this.home();
       this.fitK = home.k;
-      this.camera.minK = home.k * 0.72;
       if (first) this.camera.jumpTo(home);
+      this.camera.constrain(this.scene.catalogue.size, SHEET_MARGIN);
     }
     this.dirty = true;
   }
@@ -150,10 +158,11 @@ export class Renderer {
       this.territory.updateKnowledge(scene.world.places);
     }
     if (firstScene) {
+      this.camera.minK = this.coverK();
       const home = this.home();
       this.fitK = home.k;
-      this.camera.minK = home.k * 0.72;
       this.camera.jumpTo(home);
+      this.camera.constrain(scene.catalogue.size, SHEET_MARGIN);
     }
     this.dirty = true;
   }
@@ -165,6 +174,7 @@ export class Renderer {
     const stages = new Map<string, FeatureStage>();
     const places = new Set<string>();
     const flooding: string[] = [];
+    const draining: string[] = [];
     const born: string[] = [];
     for (const place of world.places) {
       places.add(place.id);
@@ -176,16 +186,28 @@ export class Renderer {
         const done = f.stage === 'working' || f.stage === 'mature';
         const wasDone = before === 'working' || before === 'mature';
         if (forward && done && !wasDone && this.prevPlaces.has(place.id)) flooding.push(f.id);
+        if (!forward && wasDone && !done) draining.push(f.id);
       }
     }
+    const links = new Set(world.links.map((l) => l.id));
+    const laid = forward && this.prevAsOf !== '' ? [...links].filter((id) => !this.prevLinks.has(id)) : [];
     // A big jump is a cut, not a moment: animate only what a person could follow.
     if (!this.camera.reducedMotion) {
       if (flooding.length <= 24) for (const id of flooding) this.floods.set(id, now);
       if (born.length <= 6) for (const id of born) this.births.set(id, now);
+      if (draining.length <= 24) for (const id of draining) this.drains.set(id, now);
+      if (laid.length <= 6) for (const id of laid) this.roadBirths.set(id, now);
     }
+    this.prevLinks = links;
     this.prevStages = stages;
     this.prevPlaces = places;
     this.prevAsOf = world.asOf;
+  }
+
+  /** The lowest zoom at which the sheet still covers the whole window. */
+  private coverK(): number {
+    const size = this.scene?.catalogue.size ?? { width: 4800, height: 3200 };
+    return Math.max(this.camera.width / (size.width + SHEET_MARGIN * 2), this.camera.height / (size.height + SHEET_MARGIN * 2));
   }
 
   home() {
@@ -298,8 +320,8 @@ export class Renderer {
     if (!scene) return;
 
     const moved = this.camera.tick(now, dt);
-    if (moved) this.camera.constrain(scene.catalogue.size);
-    const animating = this.floods.size > 0 || this.births.size > 0;
+    if (moved) this.camera.constrain(scene.catalogue.size, SHEET_MARGIN);
+    const animating = this.floods.size + this.births.size + this.drains.size + this.roadBirths.size > 0;
     const crawl = this.crawlOnScreen && !this.camera.reducedMotion && now - this.lastCrawl > 42;
     if (!this.dirty && !moved && !animating && !crawl) return;
     this.dirty = false;
@@ -321,6 +343,10 @@ export class Renderer {
     for (const [id, start] of this.births) if (now - start > BIRTH_MS) this.births.delete(id);
     const floods = new Map<string, number>();
     for (const [id, start] of this.floods) floods.set(id, Math.min(1, (now - start) / FLOOD_MS));
+    for (const [id, start] of this.drains) if (now - start > DRAIN_MS) this.drains.delete(id);
+    for (const [id, start] of this.roadBirths) if (now - start > ROAD_MS) this.roadBirths.delete(id);
+    const drains = new Map<string, number>();
+    for (const [id, start] of this.drains) drains.set(id, Math.min(1, (now - start) / DRAIN_MS));
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = css(INK.table);
@@ -336,7 +362,7 @@ export class Renderer {
     const placeById = new Map(scene.world.places.map((p) => [p.id, p]));
     const lit = scene.method ? this.litPlaces(scene) : null;
 
-    this.drawRoads(scene, placeById, lit);
+    this.drawRoads(scene, placeById, lit, now);
 
     const { slip } = territory.patterns(ctx);
     const visible: PlaceArt[] = [];
@@ -355,7 +381,7 @@ export class Renderer {
       ctx.translate(art.plan.center.x, art.plan.center.y);
       ctx.scale(e, e);
       ctx.translate(-art.plan.center.x, -art.plan.center.y);
-      drawPlace(ctx, art, { k: k * e, time: now, alpha, crawl: !cam.reducedMotion, floods, slipPaper: slip });
+      drawPlace(ctx, art, { k: k * e, time: now, alpha, crawl: !cam.reducedMotion, floods, drains, slipPaper: slip });
       ctx.restore();
     }
     ctx.restore();
@@ -385,7 +411,7 @@ export class Renderer {
     return lit;
   }
 
-  private drawRoads(scene: Scene, places: Map<string, PlaceState>, lit: Set<string> | null) {
+  private drawRoads(scene: Scene, places: Map<string, PlaceState>, lit: Set<string> | null, now: number) {
     const { ctx, camera: cam } = this;
     const px = 1 / cam.k;
     const links = new Map(scene.world.links.map((l) => [l.id, l]));
@@ -401,12 +427,16 @@ export class Renderer {
       const path = new Path2D();
       const ra = this.townReach(a.id);
       const rb = this.townReach(b.id);
-      addPolyline(
-        path,
-        road.line.filter(
-          (p) => Math.hypot(p.x - a.position.x, p.y - a.position.y) > ra && Math.hypot(p.x - b.position.x, p.y - b.position.y) > rb,
-        ),
+      let line = road.line.filter(
+        (p) => Math.hypot(p.x - a.position.x, p.y - a.position.y) > ra && Math.hypot(p.x - b.position.x, p.y - b.position.y) > rb,
       );
+      // A new road is drawn along its length, from the place it was surveyed from.
+      const laid = this.roadBirths.get(link.id);
+      if (laid !== undefined) {
+        const t = Math.min(1, (now - laid) / ROAD_MS);
+        line = line.slice(0, Math.max(2, Math.ceil(line.length * (1 - Math.pow(1 - t, 2)))));
+      }
+      addPolyline(path, line);
       const old = a.liveliness === 'ruins' || b.liveliness === 'ruins';
       const ink = old ? INK.sepia : INK.black;
 
@@ -492,7 +522,7 @@ export class Renderer {
       const sizePx = coreRadius(plan) * cam.k * this.exag;
       const rank = RANKS.indexOf(place.rank);
       const hasPlan = art.lots.length > 0;
-      if (hasPlan && sizePx > 15 && rank >= 2) continue;
+      if (hasPlan && rank >= 2 && sizePx > 6) continue;
       if (hasPlan && sizePx > 34) continue;
       const born = this.births.get(place.id);
       const t = born === undefined ? 1 : Math.min(1, (now - born) / BIRTH_MS);
@@ -546,13 +576,16 @@ export class Renderer {
 
       if (k >= 3.3 && k < 9 && art.building.length + Object.keys(art.wash).length > 0) {
         const a = Math.min(1, (k - 3.3) / 0.8) * 0.55;
+        const lettered = new Set<string>();
         for (const street of art.plan.streets) {
           if (!street.main || !street.name || street.line.length < 2) continue;
+          if (lettered.has(street.name.replace(/ (St|Ave)$/, ''))) continue;
           const mid = Math.floor((street.line.length - 1) / 2);
           const p = street.line[mid]!;
           const q = street.line[mid + 1] ?? p;
           const lengthPx = Math.hypot(q.x - p.x, q.y - p.y) * k;
           if (lengthPx < 90) continue;
+          lettered.add(street.name.replace(/ (St|Ave)$/, ''));
           const mid2 = at({ x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 });
           let angle = Math.atan2(q.y - p.y, q.x - p.x);
           if (angle > Math.PI / 2) angle -= Math.PI;
@@ -583,10 +616,7 @@ export class Renderer {
             tracking: 0.24,
             upper: true,
             color: ink,
-            alpha: 0.9 * a,
-            halo: INK.linen,
-            haloWidth: 2.2,
-            haloAlpha: 0.55 * a,
+            alpha: 0.82 * a,
           };
           const w = measure(ctx, ward.name, style);
           const box = { x: c.x - w / 2 - 4, y: c.y - style.size * 0.8, w: w + 8, h: style.size * 1.6 };
@@ -606,9 +636,9 @@ export class Renderer {
         const selected =
           (scene.selection?.type === 'feature' && scene.selection.id === feature.id) ||
           (scene.hover?.type === 'feature' && scene.hover.id === feature.id);
-        const named = k >= 3.6 || selected;
+        const named = (k >= 3.6 && wPx > 54) || selected;
 
-        if (done && !art.ruin) {
+        if (done && !art.ruin && !(named && wPx < 120)) {
           // Storeys, in the fixed place an atlas keeps them: the footprint's upper-left.
           const corner = lot.footprint[0]?.[0] ?? lot.center;
           const n = at({ x: corner.x + (lot.center.x - corner.x) * 0.24, y: corner.y + (lot.center.y - corner.y) * 0.24 });
@@ -632,7 +662,7 @@ export class Renderer {
           color: done ? ink : INK.graphite,
           halo: done ? null : INK.linen,
         };
-        const lines = wrap(ctx, feature.name, style, Math.max(58, wPx - 8), 3);
+        const lines = wrap(ctx, feature.name, style, selected ? Math.max(70, wPx - 8) : wPx - 6, 3);
         const lh = style.size * 1.12;
         const word = STAGE_WORD[feature.stage];
         const total = lines.length * lh + (word ? lh : 0);
@@ -691,8 +721,8 @@ export class Renderer {
         color: pencilled ? INK.graphite : art.ink,
         alpha: (lit && !lit.has(place.id) ? 0.3 : 1) * (pencilled ? 0.95 : 1),
         halo: INK.linen,
-        haloWidth: Math.max(3, size * 0.2),
-        haloAlpha: 0.72,
+        haloWidth: Math.max(4, size * 0.3),
+        haloAlpha: 0.94,
       };
       const w = measure(ctx, place.name, style);
       const c = cam.toScreen(plan.center);

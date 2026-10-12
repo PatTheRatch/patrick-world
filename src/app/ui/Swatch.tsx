@@ -13,6 +13,16 @@ export const STAGE_NAME: Record<FeatureStage, string> = {
   mature: 'Mature',
 };
 
+/** Short forms, for the ladder under a building's note. */
+export const STAGE_SHORT: Record<FeatureStage, string> = {
+  concept: 'Proposed',
+  planned: 'Staked',
+  designed: 'Plans',
+  building: 'Building',
+  working: 'Working',
+  mature: 'Mature',
+};
+
 export const STAGE_MEANING: Record<FeatureStage, string> = {
   concept: 'An idea for it. A pencilled lot and a stake.',
   planned: 'Decided on. Outlined in pencil.',

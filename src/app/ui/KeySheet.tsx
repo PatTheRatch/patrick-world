@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import { KIND_MEANING, KIND_NAME } from '../../render/palette';
 import { KINDS, STAGES, type MethodLevel, type MethodState } from '../../world/types';
 import { monthYear } from '../dates';
-import { asOf, keyOpen, method, selection, world } from '../store';
+import { asOf, keyOpen, keySection, method, selection, world } from '../store';
 import { goHome } from '../view';
 import { STAGE_MEANING, STAGE_NAME, StageSwatch, WashSwatch } from './Swatch';
 
@@ -70,7 +70,10 @@ export function KeySheet() {
   const sheet = useRef<HTMLDivElement>(null);
   const open = keyOpen.value;
   useEffect(() => {
-    if (open) sheet.current?.focus();
+    if (!open) return;
+    sheet.current?.focus();
+    if (keySection.value === 'methods') sheet.current?.querySelector('.methods')?.scrollIntoView();
+    keySection.value = 'top';
   }, [open]);
   if (!open) return null;
 
@@ -306,7 +309,14 @@ export function MethodNote() {
         <button type="button" class="link" onClick={() => (method.value = null)}>
           Clear <kbd>Esc</kbd>
         </button>
-        <button type="button" class="link" onClick={() => (keyOpen.value = true)}>
+        <button
+          type="button"
+          class="link"
+          onClick={() => {
+            keySection.value = 'methods';
+            keyOpen.value = true;
+          }}
+        >
           Key of Methods
         </button>
       </nav>

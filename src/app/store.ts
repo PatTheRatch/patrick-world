@@ -12,6 +12,7 @@ import { catalogue } from '../world/fixtures/catalogue';
 import { mergeEvents } from '../world/sources';
 import { FixtureSource } from '../world/sources/fixture';
 import { ManualSource } from '../world/sources/manual';
+import { stressEvents } from '../world/sources/stress';
 import type { FeatureKind, FeatureStage, PlaceState, Point, WorldEvent } from '../world/types';
 
 /**
@@ -85,6 +86,8 @@ export const hover = signal<Selection>(null);
 export const method = signal<string | null>(null);
 export const draft = signal<Draft>(null);
 export const keyOpen = signal(false);
+/** Which part of the Key to open on. */
+export const keySection = signal<'top' | 'methods'>('top');
 
 export type Capture =
   | { type: 'site'; at: Point; screen: Point }
@@ -112,7 +115,9 @@ export const selectedFeature = computed(() => {
 // ───────────────────────── Loading ─────────────────────────
 
 export async function load() {
-  fixtureEvents.value = await fixture.load();
+  const base = await fixture.load();
+  const copies = Number(new URLSearchParams(location.search).get('stress') ?? 0);
+  fixtureEvents.value = copies > 0 ? [...base, ...stressEvents(base, Math.min(copies, 40), catalogue)] : base;
   manualEvents.value = await manual.load();
   manual.subscribe?.(() => {
     manualEvents.value = manual.all();

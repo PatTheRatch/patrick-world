@@ -14,7 +14,7 @@ export const INK = {
   linen: hex('#d2cfc0'),
   linenShade: hex('#c9c5b4'),
   town: hex('#dedbcd'),
-  slip: hex('#f4f1e6'),
+  slip: hex('#efeee9'),
   black: hex('#1c1a18'),
   sepia: hex('#7b6248'),
   graphite: hex('#5d6268'),
@@ -46,6 +46,21 @@ export const KIND_MEANING: Record<FeatureKind, string> = {
   observatory: 'Intelligence, models, research',
   utility: 'Infrastructure and plumbing',
 };
+
+/** The same inks, handed to the stylesheet, so canvas and lettering can never disagree. */
+export function inkVariables(): Record<string, string> {
+  const h = (c: RGB) => `#${c.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+  return {
+    '--table': h(INK.table),
+    '--linen': h(INK.linen),
+    '--linen-shade': h(INK.linenShade),
+    '--slip': h(INK.slip),
+    '--ink': h(INK.black),
+    '--sepia': h(INK.sepia),
+    '--red': h(INK.red),
+    '--water-line': h(INK.waterLine),
+  };
+}
 
 export const mix = (a: RGB, b: RGB, t: number): RGB => [
   a[0] + (b[0] - a[0]) * t,

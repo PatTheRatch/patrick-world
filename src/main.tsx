@@ -7,6 +7,9 @@ import '@fontsource-variable/archivo/wdth.css';
 import './app/styles.css';
 import { render } from 'preact';
 import { App } from './app/App';
+import { inkVariables } from './render/palette';
+
+for (const [name, value] of Object.entries(inkVariables())) document.documentElement.style.setProperty(name, value);
 
 // Canvas lettering needs the faces loaded before it can measure them.
 const faces = [

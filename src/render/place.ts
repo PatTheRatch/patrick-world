@@ -7,7 +7,7 @@ import { addPolygon, addShadow, polygonBounds, scaleAbout } from './ink';
 import { AGING, INK, WASH, agedInk, agedWash, css, mix, type Aging, type RGB } from './palette';
 
 const SUN = { x: 0.62, y: 0.78 };
-const STOREY_SHADOW = 1.5;
+const STOREY_SHADOW = 2.1;
 
 const cores = new WeakMap<CityPlan, number>();
 
@@ -152,6 +152,8 @@ export interface PlaceDrawOptions {
   crawl: boolean;
   /** Feature id → 0–1 progress of its wash flooding in. */
   floods: Map<string, number>;
+  /** Feature id → 0–1 progress of its wash draining away, when the edition turns back. */
+  drains: Map<string, number>;
   slipPaper: CanvasPattern;
 }
 
@@ -209,9 +211,9 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   }
 
   // Shadows: one fill, so overlapping shadows do not double.
-  const shade = ramp(k, 0.22, 0.7);
+  const shade = ramp(k, 0.2, 0.55);
   if (shade > 0) {
-    ctx.fillStyle = css(INK.black, 0.2 * shade);
+    ctx.fillStyle = css(INK.black, 0.3 * shade);
     ctx.fill(art.shadows);
   }
 
@@ -250,6 +252,17 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
     }
   }
 
+  // Draining: turning the edition back lifts a wash off again, toward the middle.
+  if (o.drains.size > 0) {
+    for (const { lot, feature } of art.lots) {
+      const t = o.drains.get(feature.id);
+      if (t === undefined) continue;
+      const e = 1 - Math.pow(1 - t, 3);
+      ctx.fillStyle = css(WASH[feature.kind], 0.85 * (1 - e));
+      for (const poly of lot.footprint.slice(0, 1)) fillPoly(ctx, scaleAbout(poly, lot.center, 1 - 0.8 * e));
+    }
+  }
+
   // Pencil and plans.
   const pencil = ramp(k, 0.5, 1.1);
   const small = RANKS.indexOf(art.place.rank) <= 1;
@@ -277,11 +290,11 @@ export function drawPlace(ctx: CanvasRenderingContext2D, art: PlaceArt, o: Place
   }
 
   // Ink.
-  const inked = ramp(k, 0.6, 1.4);
+  const inked = ramp(k, 0.3, 0.8);
   if (inked > 0) {
     if (art.ruin) ctx.setLineDash([4 * px, 2.5 * px, 1 * px, 2.5 * px]);
     ctx.strokeStyle = css(ink, 0.95 * inked);
-    ctx.lineWidth = 0.9 * px;
+    ctx.lineWidth = Math.min(0.9, k * 0.9) * px;
     ctx.stroke(art.outline);
     ctx.lineWidth = Math.min(2.3 * px, 1.1);
     ctx.stroke(art.heavy);

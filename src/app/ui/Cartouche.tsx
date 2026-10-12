@@ -1,7 +1,7 @@
 // The title block, where a map keeps it: what this is, which edition, how much is on it.
 
 import { monthYear } from '../dates';
-import { asOf, clearManual, hasManual, isPresent, keyOpen, selection, whereabouts, world } from '../store';
+import { asOf, clearManual, hasManual, isPresent, keyOpen, keySection, selection, whereabouts, world } from '../store';
 import { goHome } from '../view';
 
 const count = (n: number, one: string, many: string) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
@@ -30,8 +30,25 @@ export function Cartouche() {
         {count(buildings, 'building', 'buildings')} standing.
       </p>
       <nav class="cartouche-actions" aria-label="Map">
-        <button type="button" class="link" onClick={() => (keyOpen.value = true)}>
+        <button
+          type="button"
+          class="link"
+          onClick={() => {
+            keySection.value = 'top';
+            keyOpen.value = true;
+          }}
+        >
           Key <kbd>K</kbd>
+        </button>
+        <button
+          type="button"
+          class="link"
+          onClick={() => {
+            keySection.value = 'methods';
+            keyOpen.value = true;
+          }}
+        >
+          Methods
         </button>
         <button
           type="button"

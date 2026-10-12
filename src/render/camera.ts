@@ -141,10 +141,14 @@ export class Camera {
   }
 
   /** Keep the centre within the sheet plus a little table. */
-  constrain(world: { width: number; height: number }) {
-    const slackX = (this.width / this.k) * 0.35;
-    const slackY = (this.height / this.k) * 0.35;
-    this.x = clamp(this.x, -slackX + 0, world.width + slackX);
-    this.y = clamp(this.y, -slackY + 0, world.height + slackY);
+  constrain(world: { width: number; height: number }, margin = 0) {
+    const halfW = this.width / this.k / 2;
+    const halfH = this.height / this.k / 2;
+    const x0 = -margin + halfW;
+    const x1 = world.width + margin - halfW;
+    const y0 = -margin + halfH;
+    const y1 = world.height + margin - halfH;
+    this.x = x0 <= x1 ? clamp(this.x, x0, x1) : world.width / 2;
+    this.y = y0 <= y1 ? clamp(this.y, y0, y1) : world.height / 2;
   }
 }

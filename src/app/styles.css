@@ -1,16 +1,18 @@
 /* Lettering laid over the sheet. Every colour here is an ink from the Key (src/render/palette.ts). */
 
 :root {
+  /* The inks proper are set from src/render/palette.ts at startup; these are the same values. */
   --table: #141714;
-  --linen: #d6d3c4;
+  --linen: #d2cfc0;
   --linen-shade: #c9c5b4;
-  --slip: #f1eee2;
+  --slip: #efeee9;
   --ink: #1c1a18;
-  --ink-soft: #3e3a35;
   --sepia: #7b6248;
+  --red: #c2341d;
+  --water-line: #5f8fa6;
+  /* Lettering tones: ink and graphite, darkened to hold contrast at small sizes on a slip. */
+  --ink-soft: #3e3a35;
   --graphite: #565b61;
-  --red: #b52f1a;
-  --water-line: #47768c;
   --rule: rgb(28 26 24 / 0.24);
 
   --serif: 'Besley', 'Clarendon', Georgia, serif;
@@ -142,15 +144,6 @@ kbd {
 
 .slip {
   background-color: var(--slip);
-  background-image:
-    radial-gradient(rgb(70 60 40 / 0.05) 0.6px, transparent 0.7px),
-    radial-gradient(rgb(255 255 250 / 0.5) 0.6px, transparent 0.7px);
-  background-size:
-    7px 7px,
-    11px 11px;
-  background-position:
-    0 0,
-    3px 5px;
   box-shadow: var(--lift);
   color: var(--ink);
 }
@@ -330,6 +323,18 @@ kbd {
   border-top: 7px solid var(--red);
   border-bottom: 0;
 }
+.dial-date {
+  position: absolute;
+  top: 2px;
+  padding: 1px 6px 0;
+  background: var(--red);
+  color: var(--slip);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .dial-now {
   align-self: center;
 }
@@ -364,13 +369,19 @@ kbd {
 .note:empty {
   display: none;
 }
+
 .note article {
-  animation: paste 260ms var(--ease-out);
+  animation: paste 340ms var(--ease-out);
 }
+/* A slip being pasted down: it lands a little past true, then settles. */
 @keyframes paste {
   from {
     opacity: 0;
-    transform: translateY(-5px) rotate(-0.4deg);
+    transform: translateY(-9px) rotate(-0.7deg) scale(1.02);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(1.5px) rotate(0.15deg) scale(0.998);
   }
 }
 
@@ -484,20 +495,19 @@ kbd {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 4px 6px;
-  margin-top: 12px;
+  gap: 0 9px;
+  margin-top: 8px;
 }
 .note-methods-lead {
   margin-right: 2px;
   font-size: 12px;
   color: var(--graphite);
 }
+/* A method named in running text: a ruled word, like the road line above it. */
 .chip {
-  padding: 2px 6px 1px;
-  border: 1px solid var(--rule);
-  font-size: 11.5px;
-  font-stretch: 92%;
-  line-height: 1.3;
+  font-size: 12px;
+  line-height: 1.5;
+  border-bottom: 1px solid var(--rule);
   transition:
     color 140ms var(--ease-out),
     border-color 140ms var(--ease-out);
@@ -529,8 +539,8 @@ kbd {
   border-bottom: 2px solid transparent;
   font-size: 8.5px;
   font-weight: 600;
-  font-stretch: 78%;
-  letter-spacing: 0.02em;
+  font-stretch: 70%;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   text-align: center;
   line-height: 1.1;
@@ -989,7 +999,6 @@ input::placeholder {
   .cartouche h1 {
     font-size: 19px;
   }
-  .cartouche-specimen,
   .cartouche-tally {
     display: none;
   }

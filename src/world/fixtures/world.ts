@@ -539,7 +539,7 @@ const ideas: PlaceSpec[] = [
     id: 'second-opinion',
     name: 'Second Opinion',
     region: 'mindworks',
-    at: [4100, 1000],
+    at: [3650, 1060],
     founded: '2026-10-03',
     note: 'Ask two models the same thing. Only show me where they disagree.',
   },
@@ -594,7 +594,7 @@ const ideas: PlaceSpec[] = [
     id: 'giftwise',
     name: 'Giftwise',
     region: 'the-commons',
-    at: [3960, 2080],
+    at: [3810, 2070],
     founded: '2024-10-27',
     note: 'Remember what people said they wanted, months before I need it.',
     features: [
