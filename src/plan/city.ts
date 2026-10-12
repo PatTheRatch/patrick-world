@@ -13,10 +13,12 @@ import type { Block, CityPlan, Dwelling, Lot, Polygon, Street, Ward } from './ty
 
 // ───────────────────────── The grid ─────────────────────────
 
-export const BLOCK_W = 64;
-export const BLOCK_H = 46;
-export const STREET_W = 7;
-export const MAIN_STREET_W = 11;
+export const BLOCK_W = 46;
+export const BLOCK_H = 34;
+export const STREET_W = 5;
+export const MAIN_STREET_W = 8;
+/** How far a street runs on past the last block it serves, as a share of the next block. */
+const STREET_END = 1 / 3;
 
 /**
  * One direction of the street grid: an endless run of blocks separated by streets.
@@ -91,15 +93,15 @@ interface KindSpec {
 }
 
 const KIND: Record<FeatureKind, KindSpec> = {
-  frontage: { w: [12.5, 16.5], min: 10 },
-  works: { w: [29, 38], min: 22 },
-  reservoir: { w: [26, 34], min: 20 },
-  observatory: { w: [19, 24], min: 16 },
-  utility: { w: [10.5, 13.5], min: 9 },
+  frontage: { w: [11.5, 15.5], min: 9 },
+  works: { w: [25, 33], min: 16 },
+  reservoir: { w: [21, 27], min: 15 },
+  observatory: { w: [14, 17.5], min: 11.5 },
+  utility: { w: [9.5, 12.5], min: 8 },
 };
 
 /** A leftover narrower than this is given to the lot beside it rather than left over. */
-const SLIVER = 9.5;
+const SLIVER = 8;
 
 interface Cell {
   i: number;
@@ -195,62 +197,59 @@ function massPolygon(m: Mass): Point[] {
   return out;
 }
 
-/** Least yard left behind any building. Annexes live here. */
-const REAR_YARD = 4.2;
-const YARD_EDGE = 0.8;
+/** Clear strip kept along the rear lot line. */
+const YARD_EDGE = 0.4;
 
 /**
  * The main mass on a lot `w` wide and `d` deep, in the lot's own frame: x across the
- * frontage, y from the street line (0) back to the rear lot line (d).
+ * frontage, y from the street line (0) back to the rear lot line (d). Buildings nearly
+ * fill their lots, as on an insurance sheet: a narrow passage each side, a small yard
+ * behind, and any variety taken as bites out of that.
  */
 function mainMass(kind: FeatureKind, w: number, d: number, r: Rng): Mass {
   let x0: number;
   let x1: number;
   let y0: number;
   let y1: number;
-  const maxDepth = d - REAR_YARD;
   switch (kind) {
     case 'frontage': {
-      // Hard on the street line, nearly wall to wall, deep.
-      x0 = r.range(0.6, 1.3);
-      x1 = w - r.range(0.6, 1.3);
-      y0 = 0.4;
-      y1 = y0 + (maxDepth - y0) * r.range(0.8, 1);
+      // On the street line, often sharing a party wall with the neighbour.
+      x0 = r.next() < 0.45 ? 0 : r.range(0.5, 1);
+      x1 = w - (r.next() < 0.45 ? 0 : r.range(0.5, 1));
+      y0 = 0;
+      y1 = d - r.range(2, 3.4);
       break;
     }
     case 'works': {
-      // Big and blocky, a working yard around it.
-      x0 = r.range(1.6, 2.8);
-      x1 = w - r.range(1.6, 2.8);
-      y0 = r.range(1.4, 2.4);
-      y1 = y0 + (maxDepth - y0) * r.range(0.86, 1);
+      // Big and blocky, on the street line.
+      x0 = r.range(0.5, 1.1);
+      x1 = w - r.range(0.5, 1.1);
+      y0 = 0;
+      y1 = d - r.range(2, 3.2);
       break;
     }
     case 'reservoir': {
-      x0 = r.range(2.4, 3.6);
-      x1 = w - r.range(2.4, 3.6);
-      y0 = r.range(2.4, 3.4);
-      y1 = y0 + (maxDepth - y0) * r.range(0.8, 0.96);
+      x0 = r.range(0.7, 1.3);
+      x1 = w - r.range(0.7, 1.3);
+      y0 = r.range(0.6, 1.3);
+      y1 = d - r.range(2, 3.2);
       break;
     }
     case 'observatory': {
-      // Squarish, standing back from the street in its own ground.
-      y0 = r.range(3, 4.4);
-      const side = Math.min(w - 4.4, maxDepth - y0) * r.range(0.86, 1);
-      const slack = w - side;
-      x0 = slack * r.range(0.35, 0.65);
-      x1 = x0 + side;
-      y1 = y0 + side * r.range(0.9, 1);
+      // Squarish, standing a little back from the street.
+      y0 = r.range(1.1, 1.8);
+      y1 = d - r.range(2, 2.8);
+      const span = Math.min(w - 1.4, (y1 - y0) * r.range(1, 1.2));
+      x0 = (w - span) * r.range(0.35, 0.65);
+      x1 = x0 + span;
       break;
     }
     case 'utility': {
-      // Small and long: a shed down one side of the lot.
-      const bw = Math.max(4, Math.min(w - 2.4, w * r.range(0.42, 0.56)));
-      const left = r.next() < 0.5;
-      x0 = left ? 1.2 : w - 1.2 - bw;
-      x1 = x0 + bw;
-      y0 = r.range(1, 2.2);
-      y1 = y0 + (maxDepth - y0) * r.range(0.82, 1);
+      // Small lots, long sheds.
+      x0 = r.range(0.6, 1.1);
+      x1 = w - r.range(0.6, 1.1);
+      y0 = r.range(0.4, 1.1);
+      y1 = d - r.range(2, 3.4);
       break;
     }
   }
@@ -260,31 +259,31 @@ function mainMass(kind: FeatureKind, w: number, d: number, r: Rng): Mass {
 
   // Shape: mostly plain rectangles, some L-plans, the odd notched corner.
   const lChance: Record<FeatureKind, number> = {
-    frontage: 0.24,
-    works: 0.42,
+    frontage: 0.22,
+    works: 0.4,
     reservoir: 0.2,
     observatory: 0.14,
     utility: 0.08,
   };
   const shape = r.next();
   const side = r.next() < 0.5;
-  const cw = r.range(0.3, 0.5);
-  const ch = r.range(0.28, 0.48);
-  const notch = r.range(1.6, 2.8);
+  const cw = r.range(0.26, 0.42);
+  const ch = r.range(0.24, 0.4);
+  const notch = r.range(1.5, 2.4);
   const notchFront = r.next() < 0.4;
   const tee = r.next() < 0.22;
-  if (mw >= 9 && md >= 8 && shape < lChance[kind]) {
+  if (mw >= 8 && md >= 7 && shape < lChance[kind]) {
     const cut: Cut = { w: mw * cw, h: md * ch };
     if (kind === 'works' && tee && mw >= 16) {
       // Both rear corners cut: a T.
-      const each: Cut = { w: mw * cw * 0.55, h: md * ch };
+      const each: Cut = { w: mw * cw * 0.5, h: md * ch };
       m.rl = each;
       m.rr = { ...each };
     } else if (side) m.rl = cut;
     else m.rr = cut;
-  } else if (mw >= 8 && md >= 8 && shape > 0.8) {
+  } else if (mw >= 7 && md >= 7 && shape > 0.8) {
     const cut: Cut = { w: notch, h: notch };
-    if (notchFront && kind !== 'frontage') {
+    if (notchFront && kind !== 'frontage' && kind !== 'works') {
       if (side) m.fl = cut;
       else m.fr = cut;
     } else if (side) m.rl = cut;
@@ -308,27 +307,27 @@ function annexRects(m: Mass, w: number, d: number, r: Rng): Rect[] {
   const yard = yardEnd - m.y1;
   const wingLeft = r.next() < 0.5;
   const wingFrac = r.range(0.55, 0.95);
-  const wingDepth = r.range(2.4, 5);
+  const wingDepth = r.range(1.5, 3);
   const wingSlide = r.next();
-  const shedW = r.range(3, 4.6);
-  const shedD = r.range(2.2, 3.2);
+  const shedW = r.range(2.2, 3.4);
+  const shedD = r.range(1.3, 2.2);
 
   // Rear wing: shares the back wall, on one half of it.
   const halfA = wingLeft ? wallA : mid + 0.3;
   const halfB = wingLeft ? mid - 0.3 : wallB;
   const room = halfB - halfA;
-  if (room >= 2.4 && yard >= 2.4) {
-    const ww = Math.max(2.4, room * wingFrac);
+  if (room >= 2 && yard >= 1.3) {
+    const ww = Math.max(2, room * wingFrac);
     const x = halfA + (room - ww) * wingSlide;
     out.push([x, m.y1, x + ww, m.y1 + Math.min(wingDepth, yard)]);
   }
 
   // Shed: on the rear lot line in the other half of the yard, clear of the main mass.
-  const lotA = wingLeft ? mid + 0.3 : YARD_EDGE;
-  const lotB = wingLeft ? w - YARD_EDGE : mid - 0.3;
-  const sd = Math.min(shedD, yard - 0.8);
+  const lotA = wingLeft ? mid + 0.3 : Math.max(YARD_EDGE, m.x0);
+  const lotB = wingLeft ? Math.min(w - YARD_EDGE, m.x1) : mid - 0.3;
+  const sd = Math.min(shedD, yard - 0.4);
   const sw = Math.min(shedW, lotB - lotA);
-  if (sw >= 2.2 && sd >= 2) {
+  if (sw >= 1.8 && sd >= 1.1) {
     const x = wingLeft ? lotB - sw : lotA;
     out.push([x, yardEnd - sd, x + sw, yardEnd]);
   }
@@ -427,12 +426,25 @@ export function planCity(place: PlaceState): CityPlan {
   const claim = (wardKey: string, ward: string | undefined): Cell => {
     const own = wardCells.get(wardKey);
     let best: { i: number; j: number; score: number } | undefined;
-    for (let j = jMin - 3; j <= jMax + 3; j++) {
-      for (let i = iMin - 3; i <= iMax + 3; i++) {
+    const dir = wardDir.get(wardKey);
+    for (let j = jMin - 1; j <= jMax + 1; j++) {
+      for (let i = iMin - 1; i <= iMax + 1; i++) {
         if (claimed.has(key(i, j))) continue;
+        // The town grows as one mass: after the first block, only cells that share a
+        // street with a block already standing may be claimed.
+        if (
+          cells.length > 0 &&
+          !claimed.has(key(i - 1, j)) &&
+          !claimed.has(key(i + 1, j)) &&
+          !claimed.has(key(i, j - 1)) &&
+          !claimed.has(key(i, j + 1))
+        ) {
+          continue;
+        }
         const cx = xs.mid(i);
         const cy = ys.mid(j);
         const out = reach(cx, cy);
+        const turn = dir === undefined ? 0 : 1 - Math.cos(Math.atan2(cy, cx) - dir);
         let score: number;
         if (own && own.length > 0) {
           // Grow the quarter: the nearest free cell to what the ward already holds.
@@ -441,15 +453,10 @@ export function planCity(place: PlaceState): CityPlan {
             const dd = Math.hypot((c.cx - cx) / stretch, (c.cy - cy) * 1.25);
             if (dd < near) near = dd;
           }
-          let turn = 0;
-          const dir = wardDir.get(wardKey);
-          if (dir !== undefined) turn = 1 - Math.cos(Math.atan2(cy, cx) - dir);
-          score = near + 0.3 * out + 14 * turn + 10 * jitter(i, j);
+          score = near + 0.35 * out + 8 * turn + 6 * jitter(i, j);
         } else {
-          // Found the quarter: the nearest free cell to the centre, out along its bearing.
-          const dir = wardDir.get(wardKey);
-          const turn = dir === undefined ? 0 : 1 - Math.cos(Math.atan2(cy, cx) - dir);
-          score = out * (1 + 0.9 * turn) + 22 * jitter(i, j);
+          // Found the quarter: hard against the town, on the side its bearing points.
+          score = out + 16 * turn + 8 * jitter(i, j);
         }
         if (!best || score < best.score) best = { i, j, score };
       }
@@ -461,6 +468,8 @@ export function planCity(place: PlaceState): CityPlan {
     const y0 = ys.start(pick.j);
     const y1 = ys.end(pick.j);
     const cr = rng(`${id}|block|${pick.i}|${pick.j}`);
+    const seededEnd = cr.next() < 0.5 ? 1 : -1;
+    const fillFrom = pick.i === 0 ? seededEnd : pick.i > 0 ? 1 : -1;
     const cell: Cell = {
       i: pick.i,
       j: pick.j,
@@ -473,7 +482,9 @@ export function planCity(place: PlaceState): CityPlan {
       ward,
       index: cells.length,
       rowY: y0 + (y1 - y0) * cr.range(0.45, 0.55),
-      dir: [cr.next() < 0.5 ? 1 : -1, cr.next() < 0.5 ? 1 : -1],
+      // Both rows fill from the end of the block nearer the centre of town, so a
+      // block's first buildings huddle together on the side people arrive from.
+      dir: fillFrom === 1 ? [1, 1] : [-1, -1],
       cursor: [0, 0],
     };
     claimed.set(key(pick.i, pick.j), cell);
@@ -493,7 +504,10 @@ export function planCity(place: PlaceState): CityPlan {
 
   const fit = (cell: Cell, kind: FeatureKind, want: number): Placement | undefined => {
     const width = cell.x1 - cell.x0;
-    const rows: (0 | 1)[] = cell.cursor[0] <= cell.cursor[1] ? [0, 1] : [1, 0];
+    // The emptier row first; on a tie, the row that faces the centre of town.
+    const inner: 0 | 1 = cell.j >= 0 ? 0 : 1;
+    const outer: 0 | 1 = inner === 0 ? 1 : 0;
+    const rows: (0 | 1)[] = cell.cursor[inner] <= cell.cursor[outer] ? [inner, outer] : [outer, inner];
     for (const row of rows) {
       const used = cell.cursor[row];
       const left = width - used;
@@ -598,9 +612,9 @@ export function planCity(place: PlaceState): CityPlan {
       let from = ts[0] as number;
       let prev = from;
       const emit = (t0: number, t1: number): void => {
-        // Half a block beyond each end, so the town trails off into open ground.
-        const s = along.mid(t0 - 1);
-        const e = along.mid(t1 + 1);
+        // A short way past the last block, so the town's edges trail off.
+        const s = along.end(t0 - 1) - along.size(t0 - 1) * STREET_END;
+        const e = along.start(t1 + 1) + along.size(t1 + 1) * STREET_END;
         const at = across.line(k);
         const line = orient === 'v' ? [toWorld(at, s), toWorld(at, e)] : [toWorld(s, at), toWorld(e, at)];
         const main = across.isMain(k);
@@ -609,7 +623,7 @@ export function planCity(place: PlaceState): CityPlan {
       };
       for (let n = 1; n < ts.length; n++) {
         const t = ts[n] as number;
-        // Stubs from blocks one cell apart meet in the middle: one street.
+        // A street runs on across a single open block between two built ones.
         if (t - prev > 2) {
           emit(from, prev);
           from = t;
@@ -647,47 +661,75 @@ export function planCity(place: PlaceState): CityPlan {
     return { name, labelAt: toWorld(u / k, v / k), angle: labelAngle, dominant };
   });
 
-  // ── Dwellings: houses on the fringe, from measured users ──
+  // ── Dwellings: terraces on the open blocks that face the town, from measured users ──
   const dwellings: Dwelling[] = [];
   const houseCount = Math.min(60, Math.max(0, Math.round(7 * Math.log10(1 + Math.max(0, place.users)))));
   if (houseCount > 0) {
-    const ringOf = (i: number, j: number): number => {
-      let best = Infinity;
-      for (const c of cells) {
-        const dd = Math.max(Math.abs(c.i - i), Math.abs(c.j - j));
-        if (dd < best) best = dd;
-      }
-      return best;
+    type Side = 'top' | 'bottom' | 'left' | 'right';
+    interface Slot {
+      i: number;
+      j: number;
+      side: Side;
+      /** 0: first terrace on a block facing the town; 1: a second one; 2: the next ring out. */
+      tier: number;
+      score: number;
+    }
+    const slots: Slot[] = [];
+    const suburb = new Set<string>();
+    const facing = (i: number, j: number, has: (k: string) => boolean): Side[] => {
+      const out: Side[] = [];
+      if (has(key(i, j - 1))) out.push('top');
+      if (has(key(i, j + 1))) out.push('bottom');
+      if (has(key(i - 1, j))) out.push('left');
+      if (has(key(i + 1, j))) out.push('right');
+      return out;
     };
-    const fringe: { i: number; j: number; ring: number; score: number }[] = [];
-    for (let j = jMin - 4; j <= jMax + 4; j++) {
-      for (let i = iMin - 4; i <= iMax + 4; i++) {
-        const ring = ringOf(i, j);
-        // One clear ring is kept between the built town and its houses.
-        if (ring < 2 || ring > 4) continue;
-        if (hash01(`${id}|house-cell|${i}|${j}`) > 0.62) continue;
-        fringe.push({ i, j, ring, score: reach(xs.mid(i), ys.mid(j)) + 30 * jitter(i, j) });
+    for (let j = jMin - 1; j <= jMax + 1; j++) {
+      for (let i = iMin - 1; i <= iMax + 1; i++) {
+        if (claimed.has(key(i, j))) continue;
+        const sides = facing(i, j, (k) => claimed.has(k));
+        if (sides.length === 0) continue;
+        suburb.add(key(i, j));
+        const score = reach(xs.mid(i), ys.mid(j)) + 12 * jitter(i, j);
+        // Opposite sides of a block can both carry a terrace; adjoining sides would collide.
+        const first = sides[0] as Side;
+        slots.push({ i, j, side: first, tier: 0, score });
+        const opposite: Side = first === 'top' ? 'bottom' : first === 'left' ? 'right' : first;
+        if (opposite !== first && sides.includes(opposite)) slots.push({ i, j, side: opposite, tier: 1, score });
       }
     }
-    fringe.sort((p, q) => p.ring - q.ring || p.score - q.score || p.i - q.i || p.j - q.j);
-    outer: for (const cell of fringe) {
-      const hr = rng(`${id}|houses|${cell.i}|${cell.j}`);
-      const x0 = xs.start(cell.i);
-      const x1 = xs.end(cell.i);
-      const y0 = ys.start(cell.j);
-      const y1 = ys.end(cell.j);
-      // Houses face the street on the side of the block nearer the town.
-      const top = Math.abs(y0) < Math.abs(y1);
-      const n = hr.int(2, 4);
-      const pitch = (x1 - x0 - 6) / n;
-      const slide = hr.range(0, 1);
+    for (let j = jMin - 2; j <= jMax + 2; j++) {
+      for (let i = iMin - 2; i <= iMax + 2; i++) {
+        if (claimed.has(key(i, j)) || suburb.has(key(i, j))) continue;
+        const sides = facing(i, j, (k) => suburb.has(k));
+        if (sides.length === 0) continue;
+        slots.push({ i, j, side: sides[0] as Side, tier: 2, score: reach(xs.mid(i), ys.mid(j)) + 12 * jitter(i, j) });
+      }
+    }
+    slots.sort((p, q) => p.tier - q.tier || p.score - q.score || p.i - q.i || p.j - q.j);
+    outer: for (const slot of slots) {
+      const hr = rng(`${id}|terrace|${slot.i}|${slot.j}|${slot.side}`);
+      const x0 = xs.start(slot.i);
+      const x1 = xs.end(slot.i);
+      const y0 = ys.start(slot.j);
+      const y1 = ys.end(slot.j);
+      const alongX = slot.side === 'top' || slot.side === 'bottom';
+      const run = (alongX ? x1 - x0 : y1 - y0) - 3;
+      const hw = hr.range(4.6, 5.4);
+      const hd = hr.range(5.5, 6.5);
+      const gap = 1;
+      const n = Math.max(1, Math.min(hr.int(3, 6), Math.floor((run + gap) / (hw + gap))));
+      const used = n * hw + (n - 1) * gap;
+      const lead = 1.5 + (run - used) * hr.next();
+      const back = 0.6;
       for (let k = 0; k < n; k++) {
-        const hw = hr.range(4.2, 6);
-        const hd = hr.range(5, 7);
-        const back = hr.range(1.2, 2.6);
-        const hx = x0 + 3 + pitch * k + (pitch - hw) * (0.2 + 0.6 * ((slide + hr.next()) % 1));
-        const hy = top ? y0 + back : y1 - back - hd;
-        dwellings.push({ footprint: rect(hx, hy, hx + hw, hy + hd) });
+        const t = lead + k * (hw + gap);
+        let fp: Polygon;
+        if (slot.side === 'top') fp = rect(x0 + t, y0 + back, x0 + t + hw, y0 + back + hd);
+        else if (slot.side === 'bottom') fp = rect(x0 + t, y1 - back - hd, x0 + t + hw, y1 - back);
+        else if (slot.side === 'left') fp = rect(x0 + back, y0 + t, x0 + back + hd, y0 + t + hw);
+        else fp = rect(x1 - back - hd, y0 + t, x1 - back, y0 + t + hw);
+        dwellings.push({ footprint: fp });
         if (dwellings.length >= houseCount) break outer;
       }
     }

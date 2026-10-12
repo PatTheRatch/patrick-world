@@ -26,7 +26,7 @@ interface EventBase {
 
 | Event | Carries | Means |
 |---|---|---|
-| `place.founded` | place id, name, region, position, note, `near?` | A new place exists. Position is fixed here. |
+| `place.founded` | place id, name, region, position, note | A new place exists. Position is fixed here. |
 | `place.noted` | place, note | A further thought about a place. Turns a spark into a site. |
 | `place.renamed` | place, name | The name changed. Old names stay in history. |
 | `place.abandoned` | place, note | A decision to stop. |

@@ -543,6 +543,24 @@ kbd {
 .ladder .is-ahead .swatch {
   opacity: 0.4;
 }
+.ladder-ranks {
+  grid-template-columns: repeat(7, 1fr);
+  margin-top: 6px;
+  margin-bottom: 9px;
+}
+.ladder-ranks li {
+  white-space: nowrap;
+}
+.ladder-ranks .is-silent {
+  visibility: hidden;
+}
+.ladder-ranks .swatch {
+  width: 34px;
+  height: 26px;
+}
+.ladder-ranks .is-ahead .swatch {
+  opacity: 0.5;
+}
 .ladder .is-here {
   color: var(--ink);
   border-color: var(--red);

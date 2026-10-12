@@ -236,10 +236,10 @@ export class Renderer {
     const lot = this.scene?.plans.get(placeId)?.lots.find((l) => l.feature === featureId);
     if (!lot) return null;
     const b = polygonBounds([lot.parcel]);
-    const grow = 3.4;
+    const grow = 5.5;
     return this.camera.framing(
       { x: b.x - (b.w * (grow - 1)) / 2, y: b.y - (b.h * (grow - 1)) / 2, w: b.w * grow, h: b.h * grow },
-      9,
+      4.6,
     );
   }
 
@@ -539,7 +539,7 @@ export class Renderer {
       const ink = art.ink;
       const at = (p: Point) => cam.toScreen(this.drawn(art.plan, p));
 
-      if (k >= 2.4 && k < 9) {
+      if (k >= 2.4 && k < 9 && art.building.length + Object.keys(art.wash).length > 0) {
         const a = Math.min(1, (k - 2.4) / 0.8) * 0.5;
         for (const street of art.plan.streets) {
           if (!street.main || !street.name || street.line.length < 2) continue;
@@ -597,7 +597,6 @@ export class Renderer {
         if (c.x < -80 || c.y < -80 || c.x > cam.width + 80 || c.y > cam.height + 80) continue;
         const b = polygonBounds(lot.footprint.slice(0, 1));
         const wPx = b.w * k;
-        const hPx = b.h * k;
         const done = feature.stage === 'working' || feature.stage === 'mature';
         const selected =
           (scene.selection?.type === 'feature' && scene.selection.id === feature.id) ||
@@ -606,7 +605,9 @@ export class Renderer {
 
         if (done && !art.ruin) {
           // Storeys, in the fixed place an atlas keeps them: the footprint's upper-left.
-          letter(ctx, String(feature.storeys), c.x - wPx / 2 + 7, c.y - hPx / 2 + 8, {
+          const corner = lot.footprint[0]?.[0] ?? lot.center;
+          const n = at({ x: corner.x + (lot.center.x - corner.x) * 0.24, y: corner.y + (lot.center.y - corner.y) * 0.24 });
+          letter(ctx, String(feature.storeys), n.x, n.y, {
             family: GOTHIC,
             size: Math.min(11, 8 + k * 0.4),
             weight: 700,

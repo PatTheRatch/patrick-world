@@ -31,7 +31,7 @@ that means.
 | No recent work | **Faded ink**, chalky wash, stillness | Time since the last work event |
 | A decision to stop | **Ruins** | An abandonment event, or very long silence |
 | Coming back to something | **New slips over faded ink** | Work after a long silence |
-| Two things being related | A **road** | A link event, or shared wards/techs |
+| Two things being related | A **road**, graded by how much binds them | A link event; shared methods and dependencies grade it |
 | Two things sharing real code or data | A **main**: a blue pipe line, lettered with what flows | A link event of kind `shares` or `feeds` |
 | A skill or technology | An entry in the **Key of Methods** | Use across places, weighted by work |
 | A domain of interest | A **district of the territory**: a named stretch of country | The region a place was founded in |

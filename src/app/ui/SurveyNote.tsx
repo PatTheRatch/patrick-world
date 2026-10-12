@@ -22,7 +22,7 @@ import {
   world,
 } from '../store';
 import { enter, inspect, stepOut } from '../view';
-import { STAGE_NAME, StageSwatch, WashSwatch } from './Swatch';
+import { RANK_NAME, RankGlyph, STAGE_NAME, StageSwatch, WashSwatch } from './Swatch';
 
 const RANK_NOUN: Record<Rank, string> = {
   spark: 'A spark',
@@ -172,7 +172,7 @@ function PlaceNote({ place }: { place: PlaceState }) {
 
       {building.length > 0 && (
         <section>
-          <h3>Being built now</h3>
+          <h3>{place.liveliness === 'building' || place.liveliness === 'settled' ? 'Being built now' : 'Left unfinished'}</h3>
           <ul class="note-list">
             {building.map((f) => (
               <li key={f.id}>
@@ -206,6 +206,17 @@ function PlaceNote({ place }: { place: PlaceState }) {
       {small && place.nextRank && place.liveliness !== 'ruins' && (
         <section>
           <h3>How this could grow</h3>
+          <ol class="ladder ladder-ranks" aria-label="Rank">
+            {RANKS.map((r, i) => {
+              const here = RANKS.indexOf(place.rank);
+              return (
+                <li key={r} class={i === here ? 'is-here' : i < here ? 'is-past' : 'is-ahead'} aria-current={i === here ? 'step' : undefined}>
+                  <RankGlyph rank={r} />
+                  <span class={i === here || i === here + 1 ? '' : 'is-silent'}>{RANK_NAME[r]}</span>
+                </li>
+              );
+            })}
+          </ol>
           <p class="note-grow">
             To become {RANK_GOAL[place.nextRank.rank]}: {list(place.nextRank.needs)}.
           </p>

@@ -528,7 +528,7 @@ export function buildTerrain(catalogue: Catalogue, seed: string): Terrain {
   const barred = new Uint8Array(N);
   for (let iy = 0; iy < ny; iy++) {
     for (let ix = 0; ix < nx; ix++) {
-      if (nearestRegion(ix * cell, iy * cell) < RIVER_CLEARANCE + 44) barred[at(ix, iy)] = 1;
+      if (nearestRegion(ix * cell, iy * cell) < RIVER_CLEARANCE + 52) barred[at(ix, iy)] = 1;
     }
   }
   {
@@ -638,18 +638,20 @@ export function buildTerrain(catalogue: Catalogue, seed: string): Terrain {
       // The grid gives a course of straight runs and 45-degree turns. Round it off,
       // then let it wander: a slow swing and a quicker wriggle, both fading out at the
       // source and the mouth so the river still meets the water where it should.
-      const eased = chaikin(raw, 1, false);
+      // Every other node is enough to carry the course; the rest only carry the grid.
+      const thin = raw.filter((_, i) => i % 2 === 0 || i >= raw.length - 2);
+      const eased = chaikin(thin, 1, false);
       const last = eased.length - 1;
       const pts: Point[] = eased.map((p, i) => {
         if (i === 0 || i === last) return p;
         const a = eased[i - 1] as Point;
         const b = eased[i + 1] as Point;
         const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-        const fade = Math.min(1, i / 4, (last - i) / 4);
+        const fade = Math.min(1, i / 3, (last - i) / 3);
         const off =
           fade *
-          (13 * nMeander(p.x / 260 + idx * 31, p.y / 260 - idx * 17) +
-            6 * nMeander(p.x / 70 - idx * 13, p.y / 70 + idx * 7));
+          (22 * nMeander(p.x / 170 + idx * 31, p.y / 170 - idx * 17) +
+            9 * nMeander(p.x / 66 - idx * 13, p.y / 66 + idx * 7));
         return { x: p.x - ((b.y - a.y) / len) * off, y: p.y + ((b.x - a.x) / len) * off };
       });
       const line = chaikin(pts, 3, false).map((p) => ({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }));

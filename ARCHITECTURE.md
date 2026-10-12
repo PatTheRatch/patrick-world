@@ -85,6 +85,15 @@ Zoom is continuous; detail is chosen per place from its size on screen.
 
 Adjacent levels cross-fade over a zoom band so nothing pops.
 
+### Exaggeration
+
+At true scale a city seen from territory height is a speck, and the brief's first requirement
+(see which projects matter without reading) fails. So towns are drawn larger than life when far
+away, up to 2.3 times, settling to true scale by the time buildings are legible. This is
+ordinary cartographic practice: a road on a national map is not drawn at its true width either.
+The apparent size is interpolated so it only ever grows as the camera comes down. Hit-testing,
+lettering and selection all go through the same transform (`Renderer.drawn`).
+
 ## Performance plan
 
 - **Draw only on change.** The loop sleeps unless the camera is moving, the edition is

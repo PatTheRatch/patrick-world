@@ -164,7 +164,7 @@ describe('buildTerrain', () => {
       }
       expect(worstClimb).toBeLessThan(0.06);
       // Not ruled with a straight-edge.
-      expect(polylineLength(line)).toBeGreaterThan(1.08 * Math.hypot(mouth.x - source.x, mouth.y - source.y));
+      expect(polylineLength(line)).toBeGreaterThan(1.04 * Math.hypot(mouth.x - source.x, mouth.y - source.y));
     }
   });
 

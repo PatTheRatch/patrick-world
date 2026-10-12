@@ -47,6 +47,10 @@ describe('debug renders', () => {
         );
       }
     }
+    for (const wards of [['Market'], ['Market', 'Foundry']]) {
+      const plan = planCity(makePlace(5, { wards }));
+      stats.push(`5 features in ${wards.length} ward(s): built ${builtSpan(plan).toFixed(0)} across ${(plan.radius * 2).toFixed(0)} blocks ${plan.blocks.length}`);
+    }
     console.log(stats.join('\n'));
     fs.writeFileSync(`${OUT}/stats.txt`, stats.join('\n'));
     const places = TEST_CATALOGUE.regions.map((r) => makePlace(1, { id: r.id, position: r.center }));

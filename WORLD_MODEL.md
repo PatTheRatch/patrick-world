@@ -95,9 +95,17 @@ places, plus breadth (how many distinct places).
 ### Roads
 
 A road exists between two places when a link event says so. Its build-out is derived from how
-much binds them: a bare "related" link is a surveyed line of dots; shared methods and shared
-activity grade it into a dashed track, then a solid road. A `shares` or `feeds` link adds a
-main alongside.
+much binds them:
+
+- **Surveyed** (a line of dots): related on Patrick's word alone.
+- **Track** (dashed): a real dependency (`shares`, `feeds`, `split-from`), or at least one shared
+  method between two places that have both had real work.
+- **Road** (two ink lines): both places are towns or larger, and they share three or more
+  methods or a real dependency.
+
+An idea that merely lists the same methods as a city does not earn a road. Until both ends are
+built, shared methods are a coincidence of intent. A `shares` or `feeds` link also lays a main
+alongside, lettered with what flows.
 
 ## Layout: where things go, and why they never move
 

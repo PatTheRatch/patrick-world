@@ -2,7 +2,7 @@
 // so the legend is always the same drawing as the map.
 
 import { INK, WASH, css, mix } from '../../render/palette';
-import type { FeatureKind, FeatureStage } from '../../world/types';
+import type { FeatureKind, FeatureStage, Rank } from '../../world/types';
 
 export const STAGE_NAME: Record<FeatureStage, string> = {
   concept: 'Proposed',
@@ -75,6 +75,85 @@ export function WashSwatch({ kind }: { kind: FeatureKind }) {
   return (
     <svg width="26" height="18" viewBox="0 0 26 18" aria-hidden="true" class="swatch">
       <rect x="1" y="1" width="24" height="16" fill={css(WASH[kind])} stroke={css(INK.black)} stroke-width="1" />
+    </svg>
+  );
+}
+
+export const RANK_NAME: Record<Rank, string> = {
+  spark: 'Spark',
+  site: 'Site',
+  outpost: 'Outpost',
+  settlement: 'Settlement',
+  town: 'Town',
+  city: 'City',
+  major: 'Major city',
+};
+
+/** Buildings drawn for each rank: [x, y, w, h, wash index]. */
+const RANK_PLAN: Record<Rank, [number, number, number, number, number][]> = {
+  spark: [],
+  site: [],
+  outpost: [[14, 10, 8, 6, 1]],
+  settlement: [
+    [10, 8, 8, 6, 1],
+    [19, 9, 5, 5, 0],
+    [12, 15, 6, 4, 4],
+  ],
+  town: [
+    [7, 6, 8, 6, 1],
+    [16, 6, 5, 6, 0],
+    [22, 7, 6, 5, 3],
+    [8, 14, 6, 5, 2],
+    [15, 14, 9, 5, 1],
+  ],
+  city: [
+    [4, 4, 8, 6, 1],
+    [13, 4, 5, 6, 0],
+    [19, 4, 7, 6, 3],
+    [27, 5, 5, 5, 4],
+    [4, 12, 6, 5, 2],
+    [11, 12, 9, 5, 1],
+    [21, 12, 5, 5, 0],
+    [6, 19, 8, 4, 3],
+    [16, 19, 10, 4, 1],
+  ],
+  major: [
+    [2, 2, 8, 5, 1],
+    [11, 2, 5, 5, 0],
+    [17, 2, 7, 5, 3],
+    [25, 2, 6, 5, 1],
+    [32, 3, 5, 4, 4],
+    [2, 9, 6, 5, 2],
+    [9, 9, 9, 5, 1],
+    [19, 9, 5, 5, 0],
+    [25, 9, 8, 5, 2],
+    [3, 16, 8, 5, 3],
+    [12, 16, 6, 5, 1],
+    [19, 16, 9, 5, 0],
+    [29, 16, 7, 5, 1],
+    [6, 23, 9, 4, 4],
+    [17, 23, 10, 4, 3],
+  ],
+};
+
+const WASHES: FeatureKind[] = ['frontage', 'works', 'reservoir', 'observatory', 'utility'];
+
+/** What a place of each rank looks like on the sheet, in miniature. */
+export function RankGlyph({ rank }: { rank: Rank }) {
+  const ink = css(INK.black);
+  const pencil = css(INK.graphite);
+  return (
+    <svg width="40" height="30" viewBox="0 0 40 30" aria-hidden="true" class="swatch">
+      {rank === 'spark' && <path d="M16 11l8 8M24 11l-8 8" stroke={pencil} stroke-width="1.4" stroke-linecap="round" fill="none" />}
+      {rank === 'site' && (
+        <g fill="none" stroke={pencil} stroke-width="1.2">
+          <circle cx="20" cy="15" r="3.4" />
+          <path d="M13 15h14M20 8v14" />
+        </g>
+      )}
+      {RANK_PLAN[rank].map(([x, y, w, h, wash], i) => (
+        <rect key={i} x={x + 0.5} y={y + 0.5} width={w} height={h} fill={css(WASH[WASHES[wash]!])} stroke={ink} stroke-width="0.8" />
+      ))}
     </svg>
   );
 }
