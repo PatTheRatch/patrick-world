@@ -29,6 +29,30 @@ language, almost everything the product needs to say.
 None of those are invented game states. They are how survey atlases have always recorded the
 truth about buildings, which is why nothing needs a status badge.
 
+## What it should feel like
+
+**Quiet proprietorship.** Walking your own land at the end of a day and seeing what is
+standing. "This is mine, it is real, and I know what I would build next."
+
+- **Leans toward:** steadiness; appetite at the sight of a pegged lot; fondness for small
+  things left alone; the click of a check passing.
+- **Kept out:** urgency, guilt, being scored, being cheered at, cuteness.
+- **Aftertaste:** a session ends with one more thing standing or one thing more clearly
+  defined. Never with a count of what is left.
+
+Heuristics for every later decision:
+
+1. Show, do not tell. Faded ink says "untouched"; no message does.
+2. Stillness is information. Nothing moves unless work is happening.
+3. The map never speaks first. No prompts, no reminders, no congratulations.
+4. Record over reward. A date on a building, not a flourish.
+5. Pencil before ink. Intent is always visibly lighter than fact.
+6. Let ruins be handsome. Abandonment is history, not failure.
+
+Strongest signal today: permanence and honesty. Weakest: **appetite.** The prototype is
+entirely retrospective; nothing on it makes him want to act. The build loop, and a ready lot
+that looks ready, are what supply it.
+
 ## The scene
 
 Patrick at his desk in the evening, a large monitor, a lamp. The atlas sheet lies under the

@@ -190,6 +190,26 @@ entry Patrick chooses. From there each lot is an idea-stage feature waiting for 
 
 No idea is required to be scaffolded, and none is required to be pursued.
 
+### Adopted from the design review
+
+Five additions, each derivable from events that already exist or are already specified:
+
+- **How it passed.** A done building records whether its criteria passed by command, by
+  review, or on Patrick's word. Derived from `criterion.checked`; shown in the note and, on the
+  map, as the difference between a wall inked on evidence and one inked on say-so.
+- **Rewritten promises.** A plan revision that removes or loosens a criterion is detectable by
+  comparing revisions. Such a building carries a slip per rewrite.
+- **Dependencies are roads.** A plan that depends on a feature in another place is a real
+  relation between the two places and grades their road. A road should come to mean "this
+  needs that", not "these are related".
+- **Unplanned work is drawn.** Commits against a feature with no plan raise storeys and an
+  inferred stage, marked as unplanned. Never hidden, never prompted about.
+- **Unsurveyed ground.** A plan using a method at level unknown or noted stands on ground the
+  world has not surveyed, and says so.
+
+And one piece of state that is not an event about the work: **when he last looked.** Needed to
+show what changed since. It is per viewer and lives beside the log, not in it.
+
 ### What this changes about evidence
 
 Until now, evidence meant commits. With plans, the stronger evidence is criteria passing, and

@@ -59,6 +59,31 @@ land; the morning summary is in [HANDOFF.md](HANDOFF.md).
 - [x] DESIGN.md recorded from what was built
 - [x] HANDOFF.md
 
+## What we do not know, and the order to find out
+
+From the design review. Each prototype answers a question; none exists to look finished.
+
+| Known | |
+|---|---|
+| Known knowns | The drawing reads; stage by technique works; the model derives and scrubs fast. |
+| Known unknowns | Will he recognise his world from GitHub alone? Will he write plans? Can an agent session be mapped to plan steps without the agent reporting on itself? |
+| Unknown knowns | He already plans somewhere (plan mode, notes, Patrick OS). The world must take those in, not compete with them. He builds across several tools and machines. |
+| Suspected blind spots | **What a building is** (directory, pull request, capability?). Whether watching an agent on a map gives anything a terminal does not. Plans rotting. What a permanent layout looks like after six months of mis-scoped lots. Whether an honest map of mostly outposts discourages him. |
+
+| # | Prototype | Question it answers | Stop when |
+|---|---|---|---|
+| 1 | His real GitHub on the sheet (in progress) | Does he recognise it? Is a directory a building? | He can name three things it gets wrong and three it showed him |
+| 2 | One real feature, planned by hand: a plan as a JSON file, built the usual way, events fed in by a tiny command | Is a plan the right size? Do the seven stages match how the work really went? | The feature is done, or the format was changed twice |
+| 3 | The manual builder in the app, on a second feature | Is committing cheap enough to do unprompted? | He plans a third without being asked, or does not |
+| 4 | A headless Claude Code run on one small plan, events only, no interface | Can steps and file changes be read from the stream? | Step boundaries are detected, or shown to need self-report |
+| 5 | The companion and the builder chooser | Only if 2 to 4 held | |
+
+**Now:** real data; the plan in a building's note; the manual builder; how-it-passed and
+rewritten-promise marks. **Test first:** prototypes 2 and 4. **Later:** companion, Codex and
+Cursor adapters, scaffolding, Patrick OS. **Not now:** drawing revenue, mobile, more
+cartographic ornament, more Key of Methods, finishing the reverse-edition motion (it serves
+reflection, not the loop).
+
 ## Stage 8: Real data
 
 - [ ] GitHub adapter: fetch, transform to events, load in place of the specimen
@@ -84,7 +109,9 @@ The first builder, because it needs no companion and proves the model.
 
 - [ ] `ManualBuilder`: start a session, tick steps, record checks
 - [ ] "Build manually" from a ready building
-- [ ] Dependencies across features and places, drawn as a faint line while one is waiting
+- [ ] Dependencies across places grade the road between them
+- [ ] How each criterion passed, shown; rewritten promises carry a slip
+- [ ] "Since you were last here"
 
 ## Stage 11: The companion and the first agent
 
@@ -97,6 +124,7 @@ The first builder, because it needs no companion and proves the model.
 ## Stage 12: Ideas
 
 - [ ] `origin` on founding; sparks from Claude, ChatGPT, Patrick OS
+- [ ] A place stands where he puts it; keyword regions retired
 - [ ] `ScaffoldProvider` and one implementation
 - [ ] Scaffold in a spark's note; accept, revise, pursue
 - [ ] Pursuing stakes lots from the MVP

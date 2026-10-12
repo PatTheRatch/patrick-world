@@ -144,19 +144,43 @@ Undecided (recorded, not invented):
 - There is no real commit history, analytics or usage data in this repository. Future work must
   not present fixture numbers as Patrick's real numbers.
 
-## Product Principles
+## Goal
 
-1. **Evidence, not effort theatre.** If it is on the map, something real put it there.
-2. **Scale is the message.** Importance, maturity and activity are read from size, density,
-   light and motion before any word is read.
-3. **Nothing is deleted.** Ruins, dormant towns and abandoned outposts are history, and
-   history is the point.
-4. **The world is the interface.** Chrome stays out of the way; the map is never a widget
-   inside a layout.
-5. **Small things stay small.** A half-formed thought is a mark on the ground, and that is a
-   legitimate, permanent thing for it to be.
-6. **The world keeps the books.** Plans and their state live here. Tools that do the work
-   report to it and are replaceable.
+Patrick finishes more of what he starts, and knows what "finished" meant, because each
+feature's plan and its proof live where he can see them.
+
+Signals that it is working, all countable from the event log:
+
+- Features reaching done with every criterion passed, per month.
+- The share of work that had a plan before it was built.
+- Days on which he opened the world and something on it changed.
+- First: one real feature taken from spark to done through the world within two weeks of the
+  build loop existing.
+
+Signals that it is failing: he opens it to look and never to act; plans stop being written
+while commits continue; "done" is mostly recorded on his own word.
+
+## Design Pillars
+
+Each one names what it gives up. A pillar that cannot say no is not doing any work. When two
+collide, the earlier one wins.
+
+1. **Earned ink.** Nothing is drawn that did not happen. *Gives up:* flattering progress, quick
+   wins, tidying the map by hand, and a full-looking world on day one.
+2. **Done is proven.** A building stands when its acceptance criteria pass, and the map shows
+   how they passed: by a command, by a review, or on Patrick's word. *Gives up:* a "mark as
+   done" button, speed, and any builder's right to declare victory.
+3. **Nothing moves, nothing is erased.** Places stay where they were founded; ruins stay;
+   rewritten plans leave their old revisions showing. *Gives up:* reorganising, deleting what is
+   embarrassing, and optimal layouts.
+4. **The map is the workplace.** He acts on a thing where it stands. *Gives up:* tables, bulk
+   editing and density. One accepted exception: a build plan is a document and opens as its own
+   sheet of the atlas, the way the Key does.
+5. **Small is legitimate.** A spark may stay a spark forever. Discipline begins only when he
+   chooses to build. *Gives up:* reminders, backlog pressure, and any count of what is undone.
+
+Standing rule from these: **no new visual dimension without retiring one.** The drawing already
+carries stage, kind, effort, recency and age. Anything further goes in the note, not on the map.
 
 ## Accessibility & Inclusion
 

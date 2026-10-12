@@ -103,6 +103,120 @@ Derived from time since last work, never set:
 A revival is not a state. It is what Building looks like on top of Dormant: bright slips on
 brown ink. The contrast is the story.
 
+## The core loop
+
+Reviewed on 12 October 2026 with a set of game-design critique tools (core-loop and pillar
+extraction, emotional canvas, unknown-unknowns prototyping, goal framing, feature
+prioritisation, red-team audit, and a deliberately over-ambitious "Molyneux" lens). They were
+used as critique, not as a recipe: this is a building environment, not a game. One of them, a
+craft critique meant for shipped games, was used only for its first move, below.
+
+### The skeleton, with the fiction removed
+
+Stripped of the atlas, the first prototype is a zoomable, read-only chart of commit totals with
+a date slider and three forms that append records. The only thing a person can repeatedly do
+in it is look. The fiction promises a ruler building a civilisation; the system offers a
+visitor reading one. That mismatch, big fiction over a thin system, is the "dashboard with a
+map skin" failure the brief warned about, only better drawn. **There was no loop.** The build
+model is what supplies one.
+
+### The loop
+
+> **Survey → Commit → Build → Prove → Stand**, and survey again.
+
+| Step | He does | The world answers | Why he goes round again |
+|---|---|---|---|
+| Survey | Looks over the territory or a town | Shows what changed since he was last here, and which lots are ready | A ready lot is an itch |
+| Commit | Picks a lot and says what done means | Pencil becomes plans; a dependency becomes a road | The promise is now on the map |
+| Build | Builds it, or hands it to a builder | The wash rises step by step; the outline crawls while a session is open | Watching something go up |
+| Prove | Runs the checks, or looks and judges | Each criterion passes or fails, on the record | The last check is the one that matters |
+| Stand | Nothing | Ink wall, shadow, a date. Lots that were waiting on it become ready | The map has made its next suggestion |
+
+The reward is not a number. It is a permanent, dated mark, and the fact that finishing one
+thing visibly unblocks another. Supporting loops, which must not be mistaken for the core:
+
+- **The idea loop:** spark → scaffold → pursue, or leave it. Feeds Commit.
+- **The edition dial:** reflection. Pleasant and retrospective. It gives no reason to act.
+- **The Key of Methods:** a readout. It joins the loop only where a plan touches a method he
+  has never built with (see below).
+
+### Where the loop is weak
+
+1. **Commit is a chore before any reward.** Writing criteria and steps costs effort up front.
+   If it costs more than it returns he will build elsewhere and the world goes back to being a
+   viewer. So: one sentence in, an AI-drafted plan out, and accepting it moves the drawing at once.
+2. **Prove is where honesty is cheapest to lose.** A manual check can be waved through. So the
+   way each criterion passed is recorded and visible (pillar 2).
+3. **Work done outside the loop.** He will often just code. That work must appear anyway, drawn
+   as real and marked unplanned, never hidden and never nagged about.
+4. **Survey has nothing to pull him in** unless the world differs from last time. "Since you
+   were last here" is drawn with the slips that already exist.
+
+## Reinforces the fantasy, or decorates it
+
+The fantasy, in one line: *this is my country, everything standing in it is real, and I can see
+what to build next.*
+
+| Feature | Verdict | Why |
+|---|---|---|
+| Stage carried by drawing technique | Reinforces | It is the loop's feedback, read without words |
+| Storeys and shadows | Reinforces | Effort made visible and comparable |
+| Slips under recent work | Reinforces | The only honest "what changed" signal |
+| Faded ink, ruins | Reinforces | Permanence, without comment |
+| Blank paper for the unknown | Reinforces | And becomes stronger: see "unsurveyed ground" |
+| Roads | **Decorative until they mean dependency** | Today a road is a declared relation. A road should be a real dependency between plans |
+| Where a place stands | **Decorative** | Regions chosen by keyword mean nothing. Position should be where he put it |
+| Key of Methods | Mostly decorative | A readout nobody acts on, until plans consult it |
+| The edition dial | Reinforces permanence, not the loop | Worth keeping; not worth more investment before the loop exists |
+| Dwellings for users | Reinforces, lightly | True, and rarely non-zero for a solo builder |
+| Rivers, relief, margin letters | Decorative, and cheap | They make it a place. Freeze them; add no more |
+| The opening time-lapse | Decorative | Fine once per session. Never a tutorial |
+
+## What an adversary would say
+
+Assume it failed. The most credible reasons, each with its mechanism:
+
+- **Looked at twice, then never.** Nothing changes unless he worked elsewhere, and he already
+  knows what he worked on. No information, so no reason to return. *Answer:* the loop, and
+  showing what changed.
+- **Plans become a tax and are abandoned,** while commits continue. The map then shows
+  everything stalled at "idea" during his most productive month: it lies by omission.
+  *Answer:* inferred stages stay first-class; plans are per feature and optional.
+- **False precision.** A directory is not a capability. A map that looks surveyed and is wrong
+  is worse than a list. *Answer:* inferred things are marked inferred; a mapping file and
+  plans override the guess.
+- **It becomes the project that eats the projects.** Agent orchestration is a product in
+  itself. *Answer:* a builder adapter launches and listens, and never re-implements a tool's own
+  interface. Patrick's World is on its own map; the map will show if it is eating the others.
+- **Too many meanings in one drawing.** Seven stages, five kinds, five ages, inferred or
+  planned, three kinds of proof. *Answer:* four drawn states (pencil, plans, going up,
+  standing) with two small modifiers; the rest lives in the note. See the standing rule in
+  PRODUCT.md.
+- **Too much designed before one feature was built through it.** Three verification kinds,
+  nine scaffold fields, observers. *Answer:* accepted. The prototype order in PLAN.md builds
+  the smallest loop first and treats the rest as unproven.
+
+## Pushed further, then brought back
+
+Three provocations from deliberately over-reaching, each cut down to what is credible.
+
+**The world remembers what you promised.** Rewriting "done" to something easier should leave a
+mark. *Brought back:* revisions are already events. A building whose criteria were weakened
+carries a slip for each rewrite, and its note shows what changed. Cheap, true, and slightly
+uncomfortable in the right way.
+
+**The city builds while you sleep, and you walk it in the morning.** *Brought back:* unattended
+agents need sandboxing, cost limits and real verification, and are a long way off. What is
+cheap is the morning: replay whatever arrived since the last visit, using the dial that exists.
+
+**The land pushes back.** *Brought back:* two rules that are already derivable. A lot that
+depends on something unfinished cannot be ready, and the road to it shows why. A plan that
+leans on a method he has never built with stands on unsurveyed ground, drawn as such and
+stated in the note: "uses two methods you have not built with."
+
+Rejected outright as decoration or overpromise: simulated inhabitants, advisor characters,
+other people's worlds, weather, and anything that speaks first.
+
 ## What is deliberately absent
 
 No score. No level-up moment. No streak. No currency. No achievements. No notifications. No
