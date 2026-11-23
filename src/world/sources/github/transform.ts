@@ -27,12 +27,24 @@
 // commit), so an earlier edition of the map never shows a stage that could not have been
 // known on that day.
 //
-// What is deliberately absent: `link.formed` and `traction.measured`. GitHub alone evidences
-// neither a connection between two repositories nor a single user. Those come from other
-// sources or from the owner's own hand.
+// What is deliberately absent: `traction.measured`, and any `link.formed` GitHub would have
+// to guess. GitHub alone evidences neither a connection between two repositories nor a
+// single user. Those come from other sources or from the owner's own hand.
+//
+// ───────────────────────── WHERE THE OWNER HAS SAID ─────────────────────────
+//
+// A repository may carry `patrick-world.json` (see ../../definition.ts). Where it does, both
+// inferences above are set aside for that repository: its features are the ones the file
+// names, each with the paths that hold its work, and each stage is the file's claim weighed
+// against the commits by `settleStage`. The file also gives the city its name, its country
+// and its links. Everything the file alone says is emitted with `source: 'declared'`; what
+// the commits say (work, and the stages they date) stays `source: 'github'`.
 
 import { addDays, dayNumber, daysBetween, isoDay, weekIndex, weekday } from '../../time';
+import { STAGES } from '../../types';
 import type { Catalogue, FeatureKind, Point, RegionDef, WorldEvent } from '../../types';
+import { declaredStages, linkKey, readDeclared } from './declared';
+import type { DeclaredCity, StageClaim } from './declared';
 import type { GithubCommit, GithubRaw, GithubRepo, GithubTreeEntry } from './raw';
 
 // ───────────────────────── The rules, in one place ─────────────────────────
@@ -463,7 +475,10 @@ function findSpot(
 
 interface FeaturePlan {
   id: string;
+  /** What its event ids are keyed by: its directory, or `@id` for a declared feature. */
   path: string;
+  /** The paths whose histories are its work. */
+  paths: string[];
   name: string;
   kind: FeatureKind;
   ward?: string;
@@ -472,13 +487,24 @@ interface FeaturePlan {
   days: string[];
   /** One ISO day per commit logged as work here. Each commit is logged against one feature only. */
   work?: string[];
+  /** Declared features only: what the file has claimed for it over time. */
+  claims?: StageClaim[];
+  /** Declared features only: the day it was first known, by the file or by its first commit. */
+  since?: string;
+  note?: string;
 }
 
 interface RepoPlan {
   repo: GithubRepo;
   place: string;
+  name: string;
+  note: string;
   foundedAt: string;
   region: string;
+  /** The repository's own definition, where it carries one that reads. */
+  city: DeclaredCity | null;
+  /** Things the owner would want to know about the definition, in plain words. */
+  notes: string[];
   features: FeaturePlan[];
   /** Attributed commits touching no feature directory: one ISO day each. */
   remainder: string[];
@@ -539,33 +565,91 @@ function planRepo(repo: GithubRepo, raw: GithubRaw, catalogue: Catalogue, today:
   // Created on GitHub, or first committed to, whichever came first (history can predate the push).
   const foundedAt = allDays.reduce((a, b) => (b < a ? b : a), created);
 
-  // Features: candidate directories with at least one of the owner's commits.
-  const candidates = candidateDirectories(repo.tree);
-  const expandedRoots = new Set(candidates.map((c) => c.root).filter((r): r is string => r !== undefined));
+  /** Every commit that touched any of these paths, once each. */
+  const historyOf = (paths: readonly string[]): GithubCommit[] => {
+    if (paths.length === 1) return repo.paths[paths[0]!]?.commits ?? [];
+    const seen = new Set<string>();
+    const out: GithubCommit[] = [];
+    for (const path of paths) {
+      for (const c of repo.paths[path]?.commits ?? []) {
+        if (seen.has(c.sha7)) continue;
+        seen.add(c.sha7);
+        out.push(c);
+      }
+    }
+    return out;
+  };
+
+  const read = readDeclared(repo.definition, today);
+  const city = read.city;
+  const notes: string[] = [];
+  if (read.problem !== undefined) notes.push(read.problem);
+  // A definition that lists no features gives the city its name, country and links, and
+  // leaves its features to be guessed from directories as before.
+  const described = city !== null && city.definition.features.length > 0;
+
   let features: FeaturePlan[] = [];
-  const usedIds = new Set<string>();
-  for (const c of candidates) {
-    const history = repo.paths[c.path];
-    if (history === undefined) continue;
-    const days = history.commits
-      .filter(mine)
-      .map(dayOf)
-      .filter((d): d is string => d !== null);
-    if (days.length === 0) continue;
-    const base = c.path.split('/').pop() ?? c.path;
-    let id = kebab(c.path);
-    while (usedIds.has(id)) id = `${id}-x`;
-    usedIds.add(id);
-    const feature: FeaturePlan = { id, path: c.path, name: humanise(base), kind: kindOf(base), methods: methodsFor(base), days };
-    // A ward only where there is more than one root to tell apart.
-    if (c.root !== undefined && expandedRoots.size > 1) feature.ward = humanise(c.root);
-    features.push(feature);
-  }
-  if (features.length > DIRECTORIES.maxFeatures) {
-    features = features
-      .slice()
-      .sort((a, b) => b.days.length - a.days.length || (a.path < b.path ? -1 : 1))
-      .slice(0, DIRECTORIES.maxFeatures);
+  if (city !== null && described) {
+    // Features: the ones the owner named. No cap; the owner decides how many there are.
+    for (const d of city.definition.features) {
+      const paths = d.paths ?? [];
+      const days = historyOf(paths)
+        .filter(mine)
+        .map(dayOf)
+        .filter((x): x is string => x !== null);
+      const strangers = (d.methods ?? []).filter((m) => !known.has(m));
+      if (strangers.length > 0) notes.push(`"${d.id}" names what the Key of Methods does not have: ${strangers.join(', ')}.`);
+      const unread = paths.filter((path) => repo.paths[path] === undefined);
+      if (unread.length > 0) notes.push(`"${d.id}": no history was read for ${unread.join(', ')}. Run the sync again.`);
+      else if (paths.length > 0 && days.length === 0 && STAGES.indexOf(d.stage) >= STAGES.indexOf('building')) {
+        notes.push(`"${d.id}" is declared ${d.stage}, and no commit of yours touches ${paths.join(', ')}. Are its paths right?`);
+      }
+      const named = city.knownAt.get(d.id) ?? today;
+      const firstCommit = days.reduce((a, b) => (b < a ? b : a), named);
+      const feature: FeaturePlan = {
+        id: d.id,
+        path: `@${d.id}`,
+        paths,
+        name: d.name,
+        kind: d.kind,
+        methods: d.methods !== undefined ? d.methods.filter((m) => known.has(m)) : methodsFor(d.name),
+        days,
+        claims: city.claims.get(d.id) ?? [{ at: named, stage: d.stage }],
+        since: firstCommit,
+      };
+      if (d.ward !== undefined) feature.ward = d.ward;
+      const note = d.note ?? (paths.length > 0 ? paths.join(', ') : undefined);
+      if (note !== undefined) feature.note = note;
+      features.push(feature);
+    }
+  } else {
+    // Features: candidate directories with at least one of the owner's commits.
+    const candidates = candidateDirectories(repo.tree);
+    const expandedRoots = new Set(candidates.map((c) => c.root).filter((r): r is string => r !== undefined));
+    const usedIds = new Set<string>();
+    for (const c of candidates) {
+      const history = repo.paths[c.path];
+      if (history === undefined) continue;
+      const days = history.commits
+        .filter(mine)
+        .map(dayOf)
+        .filter((d): d is string => d !== null);
+      if (days.length === 0) continue;
+      const base = c.path.split('/').pop() ?? c.path;
+      let id = kebab(c.path);
+      while (usedIds.has(id)) id = `${id}-x`;
+      usedIds.add(id);
+      const feature: FeaturePlan = { id, path: c.path, paths: [c.path], name: humanise(base), kind: kindOf(base), methods: methodsFor(base), days };
+      // A ward only where there is more than one root to tell apart.
+      if (c.root !== undefined && expandedRoots.size > 1) feature.ward = humanise(c.root);
+      features.push(feature);
+    }
+    if (features.length > DIRECTORIES.maxFeatures) {
+      features = features
+        .slice()
+        .sort((a, b) => b.days.length - a.days.length || (a.path < b.path ? -1 : 1))
+        .slice(0, DIRECTORIES.maxFeatures);
+    }
   }
 
   // Work is counted once. A commit that touched several feature directories is evidence for
@@ -575,7 +659,7 @@ function planRepo(repo: GithubRepo, raw: GithubRaw, catalogue: Catalogue, today:
     const size = new Map(features.map((f) => [f.path, f.days.length]));
     const home = new Map<string, string>();
     for (const f of features) {
-      for (const c of repo.paths[f.path]?.commits ?? []) {
+      for (const c of historyOf(f.paths)) {
         if (!mine(c) || dayOf(c) === null) continue;
         const held = home.get(c.sha7);
         if (held === undefined || size.get(f.path)! < size.get(held)! || (size.get(f.path) === size.get(held) && f.path < held)) {
@@ -584,7 +668,7 @@ function planRepo(repo: GithubRepo, raw: GithubRaw, catalogue: Catalogue, today:
       }
     }
     for (const f of features) {
-      f.work = (repo.paths[f.path]?.commits ?? [])
+      f.work = historyOf(f.paths)
         .filter((c) => mine(c) && home.get(c.sha7) === f.path)
         .map(dayOf)
         .filter((d): d is string => d !== null);
@@ -600,17 +684,13 @@ function planRepo(repo: GithubRepo, raw: GithubRaw, catalogue: Catalogue, today:
     if (days.length > 0) {
       // No usable directories: the repository is its own single feature.
       features = [
-        { id: kebab(repo.name), path: '.', name: humanise(repo.name), kind: kindOf(repo.name), methods: methodsFor(repo.name), days },
+        { id: kebab(repo.name), path: '.', paths: [], name: humanise(repo.name), kind: kindOf(repo.name), methods: methodsFor(repo.name), days },
       ];
     }
     remainder = [];
   } else {
     const touched = new Set<string>();
-    const kept = new Set(features.map((f) => f.path));
-    for (const [path, history] of Object.entries(repo.paths)) {
-      if (!kept.has(path)) continue;
-      for (const c of history.commits) touched.add(c.sha7);
-    }
+    for (const f of features) for (const c of historyOf(f.paths)) touched.add(c.sha7);
     remainder = ownCommits
       .filter((c) => !touched.has(c.sha7))
       .map(dayOf)
@@ -618,7 +698,7 @@ function planRepo(repo: GithubRepo, raw: GithubRaw, catalogue: Catalogue, today:
   }
 
   // Proposal order is the order the lots are drawn in: by first commit, then by path.
-  const firstDay = (f: FeaturePlan) => f.days.reduce((a, b) => (b < a ? b : a));
+  const firstDay = (f: FeaturePlan) => f.since ?? f.days.reduce((a, b) => (b < a ? b : a));
   features.sort((a, b) => {
     const x = firstDay(a);
     const y = firstDay(b);
@@ -639,11 +719,24 @@ function planRepo(repo: GithubRepo, raw: GithubRaw, catalogue: Catalogue, today:
     releases.push({ key: t.name, name: t.name, at: isoDay(t.date) });
   }
 
+  // The country: the one the owner named, if the map has it; the keyword guess otherwise.
+  let region = regionFor(repo, features.flatMap((f) => f.paths), catalogue);
+  const wanted = city?.definition.region;
+  if (wanted !== undefined) {
+    if (catalogue.regions.some((r) => r.id === wanted)) region = wanted;
+    else notes.push(`The map has no region "${wanted}"; one of ${catalogue.regions.map((r) => r.id).join(', ')}.`);
+  }
+  const description = repo.description?.trim() ?? '';
+
   return {
     repo,
     place: placeId(repo),
+    name: city?.definition.name ?? humanise(repo.name),
+    note: city?.definition.what ?? (description !== '' ? description : 'No description.'),
     foundedAt: foundedAt <= today ? foundedAt : today,
-    region: regionFor(repo, features.map((f) => f.path), catalogue),
+    region,
+    city,
+    notes,
     features,
     remainder,
     releases: releases.filter((r) => r.at <= today),
@@ -661,11 +754,24 @@ function tally(days: readonly string[]): Map<string, number> {
   return out;
 }
 
-/**
- * Every event GitHub's record evidences. `isLand` answers for the terrain the map is
- * drawn on, so that no place is founded in the sea.
- */
+export interface Survey {
+  events: WorldEvent[];
+  /** How many places are drawn from their own definition and not from guesses. */
+  described: number;
+  /** What the owner would want to know about the definitions, each led by its repository's name. */
+  notes: string[];
+}
+
+/** Every event GitHub's record evidences. See `surveyGithub` for what else the record says. */
 export function githubEvents(raw: GithubRaw, catalogue: Catalogue, isLand: (p: Point) => boolean): WorldEvent[] {
+  return surveyGithub(raw, catalogue, isLand).events;
+}
+
+/**
+ * Every event GitHub's record evidences, and how the definitions in it read. `isLand`
+ * answers for the terrain the map is drawn on, so that no place is founded in the sea.
+ */
+export function surveyGithub(raw: GithubRaw, catalogue: Catalogue, isLand: (p: Point) => boolean): Survey {
   const today = isoDay(raw.fetchedAt);
   const plans = raw.repos.map((repo) => planRepo(repo, raw, catalogue, today));
 
@@ -699,10 +805,26 @@ export function githubEvents(raw: GithubRaw, catalogue: Catalogue, isLand: (p: P
     events.push(e);
   };
 
+  // What a link may call a city: the id in its own definition, and failing that its
+  // repository's name, so that a city can be linked to before it has a file of its own.
+  // An elder city keeps an id two definitions claim.
+  const handles = new Map<string, string>();
+  const founded = new Map<string, string>();
+  for (const plan of order) {
+    founded.set(plan.place, plan.foundedAt);
+    if (plan.city === null) continue;
+    const id = plan.city.definition.id;
+    if (handles.has(id)) plan.notes.push(`Its id "${id}" already belongs to an older city; links to it go there.`);
+    else handles.set(id, plan.place);
+  }
+  for (const plan of order) {
+    const name = kebab(plan.repo.name);
+    if (!handles.has(name)) handles.set(name, plan.place);
+  }
+
   for (const plan of order) {
     const { repo, place } = plan;
     const key = `gh:${repo.full_name}`;
-    const description = repo.description?.trim() ?? '';
 
     emit({
       id: `${key}:founded`,
@@ -710,35 +832,58 @@ export function githubEvents(raw: GithubRaw, catalogue: Catalogue, isLand: (p: P
       source: 'github',
       type: 'place.founded',
       place,
-      name: humanise(repo.name),
+      name: plan.name,
       region: plan.region,
       position: positions.get(place) ?? fallbackRegion.center,
-      note: description !== '' ? description : 'No description.',
+      note: plan.note,
     });
 
     const releaseDays = plan.releases.map((r) => r.at);
     for (const f of plan.features) {
       const stages = inferStages(f.days, releaseDays, today);
-      if (stages === null) continue;
-      const proposed: WorldEvent = {
-        id: `${key}:feature:${f.path}:proposed`,
-        at: stages.building,
-        source: 'github',
-        type: 'feature.proposed',
-        place,
-        feature: f.id,
-        name: f.name,
-        kind: f.kind,
-        methods: f.methods,
-        note: f.path === '.' ? 'The whole repository.' : `${f.path}/`,
-      };
-      if (f.ward !== undefined) proposed.ward = f.ward;
-      emit(proposed);
-      // INFERRED, not observed. See the header of this file.
-      for (const stage of ['building', 'working', 'mature'] as const) {
-        const at = stages[stage];
-        if (at === undefined) continue;
-        emit({ id: `${key}:feature:${f.path}:stage:${stage}`, at, source: 'github', type: 'feature.staged', place, feature: f.id, stage });
+      if (f.claims !== undefined) {
+        // DECLARED: the owner named this feature, so it stands whether or not it has commits.
+        const proposed: WorldEvent = {
+          id: `${key}:feature:${f.path}:proposed`,
+          at: f.since ?? today,
+          source: 'declared',
+          type: 'feature.proposed',
+          place,
+          feature: f.id,
+          name: f.name,
+          kind: f.kind,
+          methods: f.methods,
+        };
+        if (f.note !== undefined) proposed.note = f.note;
+        if (f.ward !== undefined) proposed.ward = f.ward;
+        emit(proposed);
+        for (const s of declaredStages(f.claims, stages, today)) {
+          // A claim may be made, withdrawn and made again, so its day is part of its id.
+          const id = s.source === 'declared' ? `${key}:feature:${f.path}:claim:${s.stage}:${s.at}` : `${key}:feature:${f.path}:stage:${s.stage}`;
+          emit({ id, at: s.at, source: s.source, type: 'feature.staged', place, feature: f.id, stage: s.stage });
+        }
+      } else {
+        if (stages === null) continue;
+        const proposed: WorldEvent = {
+          id: `${key}:feature:${f.path}:proposed`,
+          at: stages.building,
+          source: 'github',
+          type: 'feature.proposed',
+          place,
+          feature: f.id,
+          name: f.name,
+          kind: f.kind,
+          methods: f.methods,
+          note: f.path === '.' ? 'The whole repository.' : `${f.path}/`,
+        };
+        if (f.ward !== undefined) proposed.ward = f.ward;
+        emit(proposed);
+        // INFERRED, not observed. See the header of this file.
+        for (const stage of ['building', 'working', 'mature'] as const) {
+          const at = stages[stage];
+          if (at === undefined) continue;
+          emit({ id: `${key}:feature:${f.path}:stage:${stage}`, at, source: 'github', type: 'feature.staged', place, feature: f.id, stage });
+        }
       }
       for (const [week, commits] of tally(f.work ?? f.days)) {
         // The week still in progress is logged on the day of the sync: nothing is dated ahead of today.
@@ -773,9 +918,29 @@ export function githubEvents(raw: GithubRaw, catalogue: Catalogue, isLand: (p: P
       if (at > today) at = today;
       emit({ id: `${key}:abandoned`, at, source: 'github', type: 'place.abandoned', place, note: 'Archived on GitHub.' });
     }
+
+    // Links: only ever the owner's word. Dated the day the file first drew the link, and
+    // never before both of its ends stood.
+    for (const link of plan.city?.definition.links ?? []) {
+      const other = handles.get(link.to);
+      if (other === undefined) {
+        plan.notes.push(`It links to "${link.to}", which no repository answers to yet.`);
+        continue;
+      }
+      if (other === place) continue;
+      let at = plan.city?.linkedAt.get(linkKey(link)) ?? today;
+      if (at < plan.foundedAt) at = plan.foundedAt;
+      const otherFounded = founded.get(other);
+      if (otherFounded !== undefined && at < otherFounded) at = otherFounded;
+      const formed: WorldEvent = { id: `${key}:link:${linkKey(link)}`, at, source: 'declared', type: 'link.formed', a: place, b: other, kind: link.kind };
+      if (link.carries !== undefined) formed.carries = link.carries;
+      emit(formed);
+    }
   }
 
-  return events;
+  const notes: string[] = [];
+  for (const plan of plans) for (const note of plan.notes) notes.push(`${plan.repo.full_name}: ${note}`);
+  return { events, described: plans.filter((p) => p.city !== null).length, notes };
 }
 
 /** How much of the record was attributed, for the sync report and the source's status. */

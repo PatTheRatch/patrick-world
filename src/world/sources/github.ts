@@ -3,7 +3,7 @@
 
 import type { Catalogue, Point, WorldEvent, WorldSource } from '../types';
 import { isGithubRaw } from './github/raw';
-import { githubEvents } from './github/transform';
+import { surveyGithub } from './github/transform';
 
 export const GITHUB_DATA_URL = '/data/github.json';
 
@@ -26,6 +26,10 @@ export class GitHubSource implements WorldSource {
   /** ISO timestamp of the sync the record came from. */
   fetchedAt: string | null = null;
   repoCount = 0;
+  /** How many places are drawn from their own patrick-world.json and not from guesses. */
+  described = 0;
+  /** What the owner would want to know about those files: a broken one, a link to nowhere. */
+  definitionNotes: string[] = [];
   /** Why the status is `error`, in words. */
   problem: string | null = null;
 
@@ -41,6 +45,8 @@ export class GitHubSource implements WorldSource {
     this.status = 'absent';
     this.fetchedAt = null;
     this.repoCount = 0;
+    this.described = 0;
+    this.definitionNotes = [];
     this.problem = null;
     try {
       const doFetch = this.fetcher ?? (globalThis as { fetch?: FetchLike }).fetch;
@@ -59,7 +65,9 @@ export class GitHubSource implements WorldSource {
         return this.fail('The GitHub record is not valid JSON. Run: npm run sync:github');
       }
       if (!isGithubRaw(parsed)) return this.fail('The GitHub record is not in the expected shape. Run: npm run sync:github');
-      const events = githubEvents(parsed, this.catalogue, this.isLand);
+      const { events, described, notes } = surveyGithub(parsed, this.catalogue, this.isLand);
+      this.described = described;
+      this.definitionNotes = notes;
       this.status = 'loaded';
       this.fetchedAt = parsed.fetchedAt;
       this.repoCount = parsed.repos.length;

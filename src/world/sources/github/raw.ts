@@ -118,6 +118,24 @@ export interface GithubEvidence {
   absent: Record<string, string>;
 }
 
+// ───────────────────────── The city's own definition (version 4) ─────────────────────────
+
+/** `patrick-world.json` as it stood at one commit. The text is kept unread: definition.ts reads it. */
+export interface GithubDefinitionRevision {
+  sha7: string;
+  /** ISO timestamp of the commit that wrote this revision. */
+  date: string | null;
+  text: string;
+}
+
+export interface GithubDefinition {
+  path: string;
+  /** Oldest first. The last one is the file as it stands. */
+  revisions: GithubDefinitionRevision[];
+  /** The file has more history than was read; the oldest revision here is not its first. */
+  truncated?: boolean;
+}
+
 export interface GithubRepo {
   owner: string;
   name: string;
@@ -147,14 +165,17 @@ export interface GithubRepo {
   };
   /** History per directory the script asked about, keyed by path. */
   paths: Record<string, GithubPathHistory>;
-  pathsConsidered?: { path: string; count?: number; asked: boolean }[];
+  /** `declared`: asked about because the repository's own definition names it. */
+  pathsConsidered?: { path: string; count?: number; asked: boolean; declared?: boolean }[];
   notes?: string[];
   /** Since version 2. Absent in older files, and in a repository the sync could not finish. */
   evidence?: GithubEvidence;
+  /** Since version 4. Absent when the repository carries no patrick-world.json. */
+  definition?: GithubDefinition;
 }
 
 export interface GithubRaw {
-  /** 1: the record the map is drawn from. 2: the same, plus `evidence` on each repository. 3: evidence also carries `documents`. */
+  /** 1: the record the map is drawn from. 2: the same, plus `evidence` on each repository. 3: evidence also carries `documents`. 4: a repository may carry its `definition`, and the paths it declares are asked about. */
   version: number;
   /** ISO timestamp of the sync. The world's "today" when this data is on the map. */
   fetchedAt: string;

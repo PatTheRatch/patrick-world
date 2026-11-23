@@ -19,6 +19,11 @@ npm run sync:github  # read your repositories (via the gh CLI) into public/data/
 With a GitHub record present the app shows your real repositories. `?world=specimen` shows the
 fictional specimen world instead. The record is private, git-ignored, and left out of builds.
 
+A repository that carries a `patrick-world.json` at its root is drawn from what that file says
+(its features, what is planned, its region, its links) and not from guesses. This repository's
+own [patrick-world.json](patrick-world.json) is the example; the format is in
+[DATA_MODEL.md](DATA_MODEL.md). The file must be pushed before a sync can see it.
+
 ## Getting around
 
 | | |

@@ -5,6 +5,7 @@ import {
   TODAY,
   asOf,
   clearManual,
+  describedPlaces,
   hasManual,
   isPresent,
   keyOpen,
@@ -17,6 +18,12 @@ import {
 import { goHome } from '../view';
 
 const count = (n: number, one: string, many: string) => `${n.toLocaleString('en-US')} ${n === 1 ? one : many}`;
+
+/** What the stages on the sheet rest on: the owner's word where a place carries its own definition, commits elsewhere. */
+function surveyBasis(described: number): string {
+  if (described === 0) return 'Stages are inferred from commit history.';
+  return `${count(described, 'place is', 'places are')} described by ${described === 1 ? 'its' : 'their'} own patrick-world.json; elsewhere stages are inferred from commit history.`;
+}
 
 export function Cartouche() {
   const w = world.value;
@@ -80,7 +87,7 @@ export function Cartouche() {
       </nav>
       <p class="cartouche-specimen">
         {worldKind.value === 'github'
-          ? `Surveyed from GitHub, ${dayMonthYear(TODAY.value)}. Stages are inferred from commit history.`
+          ? `Surveyed from GitHub, ${dayMonthYear(TODAY.value)}. ${surveyBasis(describedPlaces.value)}`
           : 'Specimen sheet. Every place, date and figure on it is fictional.'}
       </p>
     </header>

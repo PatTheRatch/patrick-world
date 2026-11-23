@@ -240,9 +240,44 @@ What it infers, and how far to trust it:
 | `mature` | Returned to in three separate bursts over six months | Low |
 | Region | Keywords in the name, description and topics | **Low.** To be replaced by where he puts it. |
 | Methods | The repository's languages, on every feature | Low |
-| Links, users | Not inferred. GitHub does not evidence either. | |
+| Links | Not inferred. Drawn only where a city's own definition declares them (below). | |
+| Users | Not inferred. GitHub does not evidence them. | |
 
 Every inferred stage is a stand-in until the feature has a build plan. The cartouche says so.
+
+### A city's own definition
+
+Built. A repository may carry `patrick-world.json` at its root, and where it does the two
+low-trust rows above (features, stages) and the region guess are set aside for that repository.
+The format and its reader are `src/world/definition.ts`; this repository's own file is the
+worked example.
+
+| The file says | Which replaces |
+|---|---|
+| `id` | Nothing: it is the handle other cities' links point at. The place id stays `gh-owner-repo`. |
+| `name`, `what` | The humanised repository name and its GitHub description |
+| `region` | The keyword guess, when the map has that region |
+| `features[]`: `id`, `name`, `kind`, `stage`, `paths`, `ward`, `methods`, `note` | Directories as features. A feature with no `paths` is intended and has no code. An empty list keeps the directory guess. |
+| `links[]`: `to`, `kind`, `carries` | Nothing was inferred. `to` is another city's `id`, or failing that its repository name. |
+
+Three rules hold it together:
+
+- **Fact beats claim, claim beats inference** (`settleStage`). Commits on a feature's paths are
+  a fact, so a feature the file still calls planned is drawn as building. Whether work amounts
+  to `working` or `mature` is only ever inferred, so there the file wins in both directions.
+- **The file's git history is the plan's history.** The sync records the file at every commit
+  that touched it. A claim is dated by the commit that first made it, so the edition dial can
+  be turned back past it and a lot never moves when the file is edited.
+- **Repositories never read each other.** Each carries its own file and the sync reads them
+  all. A link to an id nobody answers to is reported and not drawn.
+
+What only the file says is emitted with `source: 'declared'`; work and the stages commits date
+stay `source: 'github'`. A file that does not read is refused whole and the city stays guessed
+at; the sync's summary and the browser console say why.
+
+Adopting a definition re-surveys that city once: its features change from directories to the
+named ones, so their lots are laid out afresh, and a declared region can move the place. Manual
+marks and build plans made against the old directory features do not carry over.
 
 ## Storage today
 

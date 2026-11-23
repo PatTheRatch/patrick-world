@@ -113,7 +113,11 @@ reflection, not the loop).
 
 - [x] GitHub adapter: fetch, transform to events, load in place of the specimen
 - [ ] Review inferred stages against what Patrick knows to be true; tune the rules
-- [ ] A repository-to-place and path-to-feature mapping file for where inference is wrong
+- [x] A city's own definition: `patrick-world.json` in each repository names its features, their
+      paths, what is planned, its region and its links; the sync reads it with its history
+- [ ] The founding questionnaire: a command to run in a repository that reads the code, asks
+      what it cannot see, and writes the definition
+- [ ] A link to a city that does not exist yet drawn as a pencilled site
 - [ ] The event log on disk, with a schema version
 
 ## Stage 9: The build model in the app

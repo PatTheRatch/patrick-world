@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "id": "patrick-world",
+  "name": "Patrick's World",
+  "what": "An explorable map of my projects and ideas, drawn as a survey atlas. A place to see what I have built and to build from.",
+  "region": "mindworks",
+  "features": [
+    {
+      "id": "world-model",
+      "name": "The world model",
+      "kind": "works",
+      "stage": "working",
+      "paths": ["src/world"],
+      "methods": ["typescript"],
+      "note": "An append-only event log and one pure function that derives the world at any date."
+    },
+    {
+      "id": "town-plans",
+      "name": "Terrain and town plans",
+      "kind": "works",
+      "stage": "working",
+      "paths": ["src/plan"],
+      "methods": ["typescript"],
+      "note": "The coast, rivers and relief, and town plans that grow outward and never rearrange."
+    },
+    {
+      "id": "the-sheet",
+      "name": "The drawn sheet",
+      "kind": "frontage",
+      "stage": "working",
+      "paths": ["src/render"],
+      "methods": ["typescript", "canvas-graphics"],
+      "note": "The Canvas renderer: pencil, wash, hatching, shadows by storey."
+    },
+    {
+      "id": "lettered-surfaces",
+      "name": "The lettered surfaces",
+      "kind": "frontage",
+      "stage": "working",
+      "paths": ["src/app"],
+      "methods": ["typescript", "product-design"],
+      "note": "Cartouche, edition dial, survey notes, the Key, and the three ways to add to the world."
+    },
+    {
+      "id": "github-survey",
+      "name": "The GitHub survey",
+      "kind": "reservoir",
+      "stage": "working",
+      "paths": ["src/world/sources/github", "src/world/sources/github.ts", "scripts/github-fetch.mjs"],
+      "methods": ["typescript", "data-engineering"],
+      "note": "Reads my repositories and turns their history into the world's events."
+    },
+    {
+      "id": "understanding",
+      "name": "Project understanding",
+      "kind": "observatory",
+      "stage": "working",
+      "paths": ["src/understanding", "scripts/understand.mjs"],
+      "methods": ["typescript", "prompt-design"],
+      "note": "An advisory reading of what each project is and where to pick it back up."
+    },
+    {
+      "id": "build-plans",
+      "name": "Build plans",
+      "kind": "works",
+      "stage": "building",
+      "paths": ["src/world/build.ts", "src/world/buildlog.ts", "src/app/builds.ts", "src/app/ui/PlanSheet.tsx"],
+      "methods": ["typescript"],
+      "note": "What done means for a feature, and the reports that say how far along it is."
+    },
+    {
+      "id": "city-definitions",
+      "name": "City definitions",
+      "kind": "reservoir",
+      "stage": "building",
+      "paths": ["src/world/definition.ts", "patrick-world.json"],
+      "methods": ["typescript"],
+      "note": "A file in each repository that says what its city is, so the map stops guessing."
+    },
+    {
+      "id": "founding-questionnaire",
+      "name": "The founding questionnaire",
+      "kind": "utility",
+      "stage": "planned",
+      "methods": ["ai-agents", "prompt-design"],
+      "note": "A command to run in any repository: it reads the code, asks what it cannot see, and writes the city's definition."
+    },
+    {
+      "id": "redrawn-world",
+      "name": "The redrawn world",
+      "kind": "frontage",
+      "stage": "concept",
+      "methods": ["product-design", "canvas-graphics"],
+      "note": "A complete redesign of how the world looks. After the definitions."
+    },
+    {
+      "id": "companion",
+      "name": "The companion and the first agent builder",
+      "kind": "utility",
+      "stage": "planned",
+      "methods": ["ai-agents"],
+      "note": "A local process that keeps the log on disk and runs builders against a plan."
+    }
+  ],
+  "links": [
+    { "to": "patrick-os", "kind": "feeds", "carries": "ideas and context" }
+  ]
+}

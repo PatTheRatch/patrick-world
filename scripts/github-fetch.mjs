@@ -16,6 +16,10 @@
 // at its top with a telling name (STATUS, ROADMAP, PLAN); a long one keeps its opening and its end.
 // That is reading matter for src/understanding/, kept under its own key so that anything
 // written against version 1 reads the file exactly as before.
+// Since version 4 a repository that carries `patrick-world.json` also has `definition`: the
+// file as it stood at each commit that touched it, oldest first, so that every claim in it
+// can be dated. A revision never changes, so one already in the last record is not asked for
+// again. The paths the newest readable revision declares are asked about like directories.
 //
 // The file is a record of what GitHub said. The one choice made here is WHICH directories
 // to ask about (`candidateDirs`, which must stay in step with the same rule in
@@ -24,12 +28,14 @@
 // The output is private data. public/data/ is in .gitignore; keep it there.
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // The choice of documents is typed and tested in the app's source. Node strips the types.
 import { cutDocument, documentCandidates } from '../src/understanding/documents.ts';
+// So is the reading of a city's own definition, which says which paths to ask about.
+import { DEFINITION_FILE, parseDefinition } from '../src/world/definition.ts';
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data', 'github.json');
 
@@ -56,6 +62,14 @@ const EVIDENCE = {
   searchWaitMaxSeconds: 70,
 };
 const TODO_MARKERS = /\b(TODO|FIXME|HACK|XXX)\b/;
+
+/** Limits on a city's own definition. */
+const DEFINITION = {
+  /** Revisions read per repository, newest kept. Past this the oldest are left out and the record says so. */
+  revisions: 200,
+  /** A file longer than this is not a definition. */
+  chars: 200000,
+};
 
 // ───────────────────────── arguments ─────────────────────────
 
@@ -392,6 +406,62 @@ function fetchDocuments(token, r, repo) {
   }
 }
 
+/** The newest revision that reads as a definition, or null. */
+function newestDefinition(revisions) {
+  for (let i = revisions.length - 1; i >= 0; i--) {
+    const parsed = parseDefinition(revisions[i].text);
+    if (parsed.ok) return parsed.definition;
+  }
+  return null;
+}
+
+/**
+ * The city's own definition, where the repository carries one: every revision of it, oldest
+ * first, text unread. Returns the paths its newest readable revision declares, which are
+ * then asked about like any directory. `known` holds the revisions of the last record, by
+ * sha: a commit never changes, so those are not fetched again.
+ */
+function fetchDefinition(token, r, repo, known) {
+  if (!repo.tree.root.some((e) => e.type === 'blob' && e.path === DEFINITION_FILE)) return [];
+  const api = `/repos/${r.full_name}`;
+  const file = encodeURIComponent(DEFINITION_FILE);
+  const read = (ref) => {
+    const res = get(token, `${api}/contents/${file}?ref=${encodeURIComponent(ref)}`, { soft: true });
+    // A 404 is a commit that removed the file: a fact, not a failure.
+    if (res.status === 404) return null;
+    if (res.status !== 200 || typeof res.body?.content !== 'string' || res.body.encoding !== 'base64') return undefined;
+    return Buffer.from(res.body.content, 'base64').toString('utf8');
+  };
+
+  const history = getAll(token, `${api}/commits?sha=${encodeURIComponent(r.default_branch)}&path=${file}&per_page=100`, DEFINITION.revisions);
+  const revisions = [];
+  let failed = 0;
+  // GitHub lists newest first; the record keeps oldest first.
+  for (const c of history.items.slice().reverse()) {
+    const row = commitRow(c);
+    let text = known?.get(row.sha7);
+    if (text === undefined) text = read(String(c.sha));
+    if (text === null) continue;
+    if (text === undefined || text.length > DEFINITION.chars) {
+      failed++;
+      continue;
+    }
+    revisions.push({ sha7: row.sha7, date: row.date, text });
+  }
+  if (revisions.length === 0) {
+    // No history to be had: the file as it stands, undated.
+    const text = read(r.default_branch);
+    if (typeof text === 'string' && text.length <= DEFINITION.chars) revisions.push({ sha7: '', date: null, text });
+  }
+  if (failed > 0) repo.notes.push(`${failed} revision(s) of ${DEFINITION_FILE} could not be read.`);
+  if (revisions.length === 0) return [];
+
+  repo.definition = { path: DEFINITION_FILE, revisions, truncated: history.truncated };
+  const definition = newestDefinition(revisions);
+  if (definition === null) return [];
+  return [...new Set(definition.features.flatMap((f) => f.paths ?? []))];
+}
+
 function fetchRepo(token, r, opts) {
   const full = r.full_name;
   const api = `/repos/${full}`;
@@ -478,6 +548,7 @@ function fetchRepo(token, r, opts) {
   const slim = (e) => ({ path: e.path, type: e.type });
   repo.tree.root = root.body.tree.map(slim);
   fetchDocuments(token, r, repo);
+  const declared = fetchDefinition(token, r, repo, opts.known?.get(full));
   for (const e of root.body.tree) {
     if (e.type !== 'tree' || !SOURCE_ROOTS.includes(e.path)) continue;
     const sub = get(token, `${api}/git/trees/${e.sha}`);
@@ -508,6 +579,12 @@ function fetchRepo(token, r, opts) {
     dirs = dirs.filter((d) => keep.has(d));
     repo.notes.push(`${counted.length} candidate directories; asked about the ${MAX_DIRS} with most commits.`);
   }
+  // What the owner's own definition names is always asked about, whatever the cap above kept.
+  for (const path of declared) {
+    if (dirs.includes(path)) continue;
+    dirs.push(path);
+    repo.pathsConsidered.push({ path, asked: true, declared: true });
+  }
   for (const path of dirs) {
     const pc = getAll(
       token,
@@ -535,8 +612,22 @@ function main() {
     process.exit(1);
   }
 
+  // Revisions of definitions already in hand, by repository and sha. Read from the last
+  // record if there is one; a record that cannot be read just means asking again.
+  opts.known = new Map();
+  try {
+    if (existsSync(OUT)) {
+      for (const repo of JSON.parse(readFileSync(OUT, 'utf8')).repos ?? []) {
+        const revisions = (repo.definition?.revisions ?? []).filter((v) => v.sha7 && typeof v.text === 'string');
+        if (revisions.length > 0) opts.known.set(repo.full_name, new Map(revisions.map((v) => [v.sha7, v.text])));
+      }
+    }
+  } catch {
+    opts.known = new Map();
+  }
+
   const raw = {
-    version: 3,
+    version: 4,
     fetchedAt: new Date().toISOString(),
     accounts,
     // The display name on each account's profile, for recognising the owner's commits
@@ -609,6 +700,19 @@ function main() {
   console.log(`    open issues: ${sum((e) => e.issues?.length ?? 0)} across ${n((r) => (r.evidence.issues?.length ?? 0) > 0)} repositories`);
   console.log(`    TODO lines: ${sum((e) => e.todos?.length ?? 0)} across ${n((r) => r.evidence.todos)} repositories`);
   console.log(`    recent commits opened for their files: ${sum((e) => e.recentChanges?.length ?? 0)}`);
+  // Definitions: which cities describe themselves, and any whose file does not read.
+  // The file's own errors are echoed; they are about its shape, not its contents.
+  const defined = raw.repos.filter((r) => r.definition);
+  console.log(`  ${DEFINITION_FILE}: carried by ${defined.length} of ${raw.repos.length} repositories`);
+  for (const r of defined) {
+    const newest = parseDefinition(r.definition.revisions[r.definition.revisions.length - 1].text);
+    const revs = `${r.definition.revisions.length} revision${r.definition.revisions.length === 1 ? '' : 's'}`;
+    if (newest.ok) console.log(`    ${r.full_name}: ${newest.definition.features.length} features, ${revs}`);
+    else {
+      console.log(`    ${r.full_name}: DOES NOT READ (${revs})`);
+      for (const e of newest.errors) console.log(`      ${e}`);
+    }
+  }
   const reasons = new Map();
   for (const r of withEvidence) {
     for (const [section, why] of Object.entries(r.evidence.absent)) {

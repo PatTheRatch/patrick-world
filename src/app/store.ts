@@ -41,6 +41,8 @@ export let manual = new ManualSource();
 export const worldKind = signal<'specimen' | 'github'>('specimen');
 /** When the GitHub record was fetched (ISO timestamp); null for the specimen. */
 export const surveyedAt = signal<string | null>(null);
+/** Of the surveyed places, how many are drawn from their own patrick-world.json. */
+export const describedPlaces = signal(0);
 
 /**
  * The present, as an ISO day. For the specimen it is the day its fiction is written up
@@ -180,6 +182,9 @@ export async function load() {
   if (surveyed.length > 0) {
     baseEvents.value = surveyed;
     surveyedAt.value = github.fetchedAt;
+    describedPlaces.value = github.described;
+    // A broken definition or a link to nowhere: said once, where the owner will look.
+    for (const note of github.definitionNotes) console.warn(`patrick-world.json: ${note}`);
     worldKind.value = 'github';
     // Marks made on the fiction do not belong on the survey, nor the other way round.
     manual = new ManualSource(undefined, MANUAL_EVENTS_GITHUB_KEY);
@@ -189,6 +194,7 @@ export async function load() {
     const copies = Number(params.get('stress') ?? 0);
     baseEvents.value = copies > 0 ? [...base, ...stressEvents(base, Math.min(copies, 40), catalogue)] : base;
     surveyedAt.value = null;
+    describedPlaces.value = 0;
     worldKind.value = 'specimen';
     fixtureBuilds.value = copies > 0 ? [] : buildFixtureEvents();
     understanding.value = fixtureUnderstanding;

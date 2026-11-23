@@ -6,7 +6,8 @@ import type { BuildState } from './build';
 
 // ───────────────────────── Events: the only stored thing ─────────────────────────
 
-export type Source = 'fixture' | 'manual' | 'github' | 'patrick-os' | 'deploy' | 'analytics';
+/** `declared`: said by a repository's own patrick-world.json (see definition.ts). */
+export type Source = 'fixture' | 'manual' | 'github' | 'declared' | 'patrick-os' | 'deploy' | 'analytics';
 
 export type FeatureStage = 'concept' | 'planned' | 'designed' | 'building' | 'working' | 'mature';
 export const STAGES: readonly FeatureStage[] = [
