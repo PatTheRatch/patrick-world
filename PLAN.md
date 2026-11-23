@@ -115,6 +115,8 @@ reflection, not the loop).
 - [x] The sync reads beyond the owner's own repositories: organisations, named repositories,
       GitHub Enterprise hosts; a team's record counts everyone's commits; unchanged
       repositories are reused so a large sync can resume
+- [x] Repositories on any host: `sync:local` reads clones on this machine through git and
+      writes the same record (Bitbucket, GitLab, none); tested end to end on a made repository
 - [ ] Regions that are not the owner's personal four: a work map needs its own countries
 - [ ] A way to hand the map to someone else (a build that carries a chosen record)
 - [ ] Review inferred stages against what Patrick knows to be true; tune the rules

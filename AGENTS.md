@@ -29,6 +29,7 @@ npm run dev          # http://localhost:5199
 npm run check        # typecheck, tests, production build. Run before you say you are done.
 npm test             # tests only
 npm run sync:github  # read repositories through the gh CLI into public/data/github.json
+npm run sync:local   # the same record, read from clones on this machine (any host)
 npm run sync:skill   # refresh the questionnaire skill's copies after changing what they copy
 npm run world        # export, build and serve the mockup of the new world (see mockups/)
 ```
@@ -87,7 +88,11 @@ types only. Each says so at its top.
 - The rule for which directories stand in for features lives in
   `src/world/sources/github/transform.ts`, `scripts/github-fetch.mjs` and
   `skills/patrick-world-init/scripts/lib.mjs`. Change all three. A test checks the skill's
-  copy against the transform's; nothing checks the fetch script's.
+  copy against the transform's; nothing checks the fetch script's. `scripts/local-fetch.mjs`
+  imports the skill's copy and has none of its own.
+- Two scripts write the same record (`public/data/github.json`, shaped by
+  `src/world/sources/github/raw.ts`): `github-fetch.mjs` from GitHub's API and
+  `local-fetch.mjs` from git. A field added to one belongs in the other.
 - The skill carries a type-stripped copy of `definition.ts` and a copy of the map's regions
   and methods. After changing `definition.ts` or the catalogue, run `npm run sync:skill`.
   `src/skill.test.ts` fails until you do.

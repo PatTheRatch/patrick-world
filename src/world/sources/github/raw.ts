@@ -181,7 +181,11 @@ export interface GithubRaw {
   fetchedAt: string;
   /** The owner's logins. */
   accounts: string[];
-  /** The GitHub host that was read, when it is not github.com. */
+  /**
+   * Where the record was read from, when it is not github.com: a GitHub Enterprise host, or
+   * `local` for clones on this machine read through git (scripts/local-fetch.mjs), whichever
+   * host they belong to. A local record has no `accounts`: the owner is known by `profileNames`.
+   */
   host?: string;
   /**
    * True when the sync was run with --everyone: the record is a team's, and every person's

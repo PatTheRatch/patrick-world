@@ -30,6 +30,8 @@ export class GitHubSource implements WorldSource {
   described = 0;
   /** True when the record is a team's: every person's commits count as work, not only the owner's. */
   everyone = false;
+  /** True when the record was read from clones on this machine and not from GitHub. */
+  local = false;
   /** What the owner would want to know about those files: a broken one, a link to nowhere. */
   definitionNotes: string[] = [];
   /** Why the status is `error`, in words. */
@@ -49,6 +51,7 @@ export class GitHubSource implements WorldSource {
     this.repoCount = 0;
     this.described = 0;
     this.everyone = false;
+    this.local = false;
     this.definitionNotes = [];
     this.problem = null;
     try {
@@ -71,6 +74,7 @@ export class GitHubSource implements WorldSource {
       const { events, described, notes } = surveyGithub(parsed, this.catalogue, this.isLand);
       this.described = described;
       this.everyone = parsed.everyone === true;
+      this.local = parsed.host === 'local';
       this.definitionNotes = notes;
       this.status = 'loaded';
       this.fetchedAt = parsed.fetchedAt;

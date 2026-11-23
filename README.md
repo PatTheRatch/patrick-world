@@ -52,6 +52,36 @@ so a first sync of a large organisation will stop at the limit and say so: run i
 later and it carries on from where it stopped. Issues and other things that change without
 a push are refreshed only with `--fresh`.
 
+### Repositories that are not on GitHub (Bitbucket, GitLab, anything)
+
+`sync:github` asks GitHub. For everything else there is `sync:local`, which asks git: it reads
+the repositories cloned on this machine, so it does not matter where they are hosted. It
+needs no token, makes no network call, and writes the same record, so the rest works
+unchanged.
+
+```sh
+# Every repository under a folder, as a team's map
+npm run sync:local -- --root ~/work --everyone
+
+# Or just yours, counting only your commits
+npm run sync:local -- --dirs ~/work/api,~/work/web --me "Your Other Name"
+```
+
+| Flag | Does |
+|---|---|
+| `--root dir` | Finds repositories under that folder, up to four folders deep. Repeatable. |
+| `--dirs a,b` | Reads those repositories exactly |
+| `--me "A,B"` | Other names or e-mail addresses your commits are written under |
+| `--everyone` | Counts every person's commits as work |
+| `--fetch` | Runs `git fetch` in each repository first, so the picture is current |
+
+It reads the remote's default branch as last fetched, not whatever is checked out. It tells
+your commits by the name and e-mail git is configured with, plus any name ever used with one
+of those e-mails; the summary lists the names it did not take for you, so you can add one
+with `--me`. E-mail addresses are never written to the record. A clone cannot supply a
+description, issues or an archived flag, so those are absent; a `patrick-world.json` supplies
+the description. Only repositories you have cloned are seen.
+
 A repository that carries a `patrick-world.json` at its root is drawn from what that file says
 (its features, what is planned, its region, its links) and not from guesses. This repository's
 own [patrick-world.json](patrick-world.json) is the example; the format is in
@@ -107,7 +137,8 @@ npm run world          # export your projects, build the pages, and serve them o
 ```
 
 Then open http://localhost:5290/world.html (a fictional specimen) or
-http://localhost:5290/world-mine.html (your own projects, from the last `sync:github`). Add
+http://localhost:5290/world-mine.html (your own projects, from the last `sync:github` or
+`sync:local`). Add
 `?hour=21` to see either after dark. On the board: drag to turn it, scroll to come closer,
 click a project, then **Go down to it**.
 

@@ -18,11 +18,16 @@ import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const RAW = resolve(ROOT, 'public', 'data', 'github.json');
-const OUT = resolve(ROOT, 'public', 'data', 'world.json');
+// --record and --out name other files than the usual two, for keeping more than one world.
+const arg = (flag, fallback) => {
+  const i = process.argv.indexOf(flag);
+  return i !== -1 && process.argv[i + 1] ? resolve(process.argv[i + 1]) : fallback;
+};
+const RAW = arg('--record', resolve(ROOT, 'public', 'data', 'github.json'));
+const OUT = arg('--out', resolve(ROOT, 'public', 'data', 'world.json'));
 
 if (!existsSync(RAW)) {
-  console.error('There is no GitHub record yet. Run: npm run sync:github');
+  console.error('There is no record of your repositories yet. Run: npm run sync:github, or npm run sync:local');
   process.exit(1);
 }
 

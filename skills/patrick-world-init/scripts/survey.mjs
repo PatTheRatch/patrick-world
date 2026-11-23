@@ -2,17 +2,18 @@
 // What can be seen of a repository without asking its owner anything. Prints JSON.
 //
 //   node survey.mjs [directory]     (default: the current directory)
-//   node survey.mjs --neighbours    also list the owner's other repositories, through `gh`
+//   node survey.mjs --neighbours    also list the owner's other repositories
 //
-// Read-only: it reads git history and file names. With --neighbours it makes one read-only
-// `gh repo list` call. It writes nothing and changes nothing.
+// Read-only: it reads git history and file names. With --neighbours it lists the other
+// repositories cloned beside this one, and, where the `gh` CLI is there and signed in, makes
+// one read-only `gh repo list` call. It writes nothing and changes nothing.
 //
 // The questionnaire asks only what is NOT in this output: what the thing is for, what is
 // meant and not yet begun, and what it connects to.
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { candidateDirectories, dirsIn, git, historyOf, originOf, overlaps, readDefinition, repoRoot, vocabulary } from './lib.mjs';
 
 const args = process.argv.slice(2);
@@ -92,7 +93,22 @@ if (wantNeighbours) {
     } catch {
       out.neighboursUnavailable = 'gh answered with something that was not JSON.';
     }
-  } else out.neighboursUnavailable = 'The gh CLI is missing or not signed in, so the other repositories could not be listed. Ask for their names instead.';
+  }
+  // The repositories cloned beside this one. This works whatever host they are on (GitHub,
+  // Bitbucket, GitLab, none), and it is all there is when `gh` is not.
+  const beside = [];
+  try {
+    for (const e of readdirSync(dirname(root), { withFileTypes: true })) {
+      if (!e.isDirectory() || e.name.startsWith('.') || join(dirname(root), e.name) === root) continue;
+      if (existsSync(join(dirname(root), e.name, '.git'))) beside.push(e.name);
+    }
+  } catch {
+    // A folder we may not read has no neighbours to offer.
+  }
+  const known = new Set((out.neighbours ?? []).map((n) => n.name.toLowerCase()));
+  const extra = beside.filter((name) => !known.has(name.toLowerCase())).map((name) => ({ name, description: null, archived: false, beside: true }));
+  if (out.neighbours || extra.length > 0) out.neighbours = [...(out.neighbours ?? []), ...extra];
+  else out.neighboursUnavailable = 'No other repositories were found: none are cloned beside this one, and the gh CLI is missing or not signed in. Ask for their names instead.';
 }
 
 console.log(JSON.stringify(out, null, 2));

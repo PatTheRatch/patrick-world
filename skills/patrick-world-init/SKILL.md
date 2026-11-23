@@ -1,7 +1,7 @@
 ---
 name: patrick-world-init
 description: Put this repository on the map of Patrick's World by writing its city definition, patrick-world.json, or bring an existing one up to date. Surveys the repository, asks its owner a short questionnaire about what cannot be seen in the code (what it is, what is planned, what works, what it connects to), writes the file and checks it. Use when asked to init, set up, add or update a repository for Patrick's World.
-compatibility: Works in any coding agent that can read files and run shell commands (Claude Code, GitHub Copilot, Codex). Needs git and Node 18 or later. The gh CLI is optional.
+compatibility: Works in any coding agent that can read files and run shell commands (Claude Code, GitHub Copilot, Codex), on a repository hosted anywhere (GitHub, Bitbucket, GitLab, none). Needs git and Node 18 or later. The gh CLI is optional.
 metadata:
   source: https://github.com/PatTheRatch/patrick-world
 ---
@@ -75,7 +75,7 @@ It prints JSON:
 | `documents` | Files that tend to say what is planned and what is done. **Read them.** A PLAN, ROADMAP, STATUS, TODO or HANDOFF usually answers half the questionnaire. |
 | `manifests`, `fileEndings` | What it is built with. |
 | `vocabulary` | The map's own regions and methods. You may only use these ids. |
-| `neighbours` | The owner's other repositories: the cities this one could have roads to. Missing if `gh` is not available; then ask for names. |
+| `neighbours` | The owner's other repositories: the cities this one could have roads to. It lists the repositories cloned beside this one (whatever host they are on) and, where the `gh` CLI is signed in, the owner's GitHub repositories. Missing if neither finds any; then ask for names. |
 | `repositoryName` | What other cities can call this one. |
 
 Then read: the README, the documents listed, the manifest, and enough of the source tree to
@@ -249,8 +249,9 @@ Tell the owner, briefly: the city's name and country; how many buildings, and ho
 those are planned; the roads; and anything the check still flags, with why you left it.
 
 Then say what makes it appear on the map: the file has to be **committed and pushed to the
-repository's default branch**, and the map's next sync (`npm run sync:github` in the
-patrick-world repository) will read it. Do not commit or push unless they ask you to. In a
+repository's default branch**, and the map's next sync (`npm run sync:github`, or
+`npm run sync:local` for repositories that are not on GitHub, in the patrick-world
+repository) will read it. Do not commit or push unless they ask you to. In a
 repository shared with other people, say so plainly: the file will be visible to everyone
 with access to the repository, and adding it is their call.
 

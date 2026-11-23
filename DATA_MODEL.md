@@ -225,6 +225,7 @@ Built. Three parts, so that fetching, meaning and drawing stay apart:
 | Part | Does |
 |---|---|
 | `scripts/github-fetch.mjs` (`npm run sync:github`) | Reads repositories, commits, languages, releases and per-directory history through the `gh` CLI, read-only, and writes `public/data/github.json`. No interpretation. The file is git-ignored and stripped from production builds. A repository nothing has been pushed to since the last record is taken from that record, so a large sync stopped by the rate limit resumes on the next run. |
+| `scripts/local-fetch.mjs` (`npm run sync:local`) | Writes the same record from clones on this machine, through git alone, for repositories on any host or none. No token, no network. The owner is known by name and e-mail, not by account; e-mail addresses are not recorded. A clone has no description, issues or archived flag. |
 | `src/world/sources/github/transform.ts` | A pure function from that record to events. Every rule is a named constant at the top of the file. |
 | `src/world/sources/github.ts` | A `WorldSource` that loads the record. When it is present the world is GitHub plus manual marks; the specimen is never mixed in. `?world=specimen` shows the fiction. |
 

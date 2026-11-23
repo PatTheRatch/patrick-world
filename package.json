@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "sync:github": "node scripts/github-fetch.mjs",
+    "sync:local": "node scripts/local-fetch.mjs",
     "sync:skill": "node scripts/skill-sync.mjs",
     "install:skill": "node scripts/skill-install.mjs",
     "world:export": "node scripts/world-export.mjs",
