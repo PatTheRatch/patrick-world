@@ -94,6 +94,32 @@ Agents working in *this* repository read [AGENTS.md](AGENTS.md). Codex and Copil
 directly; `CLAUDE.md` and `.github/copilot-instructions.md` are one-line pointers to it for
 the tools that look for those names.
 
+## The new world (a mockup, for now)
+
+The survey atlas this app draws is being replaced. The chosen direction is two views of one
+world: a small lit **board** that shows every project at once and the roads between them, and
+a **bay** at dusk where you arrive at one project and see its skyline and the bridges to its
+neighbours. It exists as a working mockup in `mockups/`, beside the app, until it is built
+into `src/` (PLAN.md, Stage 14).
+
+```sh
+npm run world          # export your projects, build the pages, and serve them on this machine
+```
+
+Then open http://localhost:5290/world.html (a fictional specimen) or
+http://localhost:5290/world-mine.html (your own projects, from the last `sync:github`). Add
+`?hour=21` to see either after dark. On the board: drag to turn it, scroll to come closer,
+click a project, then **Go down to it**.
+
+The three steps separately: `npm run world:export` writes `public/data/world.json` from the
+last sync; `npm run world:build` draws it into `mockups/out/`; `npm run world:serve` serves
+that folder. Both of those places are private and git-ignored: a page built from your own
+projects carries their names.
+
+Your own projects will look sparse and unconnected until their repositories carry a
+`patrick-world.json`. GitHub alone cannot say what connects to what, what is planned, or
+what a feature is called.
+
 ## Getting around
 
 | | |

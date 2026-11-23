@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Patrick's World</title>
+<!--
+  The joined world. Two views of the same projects, each used for what it is good at:
+
+    the board   everything at once: how much there is, and what connects to what
+    the bay     one project, arrived at: its skyline at the end of the day, and the bridges
+                that lead from it to its neighbours
+
+  This page only holds the two and passes you between them. Each half is a page of its own
+  (board.html, bay.html) opened with ?embed, and they speak to this one in small messages:
+
+    board → here   { pw: 'arrive', name }    "go down to this project"
+    bay   → here   { pw: 'back', name }      "back to the board" (name: where you were standing)
+    here  → either { pw: 'focus', name }     "show this project"
+    here  → either { pw: 'sleep' | 'wake' }  stop drawing while the other half is showing
+
+  Add ?hour=21 to see both after dark.
+-->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #080b14; }
+  iframe {
+    position: fixed; inset: 0; width: 100%; height: 100%; border: 0;
+    transition: opacity 1s ease, transform 1.3s cubic-bezier(.2, .7, .2, 1), visibility 0s linear 0s;
+  }
+  /* Going down: the board swells past you and is gone; the bay settles into place. */
+  #bay { opacity: 0; transform: scale(1.07); visibility: hidden; pointer-events: none; transition-delay: 0s, 0s, 1.3s; }
+  .at-bay #bay { opacity: 1; transform: none; visibility: visible; pointer-events: auto; transition-delay: .25s, .25s, 0s; }
+  .at-bay #board { opacity: 0; transform: scale(1.35); visibility: hidden; pointer-events: none; transition-delay: 0s, 0s, 1.3s; }
+  @media (prefers-reduced-motion: reduce) {
+    iframe { transition: opacity .2s linear, visibility 0s linear 0s; }
+    #bay, .at-bay #board { transform: none; }
+  }
+</style>
+</head>
+<body>
+<iframe id="board" title="The board: every project, and what connects to what"></iframe>
+<iframe id="bay" title="The bay: one project, seen from the water"></iframe>
+<script>
+  const board = document.getElementById('board');
+  const bay = document.getElementById('bay');
+  const qs = new URLSearchParams(location.search);
+  // Whatever hour this page is asked for, both halves are shown at.
+  const hour = qs.has('hour') ? `&hour=${encodeURIComponent(qs.get('hour'))}` : '';
+  const tell = (frame, message) => frame.contentWindow && frame.contentWindow.postMessage(message, '*');
+
+  let bayReady = false;
+  let wanted = null; // a project asked for before the bay had loaded
+
+  board.src = `board.html?embed${hour}`;
+  // The bay is fetched once the board is up, so that the first arrival does not wait for it.
+  board.addEventListener('load', () => {
+    bay.src = `bay.html?embed${hour}`;
+  }, { once: true });
+
+  function arrive(name) {
+    document.body.classList.add('at-bay');
+    tell(board, { pw: 'sleep' });
+    if (bayReady) {
+      tell(bay, { pw: 'wake' });
+      tell(bay, { pw: 'focus', name });
+    } else wanted = name;
+    bay.focus();
+  }
+  function back(name) {
+    document.body.classList.remove('at-bay');
+    tell(bay, { pw: 'sleep' });
+    tell(board, { pw: 'wake' });
+    if (name) tell(board, { pw: 'focus', name });
+    board.focus();
+  }
+
+  addEventListener('message', (e) => {
+    const m = e.data;
+    if (!m || !m.pw) return;
+    if (e.source === board.contentWindow && m.pw === 'arrive') arrive(m.name);
+    if (e.source === bay.contentWindow && m.pw === 'back') back(m.name);
+    if (e.source === bay.contentWindow && m.pw === 'ready') {
+      bayReady = true;
+      if (wanted) {
+        tell(bay, { pw: 'focus', name: wanted });
+        wanted = null;
+      } else tell(bay, { pw: 'sleep' });
+    }
+  });
+</script>
+</body>
+</html>

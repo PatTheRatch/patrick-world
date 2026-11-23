@@ -7,18 +7,20 @@ related_targets: []
 
 # Surface brief: the world (index.html)
 
-Scope: the whole application surface. Visitor mode: Experience. Audience: Patrick alone, at a desk, large screen, evenings. Job: survey everything he has made and might make; capture new ideas. Constraints: no gamification, no dashboard chrome, true plan (no 3D), fixture data only and labelled synthetic.
+Scope: the whole application surface. Visitor mode: Experience. Audience: the person running the projects, and the colleagues they show it to; a laptop or a large screen. Job: see how much there is and what connects to what; arrive at one project and see how developed it is and what is happening in it. Constraints: runs in a browser with no server, opens fast, little writing, real data only (the specimen is labelled fictional).
+
+Replaces the survey-atlas direction of October 2026, which the owner rejected in November 2026 ("cardboard boxes stacked on each other"). Reached by interview, six structural sketches and an art pass; the working mockup is in `mockups/` (`npm run world`).
 
 ## Direction contract
 
-THESIS: The world is a fire-insurance survey atlas still being drawn; every mark is evidence. It refuses the map-in-a-dashboard arrangement (sidebar, cards, badges) and the fantasy-parchment game map.
+THESIS: Two views of one world, each used for what it does best. A small lit board shows everything at once; from it you go down to one project and arrive at its quay at the end of the day. It refuses the dashboard, the ticket board, and the flat map of dots that you zoom into.
 
-OWN-WORLD: Cool buff-grey linen paper on a dark baize table. Black ink that fades to sepia with age. Graphite for anything not yet real. Five saturated washes (rose, chrome yellow, Prussian blue, viridian, slate) by building kind. Brighter correction slips under recent work. Surveyor's red only for the hand: selection and the current edition. Besley for names and titles; Archivo wide caps for streets and wards, condensed for numerals. Hairline paper shadows; cast shadows by storeys.
+OWN-WORLD: The board is a carved object on a dark ink-blue table under one low warm lamp: warm stone and moss ground in stepped terraces, clay and plaster buildings, brass for roads and for the rings that mark a project's level, cream cloud over what has not been started. The bay is the same city from the water at dusk: a sky from apricot at the horizon to dusty blue, water that takes the sky, stone, clay and slate towers, one lamp colour. In both, light is work: a lit window, a lantern, a lamp on a crane.
 
-STORY: Patrick sees at once which places are large and which are fresh, descends into one, reads what is built, underway and merely staked, then turns the edition back and watches it un-build. He leaves wanting to put his own projects in.
+STORY: They see how much has been built and follow the brass roads from the largest project to what it leans on. They go down to one, see its skyline and the bridges to its neighbours, and read what is being built, what stands and what is only staked out. They leave saying it was beautiful.
 
-FIRST VIEWPORT: The full territory sheet fills the window. Two or three dense multi-block cities with long shadows and the largest names; towns between; pencil marks toward blank frontier. Roads and blue mains between related places. Cartouche inside the sheet's lower-left corner (title, edition, tally, Key). Edition dial along the sheet's bottom margin. No toolbar, sidebar or panels.
+FIRST VIEWPORT: The whole board, corner-on, off-centre on a dark table, lit from the left; the largest project's tower the tallest thing; glowing brass roads between tied projects; cloud round the edge. One small title, top left. No tags, badges, legend or panel at rest.
 
-FORM: Fire-insurance survey atlas, candidate 5 of 7 (assigned). Seed key a2007292. Signature interaction: the edition dial peeling the atlas back through time. Motion grammar: the pen draws, the wash floods, the slip is pasted.
+FORM: Board for the overview, bay on arrival. seed: none (pinned). The owner's words: "take... an art and beautiful pass at both the board and skyline. I do like both of them", and on which should become the world: "Both together". Signature interaction: going down from the board to a project's quay. Motion grammar: lights travel along what is connected; cranes turn where work is going on; nothing else moves.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

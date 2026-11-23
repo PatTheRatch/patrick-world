@@ -10,6 +10,10 @@
     "sync:github": "node scripts/github-fetch.mjs",
     "sync:skill": "node scripts/skill-sync.mjs",
     "install:skill": "node scripts/skill-install.mjs",
+    "world:export": "node scripts/world-export.mjs",
+    "world:build": "node mockups/build.mjs",
+    "world:serve": "node mockups/serve.mjs",
+    "world": "node scripts/world-export.mjs && node mockups/build.mjs && node mockups/serve.mjs",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && vitest run && vite build"
   },

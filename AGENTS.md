@@ -30,6 +30,7 @@ npm run check        # typecheck, tests, production build. Run before you say yo
 npm test             # tests only
 npm run sync:github  # read repositories through the gh CLI into public/data/github.json
 npm run sync:skill   # refresh the questionnaire skill's copies after changing what they copy
+npm run world        # export, build and serve the mockup of the new world (see mockups/)
 ```
 
 Node 22.18 or later (the scripts load TypeScript directly). The `gh` CLI, signed in, for the sync.
@@ -47,7 +48,8 @@ Node 22.18 or later (the scripts load TypeScript directly). The `gh` CLI, signed
 | `src/understanding/` | Advisory readings of what each project is |
 | `scripts/` | Node scripts: the sync, the skill sync |
 | `skills/patrick-world-init/` | The questionnaire that writes a repository's `patrick-world.json` |
-| `public/data/` | **Private.** The owner's GitHub record. Git-ignored. |
+| `mockups/` | A working mockup of the new world (a board and a bay) that will replace `src/render/`. Plain JavaScript, built by `mockups/build.mjs` into `mockups/out/`. |
+| `public/data/`, `mockups/out/` | **Private.** The owner's GitHub record, the world exported from it, and pages built from it. Git-ignored. |
 
 ## Rules
 
@@ -68,7 +70,7 @@ The order of trust is: fact beats claim, claim beats inference (`settleStage` in
 never written back to the log.
 
 **4. Private data stays private.** `public/data/` holds real repository names, commit
-history and README text. Do not commit it, do not paste its contents into a commit message,
+history and README text, and `mockups/out/` holds pages built from them. Do not commit it, do not paste its contents into a commit message,
 a test, a fixture or a reply, and do not send it to any outside service. Tests that read it
 must pass when it is absent.
 

@@ -6,6 +6,41 @@
 > was confirmed in an interview. Lines marked **[inferred]** are my reading of the brief, not
 > something Patrick said; everything else paraphrases the brief directly.
 
+## What Patrick said, 23 November 2026
+
+> The first interview. Everything in this section is Patrick's own answer, paraphrased. Where
+> it disagrees with a section below, this section is right and the older one is out of date.
+
+- **What it is.** A project-management tool: a way to keep track of projects, in the same
+  category as a ticket board. What sets it apart is that it is art. "Turn the mundaneness of
+  project tracking into art."
+- **Who it is for.** The person running the projects. Not only Patrick: he will use it at his
+  day job, on many more repositories than his own, and send it to colleagues so that they can
+  see how much has been built. It is no longer a world with one audience.
+- **The reaction it must earn.** That they understand the scope of the work, and say "that was
+  really cool".
+- **Beautiful wins in the interface.** Where a choice is more beautiful and slightly harder to
+  read, take the beautiful one. The plain reading belongs to an export: what is planned, what
+  is being worked on, what was recently done. Later, a setting between plain and artistic.
+- **The structure.** A world of cities; districts inside a city; buildings inside a district;
+  wonders that stand out. His reference for the structure is city-building strategy games.
+  The art must be the product's own.
+- **Buildings are structures.** The first version read as cheap because every building was a
+  square seen from above: "cardboard boxes stacked on each other". A building must look like
+  what it is, so that you can tell what a project does by looking, and more work must make it
+  more developed, not only bigger.
+- **From far away:** how many projects there are, which are connected, and how tightly. No
+  project is ever finished.
+- **Inside a city:** its shape says how developed it is. Little writing: an overview on
+  entering, names on hover, the last commit and what is in flight on a click.
+- **Status is in the picture:** a crane on what is being built, how far along it is, work on
+  a building that already stands.
+- **Movement:** small, and it means something. A crane, some traffic.
+- **Time:** every city must be able to show its history. The world-wide dial is worth keeping
+  and may skip stretches where nothing happened.
+- **The sky follows the viewer's clock.** Daytime first.
+- **Limits:** runs in a browser, opens fast, never strains it. Small to build.
+
 ## Platform
 
 web

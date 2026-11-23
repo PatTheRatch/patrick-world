@@ -192,6 +192,96 @@ reflection, not the loop).
 - [ ] `PatrickOsSource`: suggestions and context in
 - [ ] `WorldObserver`: meaningful events out
 
+## Stage 14: The new world: board and bay
+
+Chosen in November 2026, after an interview (top of [PRODUCT.md](PRODUCT.md)), six structural
+sketches and an art pass. The survey atlas is retired. The direction is recorded in
+`.impeccable/surfaces/index-html.md`; the working mockup is in `mockups/` (`npm run world`).
+
+- [x] The board: every project at once, on a lit board; brass roads between tied projects
+- [x] The bay: one project, arrived at; its skyline at dusk and bridges to its neighbours
+- [x] The two joined: go down from the board to a project, and back
+- [x] A rule that places any set of projects in the bay, in the order they were founded, so
+      that adding one never moves another (in the mockup; tried on 9, 23, 69 and 345 projects)
+- [ ] Store each project's berth once it is chosen. The rule alone is not permanent: a tie
+      added later, or an old project growing, would move things if positions were worked out
+      afresh. A berth should be an event, like a founding.
+- [x] The owner's real projects in the mockup (`npm run world:export`, then
+      `mockups/out/world-mine.html`; private and kept out of git). With no definitions yet it is sparse and has no ties at all, which is the
+      case for the questionnaire.
+- [ ] Smooth with a few hundred projects: cached layers, less redrawn per frame
+- [ ] One page and one engine, in `src/`, in place of two mockup pages held side by side
+- [ ] DESIGN.md rewritten from what is built; the old atlas rules removed
+- [ ] The plain export: what is planned, what is being worked on, what was lately finished
+- [ ] Each project's history, and a dial that skips stretches where nothing happened
+- [ ] Work in flight (open pull requests) on a building's card
+
+## Stage 15: Quality and upgrades
+
+Asked for on 23 November 2026. Today a building shows how much work is in it (its size) and
+how far along it is (its stage). Neither says whether it is any good. This stage adds a third
+thing the picture can show: **how good it is**, as a grade, on buildings and on the bridges
+and roads between projects.
+
+What Patrick said, and what follows from it:
+
+- "We need to know what good is." The grade needs a rubric with evidence behind it, so that
+  it can be checked and argued with. It cannot be a mood.
+- "If I make something robust on the first try it should already be really nice." A grade is
+  assessed, not earned by time or by the number of commits. New work can arrive at the top.
+- "Use AI to assess a feature and then it assigns it a level." The assessor may be a model.
+  Its reading is an inference and is shown as one, with who made it, when, and on what.
+- "Upgrade a bridge or a road." A grade can rise, and when it does the thing is visibly
+  rebuilt finer. It can also fall, when what it rested on stops being true.
+
+How it fits the rules this repository already keeps:
+
+- **Size, stage and grade are three separate things.** Size is how much work, stage is how
+  far along, grade is how good. A small excellent feature is a small jewel of a building; a
+  large sloppy one is a large shabby one. A strong tie that is badly built is a wide rickety
+  bridge. Never fold one into another.
+- **A grade is an event, not a field.** `quality.assessed`, carrying the grade, the assessor,
+  the reasons and the commit it was read at. `derive` gives the grade at any date, so the dial
+  shows an upgrade on the day it happened. (Rule 1 in AGENTS.md.)
+- **Fact beats claim, claim beats inference.** What can be measured (tests exist and pass,
+  it is typed, its checks in a build plan were verified) is fact. The owner's own grade is a
+  claim. A model's reading is an inference. Where they disagree the stronger wins, and the
+  card says which it was.
+- **Nothing leaves the machine that should not.** At work, source code may not be sent to a
+  model the employer has not approved. So the assessor is the owner's own agent, run in the
+  repository like the founding questionnaire, and what it writes down is the grade and its
+  reasons, never the code.
+
+The work, in order:
+
+- [x] **Decide what good means.** A short rubric, each line something evidence can speak to.
+      Patrick accepted this first draft as close enough on 23 November 2026; revise it once
+      grades have been seen on real work. It is tested; it handles what goes wrong; it does what it
+      set out to do (its acceptance criteria were checked); it has been used; it has not
+      needed fixing since; someone else could pick it up (it is named and documented).
+      For a tie: there is a stated contract between the two projects; it is tested from both
+      sides; a change on one side does not silently break the other.
+- [ ] **Decide the grades.** Few enough to tell apart in a drawing: probably four or five,
+      named in the world's own words and not as numbers.
+- [ ] **Measure what can be measured** from the record the sync already makes, with no model:
+      tests beside the code, a passing check run, fixes after it was called done.
+- [ ] **An assess command** in the `patrick-world-init` skill: the owner's agent reads one
+      feature against the rubric and writes its grade, its reasons and what would raise it.
+      Kept apart from the owner's own claims, and dated by the commit that recorded it.
+- [ ] `quality.assessed` in the event log and a grade on each feature and link in `derive`,
+      with the source it came from. Tests for: a grade that rises, one that falls, an owner's
+      grade overruling a model's, a measured fact overruling both.
+- [ ] **Draw it.** A manner of building for each grade (material, finish, ornament) on the
+      board and in the bay, and the same for bridges and roads. An upgrade is drawn as one:
+      scaffold, then the finer thing.
+- [ ] **On the card:** the grade, who assessed it and when, the reasons, and what would raise
+      it. That last line is also a list of what to do next.
+- [ ] **In the plain export:** what could be upgraded and what each would take.
+
+Open, and Patrick's to settle: whether a grade may ever be shown without reasons; whether an
+unassessed feature is drawn plain or drawn as its best guess; whether colleagues may see the
+grades of each other's work.
+
 ## Out of scope tonight
 
 Real data sources, persistence beyond local storage, accounts, deployment, mobile layout,
