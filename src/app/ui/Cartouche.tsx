@@ -11,6 +11,7 @@ import {
   keyOpen,
   keySection,
   selection,
+  teamSurvey,
   whereabouts,
   world,
   worldKind,
@@ -87,7 +88,9 @@ export function Cartouche() {
       </nav>
       <p class="cartouche-specimen">
         {worldKind.value === 'github'
-          ? `Surveyed from GitHub, ${dayMonthYear(TODAY.value)}. ${surveyBasis(describedPlaces.value)}`
+          ? `Surveyed from GitHub, ${dayMonthYear(TODAY.value)}. ${surveyBasis(describedPlaces.value)}${
+              teamSurvey.value ? ' Work is everyone\u2019s commits, not one person\u2019s.' : ''
+            }`
           : 'Specimen sheet. Every place, date and figure on it is fictional.'}
       </p>
     </header>

@@ -19,6 +19,39 @@ npm run sync:github  # read your repositories (via the gh CLI) into public/data/
 With a GitHub record present the app shows your real repositories. `?world=specimen` shows the
 fictional specimen world instead. The record is private, git-ignored, and left out of builds.
 
+### Which repositories, and whose work
+
+By default the sync reads the repositories your `gh` accounts own, and counts your commits
+(and coding agents') as the work. For a team's repositories, name them and say that
+everyone's work counts:
+
+```sh
+# Every repository of an organisation, as a team's map
+npm run sync:github -- --orgs acme --no-owned --everyone --skip-archived
+
+# Or just the ones you name
+npm run sync:github -- --repos acme/api,acme/web --no-owned --everyone
+
+# GitHub Enterprise Server
+npm run sync:github -- --host github.acme.example --orgs acme --no-owned --everyone
+```
+
+| Flag | Does |
+|---|---|
+| `--orgs a,b` | Adds every repository of those organisations that your account can see |
+| `--repos o/a,o/b` | Adds those repositories |
+| `--no-owned` | Leaves out the repositories your accounts own |
+| `--skip-archived` | Leaves out archived repositories |
+| `--everyone` | Counts every person's commits as work. Bots are still left out. The sheet says so. |
+| `--host name` | Reads a GitHub Enterprise Server host instead of github.com |
+| `--fresh` | Asks again about every repository (see below) |
+
+A repository nothing has been pushed to since the last sync is taken from the last record and
+not asked about again. GitHub allows about 5,000 calls an hour and a repository costs dozens,
+so a first sync of a large organisation will stop at the limit and say so: run it again
+later and it carries on from where it stopped. Issues and other things that change without
+a push are refreshed only with `--fresh`.
+
 A repository that carries a `patrick-world.json` at its root is drawn from what that file says
 (its features, what is planned, its region, its links) and not from guesses. This repository's
 own [patrick-world.json](patrick-world.json) is the example; the format is in

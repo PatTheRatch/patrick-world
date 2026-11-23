@@ -273,6 +273,24 @@ describe('githubEvents: work', () => {
     expect(sum('infra')).toBe(20);
   });
 
+  it('counts every person\u2019s commits on a team\u2019s map, and still no machinery', () => {
+    const team = ownerTest({ accounts: ['pat'], profileNames: [], everyone: true });
+    const by = (author: string | null, authorName: string) => team({ sha7: 'x', date: '2025-01-01T00:00:00Z', author, authorName });
+    expect(by('a-collaborator', 'A Collaborator')).toBe(true);
+    expect(by(null, 'Someone Else')).toBe(true);
+    expect(by('copilot-swe-agent[bot]', 'Copilot')).toBe(true); // an agent is a builder
+    expect(by('dependabot[bot]', 'dependabot[bot]')).toBe(false);
+    expect(by('some-ci[bot]', 'Some CI')).toBe(false);
+    expect(by(null, 'github-actions')).toBe(false);
+
+    // The same record, drawn for one person and for the team.
+    const alone = githubEvents({ ...raw, everyone: false }, catalogue, terrain.isLand);
+    const together = githubEvents({ ...raw, everyone: true }, catalogue, terrain.isLand);
+    const commits = (events: WorldEvent[]) => events.reduce((n, e) => (e.type === 'work.logged' && e.place === PLACE ? n + e.commits : n), 0);
+    // Two more people's commits (the unlinked stranger and the collaborator); the bot's still out.
+    expect(commits(together) - commits(alone)).toBe(2);
+  });
+
   it('logs the rest against the place, logs every commit exactly once, and never goes negative', () => {
     for (const e of work) expect(e.commits).toBeGreaterThan(0);
     const remainder = work.filter((e) => e.place === PLACE && e.feature === undefined).reduce((n, e) => n + e.commits, 0);

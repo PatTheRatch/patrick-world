@@ -224,7 +224,7 @@ Built. Three parts, so that fetching, meaning and drawing stay apart:
 
 | Part | Does |
 |---|---|
-| `scripts/github-fetch.mjs` (`npm run sync:github`) | Reads repositories, commits, languages, releases and per-directory history through the `gh` CLI, read-only, and writes `public/data/github.json`. No interpretation. The file is git-ignored and stripped from production builds. |
+| `scripts/github-fetch.mjs` (`npm run sync:github`) | Reads repositories, commits, languages, releases and per-directory history through the `gh` CLI, read-only, and writes `public/data/github.json`. No interpretation. The file is git-ignored and stripped from production builds. A repository nothing has been pushed to since the last record is taken from that record, so a large sync stopped by the rate limit resumes on the next run. |
 | `src/world/sources/github/transform.ts` | A pure function from that record to events. Every rule is a named constant at the top of the file. |
 | `src/world/sources/github.ts` | A `WorldSource` that loads the record. When it is present the world is GitHub plus manual marks; the specimen is never mixed in. `?world=specimen` shows the fiction. |
 
@@ -232,8 +232,8 @@ What it infers, and how far to trust it:
 
 | Thing | Rule | Trust |
 |---|---|---|
-| A place | One per repository owned | High |
-| Work | Commits by the owner, and by coding agents in the owner's repositories, per week. Each commit is logged against one feature only. | High |
+| A place | One per repository owned; with `--orgs` and `--repos`, one per repository named | High |
+| Work | Commits by the owner, and by coding agents in the owner's repositories, per week. Each commit is logged against one feature only. In a record made with `--everyone` (a team's map), every person's commits; bots never count. | High |
 | A feature | A directory inside a source root, or at the top level | **Low.** A directory is not a capability. |
 | `building` | The feature's first commit | Medium |
 | `working` | Enough commits over enough weeks, and then a release, a three-week pause, or simply sustained work | **Low.** "Stopped" and "busy for three weeks" both count. |

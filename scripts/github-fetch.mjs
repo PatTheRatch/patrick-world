@@ -3,8 +3,19 @@
 // to public/data/github.json. Run as `npm run sync:github`.
 //
 //   --accounts a,b     logins to read (default: every account `gh auth status` lists)
+//   --orgs a,b         also every repository of these organisations that the account can see
+//   --repos o/a,o/b    also these repositories, by full name
+//   --no-owned         leave out the repositories the accounts themselves own
+//   --skip-archived    leave out archived repositories
 //   --include-forks    also record forks
+//   --everyone         count every person's commits as work, not only the owner's (a team's map)
+//   --fresh            ask again about repositories nothing has been pushed to since the last sync
+//   --host name        a GitHub Enterprise Server host (default: github.com)
 //   --max-commits N    commits per repository on the default branch (default 5000)
+//
+// A repository nothing has been pushed to since the last record is taken from that record and
+// not asked about again. That is what lets a sync of hundreds of repositories finish: when
+// GitHub's hourly limit stops it, run it again and it carries on from where it stopped.
 //
 // Read-only: every call is a GET through `gh api`. The token for each account is taken
 // from `gh auth token --user <login>` and handed to `gh` in the GH_TOKEN environment
@@ -48,6 +59,8 @@ const MAX_DIRS = 14;
 const MAX_PATH_COMMITS = 1000;
 /** Tags are only dated (one call each) when there are this few of them. */
 const MAX_TAGS_DATED = 30;
+/** The version of the record this script writes. */
+const VERSION = 4;
 
 /** Limits on the evidence recorded per repository. */
 const EVIDENCE = {
@@ -73,25 +86,63 @@ const DEFINITION = {
 
 // ───────────────────────── arguments ─────────────────────────
 
+const USAGE =
+  'usage: npm run sync:github -- [--accounts a,b] [--orgs a,b] [--repos owner/name,...] [--no-owned] [--skip-archived]\n' +
+  '                              [--include-forks] [--everyone] [--fresh] [--host name] [--max-commits N]';
+
 function parseArgs(argv) {
-  const out = { accounts: null, includeForks: false, maxCommits: 5000 };
+  const out = {
+    accounts: null,
+    orgs: [],
+    repos: [],
+    owned: true,
+    skipArchived: false,
+    includeForks: false,
+    everyone: false,
+    fresh: false,
+    host: 'github.com',
+    maxCommits: 5000,
+  };
+  const list = (s) => String(s ?? '').split(',').map((x) => x.trim()).filter(Boolean);
   for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--accounts') out.accounts = String(argv[++i] ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-    else if (a.startsWith('--accounts=')) out.accounts = a.slice(11).split(',').map((s) => s.trim()).filter(Boolean);
-    else if (a === '--include-forks') out.includeForks = true;
-    else if (a === '--max-commits') out.maxCommits = Number(argv[++i]);
-    else if (a.startsWith('--max-commits=')) out.maxCommits = Number(a.slice(14));
-    else if (a === '--help' || a === '-h') {
-      console.log('usage: npm run sync:github -- [--accounts a,b] [--include-forks] [--max-commits N]');
+    // `--flag value` and `--flag=value` are the same thing.
+    const eq = argv[i].indexOf('=');
+    const flag = argv[i].startsWith('--') && eq !== -1 ? argv[i].slice(0, eq) : argv[i];
+    const value = () => (flag !== argv[i] ? argv[i].slice(eq + 1) : argv[++i]);
+    if (flag === '--accounts') out.accounts = list(value());
+    else if (flag === '--orgs') out.orgs.push(...list(value()));
+    else if (flag === '--repos') out.repos.push(...list(value()));
+    else if (flag === '--no-owned') out.owned = false;
+    else if (flag === '--skip-archived') out.skipArchived = true;
+    else if (flag === '--include-forks') out.includeForks = true;
+    else if (flag === '--everyone') out.everyone = true;
+    else if (flag === '--fresh') out.fresh = true;
+    else if (flag === '--host') out.host = String(value() ?? '').trim();
+    else if (flag === '--max-commits') out.maxCommits = Number(value());
+    else if (flag === '--help' || flag === '-h') {
+      console.log(USAGE);
       process.exit(0);
     } else {
-      console.error(`Unknown argument: ${a}`);
+      console.error(`Unknown argument: ${argv[i]}\n${USAGE}`);
       process.exit(2);
     }
   }
   if (!Number.isFinite(out.maxCommits) || out.maxCommits < 1) {
     console.error('--max-commits needs a positive number');
+    process.exit(2);
+  }
+  if (out.host === '') {
+    console.error('--host needs a host name');
+    process.exit(2);
+  }
+  for (const full of out.repos) {
+    if (!/^[^/\s]+\/[^/\s]+$/.test(full)) {
+      console.error(`--repos takes full names like owner/name; got "${full}"`);
+      process.exit(2);
+    }
+  }
+  if (!out.owned && out.orgs.length === 0 && out.repos.length === 0) {
+    console.error('--no-owned leaves nothing to read. Name some with --orgs or --repos.');
     process.exit(2);
   }
   return out;
@@ -100,6 +151,9 @@ function parseArgs(argv) {
 // ───────────────────────── gh ─────────────────────────
 
 class RateLimited extends Error {}
+
+/** Which GitHub to ask: github.com, or a GitHub Enterprise Server host given with --host. */
+let HOST = 'github.com';
 
 function gh(args, env) {
   return spawnSync('gh', args, {
@@ -113,16 +167,17 @@ function listAccounts() {
   const r = gh(['auth', 'status']);
   const text = `${r.stdout ?? ''}\n${r.stderr ?? ''}`;
   const logins = [];
-  for (const m of text.matchAll(/Logged in to github\.com account (\S+)/g)) {
+  const host = HOST.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  for (const m of text.matchAll(new RegExp(`Logged in to ${host} account (\\S+)`, 'g'))) {
     if (!logins.includes(m[1])) logins.push(m[1]);
   }
   return logins;
 }
 
 function tokenFor(login) {
-  const r = gh(['auth', 'token', '--hostname', 'github.com', '--user', login]);
+  const r = gh(['auth', 'token', '--hostname', HOST, '--user', login]);
   const token = (r.stdout ?? '').trim();
-  if (r.status !== 0 || token === '') throw new Error(`No gh token for account ${login}. Run: gh auth login`);
+  if (r.status !== 0 || token === '') throw new Error(`No gh token for account ${login} on ${HOST}. Run: gh auth login --hostname ${HOST}`);
   return token;
 }
 
@@ -134,7 +189,7 @@ let calls = 0;
  */
 function get(token, path, { accept = 'application/vnd.github+json', soft = false } = {}) {
   calls++;
-  const r = gh(['api', '--hostname', 'github.com', '-i', '-H', `Accept: ${accept}`, path], {
+  const r = gh(['api', '--hostname', HOST, '-i', '-H', `Accept: ${accept}`, path], {
     GH_TOKEN: token,
   });
   const out = r.stdout ?? '';
@@ -606,28 +661,46 @@ function fetchRepo(token, r, opts) {
 
 function main() {
   const opts = parseArgs(process.argv.slice(2));
+  HOST = opts.host;
   const accounts = opts.accounts ?? listAccounts();
   if (accounts.length === 0) {
-    console.error('No GitHub accounts found. Run: gh auth login');
+    console.error(`No accounts found for ${HOST}. Run: gh auth login --hostname ${HOST}`);
     process.exit(1);
   }
 
-  // Revisions of definitions already in hand, by repository and sha. Read from the last
-  // record if there is one; a record that cannot be read just means asking again.
+  // What the last record already holds. Read from it if there is one; a record that cannot
+  // be read just means asking again.
+  //   known     revisions of definitions, by repository and sha: a commit never changes
+  //   previous  whole repositories, reusable when nothing has been pushed to them since.
+  //             Only from a record of this version, this host and this commit limit, so that
+  //             a reused repository is exactly what asking again would have recorded.
   opts.known = new Map();
+  opts.previous = new Map();
   try {
     if (existsSync(OUT)) {
-      for (const repo of JSON.parse(readFileSync(OUT, 'utf8')).repos ?? []) {
+      const last = JSON.parse(readFileSync(OUT, 'utf8'));
+      const sameKind = last.version === VERSION && (last.host ?? 'github.com') === HOST && last.maxCommits === opts.maxCommits;
+      for (const repo of last.repos ?? []) {
         const revisions = (repo.definition?.revisions ?? []).filter((v) => v.sha7 && typeof v.text === 'string');
         if (revisions.length > 0) opts.known.set(repo.full_name, new Map(revisions.map((v) => [v.sha7, v.text])));
+        if (sameKind && !opts.fresh) opts.previous.set(repo.full_name, repo);
       }
     }
   } catch {
     opts.known = new Map();
+    opts.previous = new Map();
   }
 
   const raw = {
-    version: 4,
+    version: VERSION,
+    host: HOST,
+    // Whose commits the map should count as work. The transform reads this; nothing here does.
+    everyone: opts.everyone,
+    orgs: opts.orgs,
+    reposNamed: opts.repos,
+    reused: 0,
+    archivedSkipped: 0,
+    unreadable: [],
     fetchedAt: new Date().toISOString(),
     accounts,
     // The display name on each account's profile, for recognising the owner's commits
@@ -641,6 +714,8 @@ function main() {
     repos: [],
   };
 
+  /** Each organisation and repository named on the command line: could any account read it? */
+  const seen = new Map();
   try {
     for (const login of accounts) {
       const token = tokenFor(login);
@@ -648,17 +723,53 @@ function main() {
       if (me.status !== 200) throw new Error(`Could not read account ${login} (${me.status}).`);
       if (me.body?.name && !raw.profileNames.includes(me.body.name)) raw.profileNames.push(me.body.name);
 
-      const list = getAll(token, '/user/repos?affiliation=owner&visibility=all&sort=created&direction=asc&per_page=100');
-      for (const r of list.items) {
-        if (raw.repos.some((x) => x.full_name === r.full_name)) continue;
+      /** Record one repository, unless it is already recorded or is of a kind left out. */
+      const take = (r) => {
+        if (raw.repos.some((x) => x.full_name === r.full_name)) return;
         if (r.fork && !opts.includeForks) {
           raw.forksSkipped++;
-          continue;
+          return;
+        }
+        if (r.archived && opts.skipArchived) {
+          raw.archivedSkipped++;
+          return;
+        }
+        const before = opts.previous.get(r.full_name);
+        if (before !== undefined && before.pushed_at === r.pushed_at && before.default_branch === r.default_branch) {
+          // Nothing pushed since the last record: its history is as recorded. What GitHub
+          // says OF it today (its description, whether it is archived) is taken fresh.
+          process.stderr.write(`  ${r.full_name} (unchanged)\n`);
+          raw.repos.push({ ...before, description: r.description ?? null, topics: r.topics ?? [], archived: Boolean(r.archived), private: Boolean(r.private) });
+          raw.reused++;
+          return;
         }
         process.stderr.write(`  ${r.full_name}\n`);
         raw.repos.push(fetchRepo(token, r, opts));
+      };
+
+      if (opts.owned) {
+        const list = getAll(token, '/user/repos?affiliation=owner&visibility=all&sort=created&direction=asc&per_page=100');
+        for (const r of list.items) take(r);
+      }
+      for (const org of opts.orgs) {
+        const list = getAll(token, `/orgs/${encodeURIComponent(org)}/repos?type=all&sort=created&direction=asc&per_page=100`);
+        if (list.status !== 200) seen.set(`organisation ${org}`, seen.get(`organisation ${org}`) ?? false);
+        else {
+          seen.set(`organisation ${org}`, true);
+          for (const r of list.items) take(r);
+        }
+      }
+      for (const full of opts.repos) {
+        const one = get(token, `/repos/${full}`);
+        if (one.status !== 200 || !one.body?.full_name) seen.set(full, seen.get(full) ?? false);
+        else {
+          seen.set(full, true);
+          take(one.body);
+        }
       }
     }
+    // Named, and readable by none of the accounts: said, not passed over in silence.
+    raw.unreadable = [...seen].filter(([, ok]) => !ok).map(([name]) => name);
   } catch (err) {
     raw.complete = false;
     raw.stoppedBecause = err instanceof Error ? err.message : String(err);
@@ -686,9 +797,16 @@ function main() {
       }
     }
   }
-  console.log(`GitHub sync: ${accounts.join(', ')}`);
-  console.log(`  ${raw.repos.length} repositories (${raw.forksSkipped} forks skipped), ${total} commits on default branches, ${calls} API calls`);
-  console.log(`  ${linked} commits linked to the owner's accounts; ${total - linked} not:`);
+  console.log(`GitHub sync: ${accounts.join(', ')}${HOST === 'github.com' ? '' : ` on ${HOST}`}`);
+  const left = [`${raw.forksSkipped} forks skipped`, ...(opts.skipArchived ? [`${raw.archivedSkipped} archived skipped`] : [])].join(', ');
+  console.log(`  ${raw.repos.length} repositories (${left}), ${total} commits on default branches, ${calls} API calls`);
+  if (raw.reused > 0) console.log(`  ${raw.reused} had nothing pushed since the last sync and were not asked about again (--fresh asks anyway)`);
+  for (const name of raw.unreadable) console.log(`  COULD NOT READ ${name}: no account here can see it. Check the name, and that gh is authorised for it.`);
+  console.log(
+    raw.everyone
+      ? `  Every person's commits will count as work (--everyone). ${linked} are linked to these accounts; ${total - linked} are not:`
+      : `  ${linked} commits linked to the owner's accounts; ${total - linked} not:`,
+  );
   for (const [who, n] of [...others].sort((a, b) => b[1] - a[1])) console.log(`    ${String(n).padStart(5)}  ${who}`);
   // Evidence: counts and reasons only. No README, issue or TODO text is echoed.
   const withEvidence = raw.repos.filter((r) => r.evidence);

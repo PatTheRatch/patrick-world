@@ -112,6 +112,11 @@ reflection, not the loop).
 ## Stage 8: Real data
 
 - [x] GitHub adapter: fetch, transform to events, load in place of the specimen
+- [x] The sync reads beyond the owner's own repositories: organisations, named repositories,
+      GitHub Enterprise hosts; a team's record counts everyone's commits; unchanged
+      repositories are reused so a large sync can resume
+- [ ] Regions that are not the owner's personal four: a work map needs its own countries
+- [ ] A way to hand the map to someone else (a build that carries a chosen record)
 - [ ] Review inferred stages against what Patrick knows to be true; tune the rules
 - [x] A city's own definition: `patrick-world.json` in each repository names its features, their
       paths, what is planned, its region and its links; the sync reads it with its history

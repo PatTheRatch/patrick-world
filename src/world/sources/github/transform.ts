@@ -244,14 +244,21 @@ export function weekEnding(day: string): string {
  * a coding agent in a repository the owner owns. An agent building at the owner's direction
  * is the owner's project being built, and Patrick's World treats agents as builders. Other
  * people's commits and deploy bots are kept out.
+ *
+ * A record made with `--everyone` is a team's map and not one person's: there every
+ * person's commits count, and every agent's. Machinery still does not: a dependency bump or
+ * a CI commit is not something anybody built.
  */
 export const AGENT_AUTHORS = /^(claude|aisha|codex|cursor|copilot|devin|openai-codex|github-copilot)([-_ \[]|$)/i;
+/** Accounts that are machinery and never builders, whoever's map it is. */
+export const BOT_AUTHORS = /\[bot\]$|^(dependabot|renovate|github-actions|snyk-bot|greenkeeper|mergify|codecov|semantic-release-bot|web-flow)\b/i;
 
-export function ownerTest(raw: Pick<GithubRaw, 'accounts' | 'profileNames'>): (c: GithubCommit) => boolean {
+export function ownerTest(raw: Pick<GithubRaw, 'accounts' | 'profileNames' | 'everyone'>): (c: GithubCommit) => boolean {
   const logins = new Set(raw.accounts.map((a) => a.toLowerCase()));
   const names = new Set([...raw.accounts, ...(raw.profileNames ?? [])].map((a) => a.toLowerCase()));
   return (c) => {
     if (AGENT_AUTHORS.test(c.author ?? '') || AGENT_AUTHORS.test(c.authorName ?? '')) return true;
+    if (raw.everyone === true) return !BOT_AUTHORS.test(c.author ?? '') && !BOT_AUTHORS.test(c.authorName ?? '');
     if (c.author !== null && c.author !== undefined) return logins.has(c.author.toLowerCase());
     return typeof c.authorName === 'string' && names.has(c.authorName.toLowerCase());
   };

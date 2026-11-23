@@ -43,6 +43,8 @@ export const worldKind = signal<'specimen' | 'github'>('specimen');
 export const surveyedAt = signal<string | null>(null);
 /** Of the surveyed places, how many are drawn from their own patrick-world.json. */
 export const describedPlaces = signal(0);
+/** True when the survey counts every person's commits: a team's map, not one person's. */
+export const teamSurvey = signal(false);
 
 /**
  * The present, as an ISO day. For the specimen it is the day its fiction is written up
@@ -183,6 +185,7 @@ export async function load() {
     baseEvents.value = surveyed;
     surveyedAt.value = github.fetchedAt;
     describedPlaces.value = github.described;
+    teamSurvey.value = github.everyone;
     // A broken definition or a link to nowhere: said once, where the owner will look.
     for (const note of github.definitionNotes) console.warn(`patrick-world.json: ${note}`);
     worldKind.value = 'github';
@@ -195,6 +198,7 @@ export async function load() {
     baseEvents.value = copies > 0 ? [...base, ...stressEvents(base, Math.min(copies, 40), catalogue)] : base;
     surveyedAt.value = null;
     describedPlaces.value = 0;
+    teamSurvey.value = false;
     worldKind.value = 'specimen';
     fixtureBuilds.value = copies > 0 ? [] : buildFixtureEvents();
     understanding.value = fixtureUnderstanding;

@@ -28,6 +28,8 @@ export class GitHubSource implements WorldSource {
   repoCount = 0;
   /** How many places are drawn from their own patrick-world.json and not from guesses. */
   described = 0;
+  /** True when the record is a team's: every person's commits count as work, not only the owner's. */
+  everyone = false;
   /** What the owner would want to know about those files: a broken one, a link to nowhere. */
   definitionNotes: string[] = [];
   /** Why the status is `error`, in words. */
@@ -46,6 +48,7 @@ export class GitHubSource implements WorldSource {
     this.fetchedAt = null;
     this.repoCount = 0;
     this.described = 0;
+    this.everyone = false;
     this.definitionNotes = [];
     this.problem = null;
     try {
@@ -67,6 +70,7 @@ export class GitHubSource implements WorldSource {
       if (!isGithubRaw(parsed)) return this.fail('The GitHub record is not in the expected shape. Run: npm run sync:github');
       const { events, described, notes } = surveyGithub(parsed, this.catalogue, this.isLand);
       this.described = described;
+      this.everyone = parsed.everyone === true;
       this.definitionNotes = notes;
       this.status = 'loaded';
       this.fetchedAt = parsed.fetchedAt;

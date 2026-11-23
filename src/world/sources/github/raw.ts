@@ -181,6 +181,21 @@ export interface GithubRaw {
   fetchedAt: string;
   /** The owner's logins. */
   accounts: string[];
+  /** The GitHub host that was read, when it is not github.com. */
+  host?: string;
+  /**
+   * True when the sync was run with --everyone: the record is a team's, and every person's
+   * commits are to count as work. Absent or false: only the owner's (and coding agents').
+   */
+  everyone?: boolean;
+  /** Organisations and repositories named on the command line, beyond those the accounts own. */
+  orgs?: string[];
+  reposNamed?: string[];
+  /** How many repositories were taken unchanged from the previous record. */
+  reused?: number;
+  archivedSkipped?: number;
+  /** Organisations and repositories that were named and that no account could read. */
+  unreadable?: string[];
   /** Display names on those accounts' profiles. */
   profileNames?: string[];
   includeForks?: boolean;
