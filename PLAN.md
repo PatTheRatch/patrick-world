@@ -115,8 +115,11 @@ reflection, not the loop).
 - [ ] Review inferred stages against what Patrick knows to be true; tune the rules
 - [x] A city's own definition: `patrick-world.json` in each repository names its features, their
       paths, what is planned, its region and its links; the sync reads it with its history
-- [ ] The founding questionnaire: a command to run in a repository that reads the code, asks
-      what it cannot see, and writes the definition
+- [x] The founding questionnaire: the `patrick-world-init` skill, to run in a repository with
+      Claude Code, GitHub Copilot or Codex. It surveys the code, asks what it cannot see,
+      writes the definition and checks it
+- [x] AGENTS.md, so that any coding agent can work in this repository
+- [ ] Run the questionnaire on real repositories; revise its questions from what it gets wrong
 - [ ] A link to a city that does not exist yet drawn as a pencilled site
 - [ ] The event log on disk, with a schema version
 

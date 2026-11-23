@@ -8,6 +8,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "sync:github": "node scripts/github-fetch.mjs",
+    "sync:skill": "node scripts/skill-sync.mjs",
+    "install:skill": "node scripts/skill-install.mjs",
     "typecheck": "tsc --noEmit",
     "check": "tsc --noEmit && vitest run && vite build"
   },

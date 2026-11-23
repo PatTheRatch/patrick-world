@@ -1,0 +1,126 @@
+{
+  "regions": [
+    {
+      "id": "the-court",
+      "name": "The Court",
+      "note": "Sport and fantasy analytics."
+    },
+    {
+      "id": "mindworks",
+      "name": "Mindworks",
+      "note": "Agents, tooling and machine intelligence."
+    },
+    {
+      "id": "ledger-reach",
+      "name": "Ledger Reach",
+      "note": "Money and markets."
+    },
+    {
+      "id": "the-commons",
+      "name": "The Commons",
+      "note": "Everyday life and play."
+    }
+  ],
+  "methods": [
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "family": "language"
+    },
+    {
+      "id": "python",
+      "name": "Python",
+      "family": "language"
+    },
+    {
+      "id": "rust",
+      "name": "Rust",
+      "family": "language"
+    },
+    {
+      "id": "sql",
+      "name": "SQL",
+      "family": "data"
+    },
+    {
+      "id": "postgresql",
+      "name": "PostgreSQL",
+      "family": "data"
+    },
+    {
+      "id": "data-engineering",
+      "name": "Data engineering",
+      "family": "data"
+    },
+    {
+      "id": "web-scraping",
+      "name": "Web scraping",
+      "family": "data"
+    },
+    {
+      "id": "statistics",
+      "name": "Statistics",
+      "family": "analysis"
+    },
+    {
+      "id": "investment-analytics",
+      "name": "Investment analytics",
+      "family": "analysis"
+    },
+    {
+      "id": "computer-vision",
+      "name": "Computer vision",
+      "family": "analysis"
+    },
+    {
+      "id": "product-design",
+      "name": "Product design",
+      "family": "interface"
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "family": "interface"
+    },
+    {
+      "id": "canvas-graphics",
+      "name": "Canvas graphics",
+      "family": "interface"
+    },
+    {
+      "id": "mobile-development",
+      "name": "Mobile development",
+      "family": "interface"
+    },
+    {
+      "id": "auth-identity",
+      "name": "Auth & identity",
+      "family": "platform"
+    },
+    {
+      "id": "prompt-design",
+      "name": "Prompt design",
+      "family": "intelligence"
+    },
+    {
+      "id": "ai-agents",
+      "name": "AI agents",
+      "family": "intelligence"
+    },
+    {
+      "id": "mcp",
+      "name": "MCP",
+      "family": "intelligence"
+    },
+    {
+      "id": "llm-evaluation",
+      "name": "LLM evaluation",
+      "family": "intelligence"
+    },
+    {
+      "id": "fine-tuning",
+      "name": "Fine-tuning",
+      "family": "intelligence"
+    }
+  ]
+}

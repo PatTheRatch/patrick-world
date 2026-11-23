@@ -244,6 +244,15 @@ describe('a definition that does not read', () => {
   });
 });
 
+describe('a city that says what it receives', () => {
+  it('draws the feed from the other city to this one', () => {
+    const file = { version: 1, id: 'reader', name: 'Reader', what: 'A city.', features: [], links: [{ to: 'patrick-os', kind: 'fed-by', carries: 'ideas' }] };
+    const reader = repo({ name: 'reader', created_at: '2024-08-01T10:00:00Z', commits: [commit('2024-08-02')], definition: definition(['2025-01-01', file]) });
+    const { events } = survey(reader, os);
+    expect(events.find((e) => e.type === 'link.formed')).toMatchObject({ a: placeId(os), b: placeId(reader), kind: 'feeds', carries: 'ideas' });
+  });
+});
+
 describe('two cities claiming one id', () => {
   it('leaves the id with the elder', () => {
     const file = (id: string, links?: unknown) => ({ version: 1, id, name: id, what: 'A city.', features: [], links });

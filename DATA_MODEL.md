@@ -258,7 +258,7 @@ worked example.
 | `name`, `what` | The humanised repository name and its GitHub description |
 | `region` | The keyword guess, when the map has that region |
 | `features[]`: `id`, `name`, `kind`, `stage`, `paths`, `ward`, `methods`, `note` | Directories as features. A feature with no `paths` is intended and has no code. An empty list keeps the directory guess. |
-| `links[]`: `to`, `kind`, `carries` | Nothing was inferred. `to` is another city's `id`, or failing that its repository name. |
+| `links[]`: `to`, `kind`, `carries` | Nothing was inferred. `to` is another city's `id`, or failing that its repository name. `kind` is one of the world's, or `fed-by`: `feeds` told from the receiving end. |
 
 Three rules hold it together:
 
@@ -274,6 +274,11 @@ Three rules hold it together:
 What only the file says is emitted with `source: 'declared'`; work and the stages commits date
 stay `source: 'github'`. A file that does not read is refused whole and the city stays guessed
 at; the sync's summary and the browser console say why.
+
+The file is usually written by the questionnaire in `skills/patrick-world-init/`, a skill any
+of Claude Code, GitHub Copilot or Codex can run, which also checks the file the way the sync
+will read it. The skill carries a type-stripped copy of the reader, made from
+`src/world/definition.ts` by `npm run sync:skill` and held in step by `src/skill.test.ts`.
 
 Adopting a definition re-surveys that city once: its features change from directories to the
 named ones, so their lots are laid out afresh, and a declared region can move the place. Manual

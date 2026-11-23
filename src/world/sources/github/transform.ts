@@ -932,7 +932,11 @@ export function surveyGithub(raw: GithubRaw, catalogue: Catalogue, isLand: (p: P
       if (at < plan.foundedAt) at = plan.foundedAt;
       const otherFounded = founded.get(other);
       if (otherFounded !== undefined && at < otherFounded) at = otherFounded;
-      const formed: WorldEvent = { id: `${key}:link:${linkKey(link)}`, at, source: 'declared', type: 'link.formed', a: place, b: other, kind: link.kind };
+      // `fed-by` is `feeds` told from the receiving end: the other city is the one that sends.
+      const formed: WorldEvent =
+        link.kind === 'fed-by'
+          ? { id: `${key}:link:${linkKey(link)}`, at, source: 'declared', type: 'link.formed', a: other, b: place, kind: 'feeds' }
+          : { id: `${key}:link:${linkKey(link)}`, at, source: 'declared', type: 'link.formed', a: place, b: other, kind: link.kind };
       if (link.carries !== undefined) formed.carries = link.carries;
       emit(formed);
     }

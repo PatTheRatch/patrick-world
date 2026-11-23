@@ -81,7 +81,8 @@
       "id": "founding-questionnaire",
       "name": "The founding questionnaire",
       "kind": "utility",
-      "stage": "planned",
+      "stage": "building",
+      "paths": ["skills", "scripts/skill-sync.mjs", "scripts/skill-install.mjs"],
       "methods": ["ai-agents", "prompt-design"],
       "note": "A command to run in any repository: it reads the code, asks what it cannot see, and writes the city's definition."
     },
@@ -103,6 +104,6 @@
     }
   ],
   "links": [
-    { "to": "patrick-os", "kind": "feeds", "carries": "ideas and context" }
+    { "to": "patrick-os", "kind": "fed-by", "carries": "ideas and context" }
   ]
 }

@@ -24,6 +24,43 @@ A repository that carries a `patrick-world.json` at its root is drawn from what 
 own [patrick-world.json](patrick-world.json) is the example; the format is in
 [DATA_MODEL.md](DATA_MODEL.md). The file must be pushed before a sync can see it.
 
+### Founding a city
+
+The file does not have to be written by hand. `skills/patrick-world-init/` is a questionnaire
+any coding agent can run: Claude Code, GitHub Copilot or Codex. Run in a repository, it
+surveys the code, asks about what the code cannot show (what the project is, what is planned,
+what works, what it connects to), writes `patrick-world.json` and checks it. Run it again
+later to bring a city up to date.
+
+Install it once per machine, and it is available in every repository there:
+
+```sh
+npm run install:skill                     # every agent that is set up on this machine
+npm run install:skill -- --tool copilot   # or name one: claude, copilot, codex
+npm run install:skill -- --dry-run        # see where it would go first
+```
+
+Then, in the repository you want on the map, ask your agent to "set this repository up for
+Patrick's World", or start the skill by name (`/patrick-world-init`; in Codex,
+`$patrick-world-init`). Run the install again after pulling this repository to refresh the
+copy, or install with `--link` to keep it in step automatically.
+
+Copilot in VS Code alone may not have created `~/.copilot`, in which case the first command
+skips it: name it with `--tool copilot`. If your agent has no skills support at all (some
+IDE chats do not yet), tell it: "Read `<this checkout>/skills/patrick-world-init/SKILL.md`
+and follow it for this repository." The folder is laid out as the Agent Skills standard
+expects (`skills/<name>/SKILL.md`), so once this repository is pushed the usual installers
+should work on it too, without a checkout: `gh skill install` and `npx skills add`. Neither
+has been tried here.
+
+The skill needs only git and Node 18 or later on the machine; the `gh` CLI is optional. It
+carries its own copies of the definition reader and the map's regions and methods. After
+changing either here, run `npm run sync:skill` (a test fails until you do).
+
+Agents working in *this* repository read [AGENTS.md](AGENTS.md). Codex and Copilot read it
+directly; `CLAUDE.md` and `.github/copilot-instructions.md` are one-line pointers to it for
+the tools that look for those names.
+
 ## Getting around
 
 | | |

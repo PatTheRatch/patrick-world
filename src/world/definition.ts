@@ -23,7 +23,8 @@
 //
 // Pure: no DOM, no fetch, no clock. It has no imports that survive type-stripping, on
 // purpose: scripts/github-fetch.mjs loads this file directly with Node to learn which paths
-// a definition asks about.
+// a definition asks about, and the questionnaire skill carries a type-stripped copy of it
+// (`npm run sync:skill` after any change here; a test fails until then).
 
 import type { FeatureKind, FeatureStage, LinkKind } from './types';
 
@@ -37,7 +38,13 @@ export const DEFINITION_STAGES = STAGES;
 export const DEFINITION_FILE = 'patrick-world.json';
 export const DEFINITION_VERSION = 1;
 
-const LINK_KINDS: readonly LinkKind[] = ['related', 'shares', 'feeds', 'split-from'];
+/**
+ * How a city may say it is connected. The world's own kinds, and one more: `fed-by` is
+ * `feeds` seen from the other end, so that a city can say what it receives as well as what
+ * it sends without waiting for the other city to say it.
+ */
+export type DeclaredLinkKind = LinkKind | 'fed-by';
+const LINK_KINDS: readonly DeclaredLinkKind[] = ['related', 'shares', 'feeds', 'fed-by', 'split-from'];
 
 export interface DeclaredFeature {
   /**
@@ -65,8 +72,9 @@ export interface DeclaredFeature {
 export interface DeclaredLink {
   /** The `id` in the other city's own file. */
   to: string;
-  kind: LinkKind;
-  /** For `shares` and `feeds`: what flows. */
+  /** `feeds`: this city sends something to that one. `fed-by`: that one sends to this. */
+  kind: DeclaredLinkKind;
+  /** For `shares`, `feeds` and `fed-by`: what flows. */
   carries?: string;
 }
 
@@ -178,7 +186,7 @@ function readLink(v: unknown, n: number, self: unknown, errors: string[]): Decla
   if (v.carries !== undefined && !isText(v.carries)) errors.push(`${label}: carries must say what flows.`);
   if (errors.length > before) return null;
 
-  const link: DeclaredLink = { to: v.to as string, kind: v.kind as LinkKind };
+  const link: DeclaredLink = { to: v.to as string, kind: v.kind as DeclaredLinkKind };
   if (isText(v.carries)) link.carries = v.carries.trim();
   return link;
 }
